@@ -1,0 +1,220 @@
+.main {
+  padding-top: var(--navbar-height);
+  min-height: 100vh;
+}
+
+.pageHeader {
+  padding: var(--space-12) 0 var(--space-8);
+  background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+  border-bottom: 1px solid rgba(201, 169, 110, 0.1);
+}
+
+.pageTitle { margin-top: var(--space-3); color: var(--white); }
+.pageDesc { margin-top: var(--space-3); color: var(--gray-400); max-width: 560px; }
+
+.tasarLayout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: var(--space-8);
+  padding: var(--space-10) var(--space-6);
+  align-items: flex-start;
+}
+
+/* Steps Sidebar */
+.stepsCard {
+  padding: var(--space-6);
+  background: rgba(15, 33, 64, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  position: sticky;
+  top: calc(var(--navbar-height) + var(--space-4));
+}
+
+.stepsTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  color: var(--white);
+  margin-bottom: var(--space-6);
+}
+
+.stepsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.stepItem {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  opacity: 0.4;
+  transition: opacity var(--transition-base);
+}
+
+.stepActive { opacity: 1; }
+
+.stepNumber {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: rgba(201, 169, 110, 0.1);
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.stepActive .stepNumber {
+  background: var(--gold);
+  color: var(--navy-900);
+  border-color: var(--gold);
+}
+
+.stepName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--white);
+}
+
+.stepDesc {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+
+.stepLine {
+  width: 2px;
+  height: 24px;
+  background: rgba(201, 169, 110, 0.15);
+  margin-left: 15px;
+  margin-block: var(--space-2);
+}
+
+/* Form Card */
+.formCard {
+  padding: var(--space-8);
+  background: rgba(15, 33, 64, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.formTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  color: var(--white);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gray-400);
+  font-weight: 600;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--white);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  transition: border-color var(--transition-base);
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.input::placeholder,
+.textarea::placeholder { color: var(--gray-500); }
+
+.textarea { resize: vertical; min-height: 80px; }
+
+/* Type chips */
+.typeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.typeChip {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--gray-400);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.typeChip:hover { border-color: var(--gold); color: var(--gold); }
+
+.typeChipActive {
+  background: rgba(201, 169, 110, 0.15);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.formButtons {
+  display: flex;
+  gap: var(--space-3);
+}
+
+/* Success */
+.successCard {
+  padding: var(--space-16);
+  background: rgba(15, 33, 64, 0.5);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-5);
+}
+
+.successTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  color: var(--white);
+}
+
+.successDesc {
+  font-size: var(--text-base);
+  color: var(--gray-400);
+  max-width: 400px;
+  line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+  .tasarLayout { grid-template-columns: 1fr; }
+  .formGrid { grid-template-columns: 1fr; }
+  .stepsCard { position: static; }
+  .formButtons { flex-direction: column; }
+}

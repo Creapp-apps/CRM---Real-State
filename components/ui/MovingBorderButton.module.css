@@ -1,0 +1,77 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 2px;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+}
+
+/* The border track that clips the beam */
+.borderContainer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.borderTrack {
+  position: absolute;
+  inset: 0;
+}
+
+/* The rotating gradient beam */
+.movingBeam {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  transform-origin: center;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 70%,
+    rgba(201, 169, 110, 0.4) 78%,
+    rgba(255, 210, 130, 1) 82%,
+    rgba(201, 169, 110, 0.4) 86%,
+    transparent 94%,
+    transparent 100%
+  );
+  margin-left: -100%;
+  margin-top: -100%;
+}
+
+/* Inner content area */
+.content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 100%;
+  padding: 0.875rem 2rem;
+  background: rgba(10, 22, 40, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--white, #fff);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  transition: background 0.3s ease;
+}
+
+.wrapper:hover .content {
+  background: rgba(15, 33, 64, 0.9);
+}
+
+.wrapper:hover .movingBeam {
+  filter: brightness(1.3);
+}

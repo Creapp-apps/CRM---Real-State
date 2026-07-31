@@ -1,0 +1,209 @@
+.main {
+  padding-top: var(--navbar-height);
+  min-height: 100vh;
+}
+
+.pageHeader {
+  padding: var(--space-12) 0 var(--space-8);
+  background: linear-gradient(180deg, var(--navy-800), var(--navy-900));
+  border-bottom: 1px solid rgba(201, 169, 110, 0.1);
+}
+
+.pageTitle { margin-top: var(--space-3); color: var(--white); }
+.pageDesc { margin-top: var(--space-3); color: var(--gray-400); max-width: 500px; }
+
+.contactLayout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: var(--space-8);
+  padding: var(--space-10) var(--space-6);
+}
+
+/* Info Card */
+.infoCard {
+  padding: var(--space-8);
+  background: linear-gradient(135deg, var(--navy-700), var(--navy-800));
+  border: 1px solid rgba(201, 169, 110, 0.1);
+  border-radius: var(--radius-lg);
+  height: fit-content;
+}
+
+.infoTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  color: var(--white);
+  margin-bottom: var(--space-3);
+}
+
+.infoDesc {
+  font-size: var(--text-sm);
+  color: var(--gray-400);
+  line-height: 1.7;
+  margin-bottom: var(--space-8);
+}
+
+.infoItems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.infoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.infoIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: rgba(201, 169, 110, 0.1);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.infoLabel {
+  display: block;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gray-500);
+  margin-bottom: 2px;
+}
+
+.infoValue {
+  font-size: var(--text-sm);
+  color: var(--white);
+  transition: color var(--transition-base);
+}
+
+a.infoValue:hover { color: var(--gold); }
+
+.whatsappLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3);
+  background: #25D366;
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: all var(--transition-base);
+}
+
+.whatsappLink:hover {
+  background: #1fba59;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+/* Form Card */
+.formCard {
+  padding: var(--space-8);
+  background: rgba(15, 33, 64, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+}
+
+.formTitle {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  color: var(--white);
+  margin-bottom: var(--space-6);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.formLabel {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gray-400);
+  font-weight: 600;
+}
+
+.formInput,
+.formSelect,
+.formTextarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--white);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  transition: border-color var(--transition-base);
+}
+
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+
+.formInput::placeholder,
+.formTextarea::placeholder { color: var(--gray-500); }
+
+.formSelect {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239CA3AF' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+.formSelect option { background: var(--navy-800); }
+
+.formTextarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.successMsg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-10);
+  text-align: center;
+}
+
+.successMsg h4 {
+  color: var(--white);
+  font-size: var(--text-xl);
+}
+
+.successMsg p {
+  color: var(--gray-400);
+}
+
+@media (max-width: 768px) {
+  .contactLayout { grid-template-columns: 1fr; }
+  .formRow { grid-template-columns: 1fr; }
+}

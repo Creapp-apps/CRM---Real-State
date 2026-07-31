@@ -1,0 +1,423 @@
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Background */
+.bgWrapper {
+  position: absolute;
+  inset: -20% 0 0 0;
+  height: 120%;
+  z-index: 0;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 22, 40, 0.5) 0%,
+    rgba(10, 22, 40, 0.7) 50%,
+    rgba(10, 22, 40, 0.95) 100%
+  );
+  z-index: 1;
+}
+
+/* Content */
+.content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-10);
+  padding-top: var(--navbar-height);
+}
+
+/* Logo */
+.heroLogo {
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.heroLogo.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Title */
+.title {
+  font-family: var(--font-heading);
+  font-size: var(--text-7xl);
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 900px;
+  color: var(--white);
+  perspective: 500px;
+}
+
+.word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(20px);
+  margin-right: 0.3em;
+}
+
+.wordVisible {
+  animation: letterReveal 0.6s ease forwards;
+}
+
+@keyframes letterReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Subtitle */
+.subtitle {
+  font-size: var(--text-lg);
+  color: var(--gray-400);
+  max-width: 560px;
+  line-height: 1.7;
+  opacity: 0;
+  transition: opacity 0.8s ease 1.2s;
+}
+
+.subtitle.visible {
+  opacity: 1;
+}
+
+/* Search Bar */
+.searchBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(15, 33, 64, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2);
+  margin-top: var(--space-4);
+  gap: 0;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease 1.5s, transform 0.8s ease 1.5s;
+  z-index: 1;
+}
+
+/* Shine border — rotating conic gradient */
+.searchBar::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--shine-angle, 0deg),
+    transparent 0%,
+    transparent 25%,
+    rgba(201, 169, 110, 0.6) 35%,
+    rgba(255, 210, 130, 0.9) 40%,
+    rgba(201, 169, 110, 0.6) 45%,
+    transparent 55%,
+    transparent 100%
+  );
+  animation: shineRotate 4s linear infinite;
+  z-index: -2;
+}
+
+/* Inner mask to only show the border shine */
+.searchBar::after {
+  content: '';
+  position: absolute;
+  inset: 1.5px;
+  border-radius: inherit;
+  background: rgb(13, 28, 53);
+  z-index: -1;
+}
+
+@property --shine-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes shineRotate {
+  to {
+    --shine-angle: 360deg;
+  }
+}
+
+.searchBar.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.searchGroup {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-5);
+  min-width: 160px;
+}
+
+.searchLabel {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+
+/* Custom Select */
+.customSelect {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--white);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1) 0;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+
+.selectValue {
+  color: var(--white);
+}
+
+.selectPlaceholder {
+  color: var(--gray-400);
+}
+
+.selectChevron {
+  color: var(--gold);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Dropdown panel */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  min-width: 180px;
+  background: rgba(10, 22, 40, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 169, 110, 0.15);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  z-index: 100;
+  animation: dropdownFadeIn 0.2s ease;
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--gray-300);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.dropdownItem:hover {
+  background: rgba(201, 169, 110, 0.1);
+  color: var(--white);
+}
+
+.dropdownItemActive {
+  color: var(--gold);
+  background: rgba(201, 169, 110, 0.08);
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.searchInput {
+  font-size: var(--text-sm);
+  color: var(--white);
+  background: transparent;
+  cursor: pointer;
+  padding: var(--space-1) 0;
+  border: none;
+  font-family: inherit;
+  width: 100%;
+}
+
+.searchInput::placeholder {
+  color: var(--gray-500);
+}
+
+.searchDivider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.searchBtn {
+  padding: var(--space-4) var(--space-6) !important;
+  border-radius: var(--radius-lg) !important;
+  gap: var(--space-2) !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Scroll Indicator */
+.scrollIndicator {
+  position: absolute;
+  bottom: var(--space-10);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  opacity: 0;
+  transition: opacity 0.8s ease 2s;
+  cursor: pointer;
+}
+
+.scrollIndicator.visible {
+  opacity: 1;
+}
+
+.scrollText {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--gold);
+  animation: textPulse 2.5s ease-in-out infinite;
+}
+
+.scrollArrow {
+  color: var(--gold);
+  animation: arrowBounce 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(201, 169, 110, 0.5));
+}
+
+@keyframes textPulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes arrowBounce {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(8px);
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .title {
+    font-size: var(--text-5xl);
+  }
+
+  .searchBar {
+    flex-wrap: wrap;
+    border-radius: var(--radius-lg);
+  }
+
+  .searchGroup {
+    min-width: 130px;
+  }
+
+  .searchDivider {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    min-height: 100vh;
+  }
+
+  .title {
+    font-size: var(--text-4xl);
+    max-width: 100%;
+  }
+
+  .searchBar {
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .searchGroup {
+    width: 100%;
+    padding: var(--space-2) 0;
+    min-width: auto;
+  }
+
+  .searchSelect,
+  .searchInput {
+    width: 100%;
+    padding: var(--space-2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding-left: var(--space-3);
+  }
+
+  .searchBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .scrollIndicator {
+    bottom: var(--space-6);
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: var(--text-3xl);
+  }
+}
