@@ -2,12 +2,71 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { AnimatePresence, motion } from 'motion/react';
+import AiSearchAssistant from './AiSearchAssistant';
 import styles from './HeroSection.module.css';
 
+/* ── Rotating Word Component ── */
+const ROTATING_WORDS = ['lugar', 'espacio', 'hogar', 'local', 'negocio'];
+
+function RotatingWord({ words }) {
+  const [index, setIndex] = useState(0);
+  const [widths, setWidths] = useState([]);
+  const measureRef = useRef(null);
+
+  useEffect(() => {
+    if (measureRef.current) {
+      const children = Array.from(measureRef.current.children);
+      const measured = children.map((el) => el.getBoundingClientRect().width);
+      setWidths(measured);
+    }
+  }, [words]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % words.length);
+    }, 2600);
+    return () => clearInterval(timer);
+  }, [words]);
+
+  const currentWidth = widths[index] ? widths[index] : 'auto';
+
+  return (
+    <>
+      {/* Capa oculta para medir exactamente los píxeles de cada palabra */}
+      <span ref={measureRef} className={styles.measureContainer} aria-hidden="true">
+        {words.map((w) => (
+          <span key={w} className={styles.rotatingWord}>
+            {w}
+          </span>
+        ))}
+      </span>
+
+      <motion.span
+        animate={{ width: currentWidth }}
+        transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
+        className={styles.rotatingWordWrapper}
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={words[index]}
+            initial={{ opacity: 0, y: 18, filter: 'blur(3px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -18, filter: 'blur(3px)' }}
+            transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+            className={styles.rotatingWord}
+          >
+            {words[index]}
+          </motion.span>
+        </AnimatePresence>
+      </motion.span>
+    </>
+  );
+}
+
 /* ── Custom Dropdown ── */
-function CustomSelect({ label, options, placeholder }) {
+function CustomSelect({ label, options, placeholder, value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -18,7 +77,8 @@ function CustomSelect({ label, options, placeholder }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const displayValue = selected ? selected.label : placeholder;
+  const selectedOpt = options.find((o) => o.value === value);
+  const displayValue = selectedOpt ? selectedOpt.label : placeholder;
 
   return (
     <div className={styles.searchGroup} ref={ref}>
@@ -28,7 +88,7 @@ function CustomSelect({ label, options, placeholder }) {
         className={styles.customSelect}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={selected ? styles.selectValue : styles.selectPlaceholder}>
+        <span className={selectedOpt && selectedOpt.value !== '' ? styles.selectValue : styles.selectPlaceholder}>
           {displayValue}
         </span>
         <svg
@@ -53,10 +113,10 @@ function CustomSelect({ label, options, placeholder }) {
               key={opt.value}
               type="button"
               className={`${styles.dropdownItem} ${
-                selected?.value === opt.value ? styles.dropdownItemActive : ''
+                value === opt.value ? styles.dropdownItemActive : ''
               }`}
               onClick={() => {
-                setSelected(opt.value === '' ? null : opt);
+                if (onChange) onChange(opt.value);
                 setIsOpen(false);
               }}
             >
@@ -72,20 +132,13 @@ function CustomSelect({ label, options, placeholder }) {
 /* ── Hero Section ── */
 export default function HeroSection() {
   const [loaded, setLoaded] = useState(false);
+  const [selectedOperacion, setSelectedOperacion] = useState('');
+  const [selectedTipo, setSelectedTipo] = useState('');
   const heroRef = useRef(null);
-  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     setLoaded(true);
-
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const title = "Te acompañamos a encontrar tu lugar ideal";
 
   const operacionOptions = [
     { value: '', label: 'Todas' },
@@ -106,20 +159,13 @@ export default function HeroSection() {
 
   return (
     <section className={styles.hero} ref={heroRef}>
-
       {/* Content */}
       <div className={`container ${styles.content}`}>
-        {/* Staggered Title */}
-        <h1 className={styles.title}>
-          {title.split(' ').map((word, i) => (
-            <span
-              key={i}
-              className={`${styles.word} ${loaded ? styles.wordVisible : ''}`}
-              style={{ animationDelay: `${600 + i * 100}ms` }}
-            >
-              {word}{' '}
-            </span>
-          ))}
+        {/* Title with Rotating Word */}
+        <h1 className={`${styles.title} ${loaded ? styles.visible : ''}`}>
+          Te acompañamos a encontrar tu{' '}
+          <RotatingWord words={ROTATING_WORDS} />{' '}
+          ideal
         </h1>
 
         {/* Subtitle */}
@@ -127,51 +173,73 @@ export default function HeroSection() {
           Venta, alquiler y tasaciones de propiedades en Argentina
         </p>
 
-        {/* Quick Search Bar */}
-        <div className={`${styles.searchBar} ${loaded ? styles.visible : ''}`}>
-          <CustomSelect
-            label="Operación"
-            options={operacionOptions}
-            placeholder="Todas"
+        {/* Unified Search Section: Coexisting AI Assistant + Classic Filters */}
+        <div className={`${styles.unifiedSearchContainer} ${loaded ? styles.visible : ''}`}>
+          {/* Subtle Compact AI Assistant Bar */}
+          <AiSearchAssistant
+            onSelectOperacion={(val) => setSelectedOperacion(val)}
           />
 
-          <div className={styles.searchDivider} />
-
-          <CustomSelect
-            label="Tipo"
-            options={tipoOptions}
-            placeholder="Todos"
-          />
-
-          <div className={styles.searchDivider} />
-
-          <div className={styles.searchGroup}>
-            <label className={styles.searchLabel}>Ubicación</label>
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="Barrio o zona..."
+          {/* Classic Filter Search Bar */}
+          <div className={styles.searchBar}>
+            <CustomSelect
+              label="Operación"
+              options={operacionOptions}
+              placeholder="Todas"
+              value={selectedOperacion}
+              onChange={(val) => setSelectedOperacion(val)}
             />
-          </div>
 
-          <div className={styles.searchDivider} />
+            <div className={styles.searchDivider} />
 
-          <div className={styles.searchGroup}>
-            <label className={styles.searchLabel}>Características</label>
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="Ej: pileta, 2 ambientes..."
+            <CustomSelect
+              label="Tipo"
+              options={tipoOptions}
+              placeholder="Todos"
+              value={selectedTipo}
+              onChange={(val) => setSelectedTipo(val)}
             />
-          </div>
 
-          <Link href="/propiedades" className={`btn btn-primary ${styles.searchBtn}`}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            Buscar
-          </Link>
+            <div className={styles.searchDivider} />
+
+            <div className={styles.searchGroup}>
+              <label className={styles.searchLabel}>Ubicación</label>
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="Barrio o zona..."
+              />
+            </div>
+
+            <div className={styles.searchDivider} />
+
+            <div className={styles.searchGroup}>
+              <label className={styles.searchLabel}>Características</label>
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="Ej: pileta, 2 ambientes..."
+              />
+            </div>
+
+            <Link
+              href={`/propiedades${
+                selectedOperacion || selectedTipo
+                  ? `?${new URLSearchParams({
+                      ...(selectedOperacion && { operacion: selectedOperacion }),
+                      ...(selectedTipo && { tipo: selectedTipo }),
+                    }).toString()}`
+                  : ''
+              }`}
+              className={`btn btn-primary ${styles.searchBtn}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Buscar
+            </Link>
+          </div>
         </div>
       </div>
 

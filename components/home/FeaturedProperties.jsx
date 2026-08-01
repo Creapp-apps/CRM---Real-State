@@ -346,7 +346,6 @@ export default function FeaturedProperties() {
     <section className={styles.section}>
       <div className="container">
         <AnimatedSection animation="fade-up" className={styles.header}>
-          <span className="subtitle">Destacadas Tokko</span>
           <h2 className={styles.sectionTitle}>
             Propiedades <span className="text-gold">seleccionadas</span>
           </h2>

@@ -1,8 +1,9 @@
 .hero {
   position: relative;
-  height: 100vh;
-  min-height: 700px;
+  min-height: 100vh;
+  padding: 110px 0 50px 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -57,32 +58,48 @@
   font-family: var(--font-heading);
   font-size: var(--text-7xl);
   font-weight: 700;
-  line-height: 1.15;
-  max-width: 900px;
+  line-height: 1.2;
+  max-width: 920px;
   color: var(--white);
-  perspective: 500px;
-}
-
-.word {
-  display: inline-block;
   opacity: 0;
   transform: translateY(20px);
-  margin-right: 0.3em;
+  transition: opacity 0.8s ease 0.4s, transform 0.8s ease 0.4s;
 }
 
-.wordVisible {
-  animation: letterReveal 0.6s ease forwards;
+.title.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-@keyframes letterReveal {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.measureContainer {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+  display: flex;
+}
+
+.rotatingWordWrapper {
+  display: inline-flex;
+  position: relative;
+  vertical-align: bottom;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0.18em;
+  height: 1.25em;
+  overflow: visible;
+}
+
+.rotatingWord {
+  display: inline-block;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffffff 0%, #fce9ad 35%, #d4af37 70%, #aa7c11 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 20px rgba(212, 175, 55, 0.45));
+  white-space: nowrap;
 }
 
 /* Subtitle */
@@ -99,6 +116,27 @@
   opacity: 1;
 }
 
+/* Unified Search Container */
+.unifiedSearchContainer {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  margin: var(--space-4) auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease 1.4s, transform 0.8s ease 1.4s;
+  z-index: 2;
+}
+
+.unifiedSearchContainer.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Search Bar */
 .searchBar {
   position: relative;
@@ -109,11 +147,9 @@
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-xl);
   padding: var(--space-2);
-  margin-top: var(--space-4);
   gap: 0;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.8s ease 1.5s, transform 0.8s ease 1.5s;
+  width: 100%;
+  transform: translateY(0);
   z-index: 1;
 }
 
@@ -301,15 +337,13 @@
 
 /* Scroll Indicator */
 .scrollIndicator {
-  position: absolute;
-  bottom: var(--space-10);
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  margin-top: var(--space-6);
   z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   opacity: 0;
   transition: opacity 0.8s ease 2s;
   cursor: pointer;

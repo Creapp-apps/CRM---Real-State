@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PropertyCard from '@/components/properties/PropertyCard';
@@ -182,7 +183,7 @@ function CatalogContent() {
         <section className={styles.pageHeader}>
           <div className="container">
             <AnimatedSection animation="fade-up">
-              <span className="subtitle">Catálogo Tokko</span>
+              <span className="subtitle">Catálogo Exclusivo</span>
               <h1 className={styles.pageTitle}>
                 Nuestras <span className="text-gold">Propiedades</span>
               </h1>
@@ -208,8 +209,13 @@ function CatalogContent() {
             )}
           </button>
 
-          {/* Sidebar Filters */}
-          <aside className={`${styles.sidebar} ${mobileFiltersOpen ? styles.sidebarOpen : ''}`}>
+          {/* Sidebar Filters Animated Entrance */}
+          <motion.aside
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className={`${styles.sidebar} ${mobileFiltersOpen ? styles.sidebarOpen : ''}`}
+          >
             <div className={styles.sidebarOverlay} onClick={() => setMobileFiltersOpen(false)} />
             <div className={styles.sidebarContent}>
               <button className={styles.sidebarClose} onClick={() => setMobileFiltersOpen(false)}>
@@ -222,12 +228,17 @@ function CatalogContent() {
                 availableOptions={availableOptions}
               />
             </div>
-          </aside>
+          </motion.aside>
 
           {/* Main Content */}
           <div className={styles.content}>
-            {/* Toolbar */}
-            <div className={styles.toolbar}>
+            {/* Toolbar Animated Entrance */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className={styles.toolbar}
+            >
               <div className={styles.toolbarLeft}>
                 <span className={styles.resultText}>
                   <strong>{filtered.length}</strong> propiedad{filtered.length !== 1 ? 'es' : ''}
@@ -271,21 +282,54 @@ function CatalogContent() {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Loading / Property Grid */}
+            {/* Loading / Property Grid with Staggered Lateral Slide Animation */}
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)' }}>
-                <p>Cargando catálogo desde Tokko Broker...</p>
+              <div className={styles.loadingContainer}>
+                <div className={styles.spinnerWrapper}>
+                  <div className={styles.spinnerPulse} />
+                  <div className={styles.spinnerRing} />
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className={styles.loadingText}>Cargando catálogo de propiedades...</h3>
+                  <span className={styles.loadingSubtext}>Mónica Cardoso Propiedades</span>
+                </div>
               </div>
             ) : filtered.length > 0 ? (
-              <div className={view === 'grid' ? styles.grid : styles.list}>
-                {filtered.map(property => (
-                  <PropertyCard key={property.id} property={property} view={view} />
-                ))}
-              </div>
+              <motion.div
+                layout
+                className={view === 'grid' ? styles.grid : styles.list}
+              >
+                <AnimatePresence mode="popLayout">
+                  {filtered.map((property, index) => (
+                    <motion.div
+                      key={property.id}
+                      layout
+                      initial={{ opacity: 0, x: 50, y: 15 }}
+                      animate={{ opacity: 1, x: 0, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.94, x: -20 }}
+                      transition={{
+                        duration: 0.48,
+                        delay: Math.min(index * 0.07, 0.4), // Staggered lateral slide animation!
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                    >
+                      <PropertyCard property={property} view={view} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
             ) : (
-              <div className={styles.empty}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={styles.empty}
+              >
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   <line x1="8" y1="11" x2="14" y2="11"/>
@@ -295,7 +339,7 @@ function CatalogContent() {
                 <button className="btn btn-secondary" onClick={() => setFilters({})}>
                   Limpiar filtros
                 </button>
-              </div>
+              </motion.div>
             )}
           </div>
         </div>

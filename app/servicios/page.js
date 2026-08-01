@@ -26,13 +26,13 @@ const SERVICES = [
     icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
     title: 'Asesoría Inmobiliaria',
     description: 'Te asesoramos para tomar las mejores decisiones inmobiliarias. Analizamos el mercado, evaluamos oportunidades y te guiamos en cada inversión.',
-    features: ['Análisis de mercado', 'Due diligence', 'Negociación', 'Planificación financiera', 'Asesoría legal'],
+    features: ['Análisis de mercado', 'Negociación', 'Planificación financiera', 'Asesoría legal', 'Acompañamiento integral'],
   },
   {
     icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
     title: 'Inversiones',
-    description: 'Identificamos las mejores oportunidades de inversión inmobiliaria. Desde pozo hasta renta, te ayudamos a maximizar tu retorno.',
-    features: ['Proyectos desde pozo', 'Renta garantizada', 'Análisis ROI', 'Diversificación', 'Seguimiento post-venta'],
+    description: 'Identificamos las mejores oportunidades de inversión inmobiliaria. Desde pozo hasta renta, te ayudamos a maximizar tu capital.',
+    features: ['Proyectos desde pozo', 'Oportunidades de renta', 'Asesoramiento de inversión', 'Diversificación', 'Seguimiento post-venta'],
   },
   {
     icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
