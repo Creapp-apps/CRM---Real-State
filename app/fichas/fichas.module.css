@@ -1,0 +1,100 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  color: #fff;
+  font-family: var(--font-body, 'Inter', sans-serif);
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+.logo {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+}
+.title {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 600;
+  font-size: 1.8rem;
+  margin: 0;
+}
+.sub {
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0.35rem 0 0;
+}
+.empty {
+  color: rgba(255, 255, 255, 0.7);
+  padding: 2rem 0;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--navy-800, #0F2140);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  text-decoration: none;
+  color: #fff;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--navy-700, #142C54);
+}
+.thumbImg {
+  object-fit: cover;
+}
+.badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  background: #fff;
+  color: var(--navy-900, #0A1628);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+}
+.info {
+  padding: 1rem 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.cardType {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.8rem;
+}
+.cardTitle {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.3;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cardPrice {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin-top: 0.2rem;
+}

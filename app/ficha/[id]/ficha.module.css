@@ -1,0 +1,418 @@
+/* Ficha premium — Cardoso Propiedades (dark luxury). Optimizada para pantalla y PDF. */
+
+.ficha {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 0 4rem;
+  background: var(--navy-900, #0A1628);
+  color: #fff;
+  font-family: var(--font-body, 'Inter', sans-serif);
+}
+
+/* ── Barra superior ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.75rem;
+  flex-wrap: wrap;
+}
+.logo {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+}
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.actionBtn,
+.actionBtnPrimary {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.actionBtn {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+.actionBtn:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.actionBtnPrimary {
+  background: #fff;
+  color: var(--navy-900, #0A1628);
+  border: 1px solid #fff;
+  font-weight: 600;
+}
+.actionBtnPrimary:hover {
+  transform: translateY(-1px);
+}
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  height: clamp(380px, 62vh, 620px);
+  overflow: hidden;
+  border-radius: 20px;
+  margin: 0 1.25rem;
+}
+.heroImg {
+  object-fit: cover;
+}
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 22, 40, 0.1) 0%,
+    rgba(10, 22, 40, 0.15) 45%,
+    rgba(10, 22, 40, 0.92) 100%
+  );
+}
+.heroContent {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.chips {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.chip {
+  background: #fff;
+  color: var(--navy-900, #0A1628);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+}
+.chipGhost {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+}
+.title {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 600;
+  font-size: clamp(1.7rem, 3.6vw, 2.9rem);
+  line-height: 1.08;
+  max-width: 20ch;
+  margin: 0;
+  text-wrap: balance;
+}
+.location {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1rem;
+  margin: 0;
+}
+.price {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 700;
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  margin: 0.25rem 0 0;
+  letter-spacing: -0.01em;
+}
+
+/* ── Banda de specs ── */
+.specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 1px;
+  margin: 1.75rem 1.25rem 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.specItem {
+  background: var(--navy-800, #0F2140);
+  padding: 1.4rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+.specValue {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 600;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+.specLabel {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.82rem;
+}
+
+/* ── Galería ── */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 1.75rem 1.25rem 0;
+}
+.galleryItem {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  background: var(--navy-800, #0F2140);
+}
+.galleryImg {
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.galleryItem:hover .galleryImg {
+  transform: scale(1.05);
+}
+.galleryMore {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 22, 40, 0.68);
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* ── Cuerpo: descripción + comodidades ── */
+.body {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 2.5rem;
+  margin: 2.75rem 1.25rem 0;
+}
+.h2 {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+.description p {
+  color: rgba(255, 255, 255, 0.84);
+  line-height: 1.7;
+  margin: 0 0 0.9rem;
+  max-width: 68ch;
+}
+.amenityList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1rem;
+}
+.amenity {
+  position: relative;
+  padding-left: 1.1rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.amenity::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+/* ── Ubicación ── */
+.locationBlock {
+  margin: 2.75rem 1.25rem 0;
+}
+.locationText {
+  color: rgba(255, 255, 255, 0.84);
+  margin: 0 0 0.75rem;
+}
+.mapLink {
+  display: inline-block;
+  color: #fff;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  padding-bottom: 2px;
+  text-decoration: none;
+}
+.mapLink:hover {
+  border-color: #fff;
+}
+
+/* ── Footer ── */
+.footer {
+  margin: 3.5rem 1.25rem 0;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.footerLogo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+}
+.contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+}
+.contact a {
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+.contact a:hover {
+  color: #fff;
+}
+.ref {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* ── Lightbox ── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(5, 12, 24, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightboxImgWrap {
+  position: relative;
+  width: 90vw;
+  height: 82vh;
+}
+.lightboxImg {
+  object-fit: contain;
+}
+.lightboxClose {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.lightboxNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 1.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightboxPrev { left: 1.5rem; }
+.lightboxNext { right: 1.5rem; }
+.lightboxCount {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .gallery { grid-template-columns: repeat(2, 1fr); }
+  .body { grid-template-columns: 1fr; gap: 2rem; }
+  .heroContent { padding: 1.5rem; }
+}
+@media (max-width: 480px) {
+  .amenityList { grid-template-columns: 1fr; }
+  .actions { width: 100%; }
+}
+
+/* ── Impresión / PDF (dark fiel) ── */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  :global(body),
+  .ficha {
+    background: var(--navy-900, #0A1628) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .ficha * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .actions,
+  .lightbox,
+  .noPrint {
+    display: none !important;
+  }
+  .topbar {
+    padding: 0 0 0.75rem;
+  }
+  .hero {
+    margin: 0;
+    height: 125mm;
+    border-radius: 12px;
+    break-inside: avoid;
+  }
+  .specs,
+  .gallery,
+  .body,
+  .locationBlock,
+  .footer {
+    margin-left: 0;
+    margin-right: 0;
+    break-inside: avoid;
+  }
+  .gallery {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .galleryItem:hover .galleryImg {
+    transform: none;
+  }
+  .footer {
+    break-inside: avoid;
+  }
+}
