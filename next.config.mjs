@@ -18,6 +18,16 @@ const nextConfig = {
         hostname: 'static.tokkobroker.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.mlstatic.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '*.mlstatic.com',
+        pathname: '/**',
+      },
     ],
   },
 };
