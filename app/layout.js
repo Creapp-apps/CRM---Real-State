@@ -16,6 +16,7 @@ const inter = Inter({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://cardosopropiedades.com.ar"),
   title: "Cardoso Propiedades | Inmobiliaria Premium",
   description:
     "Encontrá tu próximo hogar con Mónica Cardoso Propiedades. Venta, alquiler y tasaciones de propiedades premium.",
@@ -31,7 +32,16 @@ export const metadata = {
     title: "Cardoso Propiedades | Inmobiliaria Premium",
     description:
       "Encontrá tu próximo hogar con Mónica Cardoso Propiedades. Venta, alquiler y tasaciones de propiedades premium.",
+    url: "https://cardosopropiedades.com.ar",
+    siteName: "Cardoso Propiedades",
+    locale: "es_AR",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cardoso Propiedades | Inmobiliaria Premium",
+    description:
+      "Encontrá tu próximo hogar con Mónica Cardoso Propiedades. Venta, alquiler y tasaciones de propiedades premium.",
   },
 };
 
