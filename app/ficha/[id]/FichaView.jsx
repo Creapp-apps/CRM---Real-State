@@ -11,12 +11,22 @@ const EMAIL = 'cardosom.prop@gmail.com';
 const AGENTE = 'Mónica Cardoso';
 const MATRICULA = 'CMCPSI 4464';
 
-/** Titular limpio: dirección si es válida, si no la localidad. */
+/** Iniciales para el avatar de la agente. */
+function initials(name) {
+  return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+/** Lugar principal (barrio o primera localidad). */
+function placeOf(p) {
+  return (p.neighborhood || p.location?.split(',')[0] || '').trim();
+}
+
+/** Titular limpio de una línea (para WhatsApp / alt). */
 function headlineOf(p) {
   const addr = (p.address || '').replace(/\s+0+$/, '').trim();
   const poor = !addr || /^ruta\s*0?$/i.test(addr) || addr.length < 5;
   if (!poor) return addr;
-  const where = p.neighborhood || p.location?.split(',')[0] || p.location;
+  const where = placeOf(p) || p.location;
   return `${p.type} en ${where}`;
 }
 
@@ -26,10 +36,14 @@ export default function FichaView({ property }) {
 
   const images = property.images?.length ? property.images : ['/images/hero-bg.jpg'];
   const cover = images[0];
-  const mosaic = images.slice(1, 9);
-  const extra = images.length - 9;
+  const gallery = images.slice(1);
+  const tiles = gallery.slice(0, 4);
+  const extra = gallery.length - tiles.length;
 
   const headline = headlineOf(property);
+  const place = placeOf(property);
+  const titleTop = place || property.type;
+  const titleBot = place ? property.type : '';
   const hasDesc = property.description && !/^sin descripci/i.test(property.description);
 
   const specs = [
@@ -57,7 +71,7 @@ export default function FichaView({ property }) {
     property.bedrooms > 0 ? `de ${property.bedrooms} ambientes` : null,
     `en ${property.operation.toLowerCase()}`,
     property.coveredArea > 0 ? `· ${property.coveredArea} m² cubiertos` : null,
-  ].filter(Boolean).join(' ') + (property.neighborhood ? ` en ${property.neighborhood}.` : '.');
+  ].filter(Boolean).join(' ') + (place ? ` en ${place}.` : '.');
 
   const closeLightbox = useCallback(() => setLightbox(null), []);
   useEffect(() => {
@@ -100,31 +114,38 @@ export default function FichaView({ property }) {
 
       {/* HERO */}
       <section className={styles.hero}>
-        <Image src={cover} alt={headline} fill priority sizes="100vw" className={styles.heroImg} />
-        <div className={styles.heroScrim} />
-        <div className={styles.heroTop}>
-          <Image src="/logohorizontal.png" alt="Cardoso Propiedades" width={210} height={34} className={styles.logo} priority />
+        <div className={styles.topbar}>
+          <Image src="/logohorizontal.png" alt="Cardoso Propiedades" width={200} height={32} className={styles.logo} priority />
           <div className={styles.agent}>
-            <strong>{AGENTE}</strong>
-            <span>Martillera &amp; Corredora</span>
-            <span className={styles.reg}>{MATRICULA}</span>
+            <div className={styles.who}>
+              <strong>{AGENTE}</strong>
+              <span>Martillera &amp; Corredora · {MATRICULA}</span>
+            </div>
+            <div className={styles.ring}>{initials(AGENTE)}</div>
           </div>
         </div>
-        <div className={styles.heroCaption}>
-          <div className={styles.addr}>
-            <div className={styles.refline}>
+
+        <div className={styles.herogrid}>
+          <div>
+            <div className={styles.pillrow}>
               <span className={`${styles.pill} ${styles.pillSolid}`}>{property.operation}</span>
               <span className={styles.pill}>{property.type}</span>
-              <span className={styles.ref}>Ref. {property.referenceCode}</span>
+              {property.referenceCode && <span className={styles.ref}>Ref. {property.referenceCode}</span>}
             </div>
-            <h1 className={styles.title}>{headline}</h1>
-            <div className={styles.subLoc}>{property.location}</div>
+            <h1 className={styles.title}>{titleTop}{titleBot && <b>{titleBot}</b>}</h1>
+            <div className={styles.subLoc}>{property.address || property.location}</div>
           </div>
-          <div className={styles.priceWrap}>
-            <div className={styles.plabel}>{property.operationType === 'venta' ? 'Precio de venta' : 'Valor de alquiler'}</div>
-            <div className={styles.price}>
-              {formatPrice(property.price, property.currency)}
-              {property.priceLabel && <span className={styles.per}> {property.priceLabel}</span>}
+
+          <div className={styles.heroCard}>
+            <div className={styles.heroPhoto}>
+              <Image src={cover} alt={headline} fill priority sizes="(max-width: 760px) 100vw, 420px" className={styles.heroImg} />
+            </div>
+            <div className={styles.heroPrice}>
+              <div className={styles.plabel}>{property.operationType === 'venta' ? 'Precio de venta' : 'Valor de alquiler'}</div>
+              <div className={styles.price}>
+                {formatPrice(property.price, property.currency)}
+                {property.priceLabel && <span className={styles.per}> {property.priceLabel}</span>}
+              </div>
             </div>
           </div>
         </div>
@@ -145,15 +166,17 @@ export default function FichaView({ property }) {
       {/* LA PROPIEDAD */}
       <section className={styles.block}>
         <div className={styles.secHead}><span className={styles.tick} /><h2>La propiedad</h2></div>
-        <p className={styles.lead}>{lead}</p>
-        <div className={styles.desc}>
-          {hasDesc && (
-            <div className={styles.bodyCopy}>
-              {property.description.split('\n').filter((l) => l.trim()).map((p, i) => <p key={i}>{p}</p>)}
-            </div>
-          )}
+        <div className={styles.propgrid}>
+          <div>
+            <p className={styles.lead}>{lead}</p>
+            {hasDesc && (
+              <div className={styles.bodyCopy}>
+                {property.description.split('\n').filter((l) => l.trim()).map((para, i) => <p key={i}>{para}</p>)}
+              </div>
+            )}
+          </div>
           {facts.length > 0 && (
-            <div className={styles.facts} style={!hasDesc ? { gridColumn: '1 / -1', maxWidth: 520 } : undefined}>
+            <div className={styles.facts}>
               <dl>
                 {facts.map((f) => (
                   <div key={f.k} className={styles.factRow}>
@@ -166,26 +189,6 @@ export default function FichaView({ property }) {
         </div>
       </section>
 
-      {/* GALERÍA */}
-      {mosaic.length > 0 && (
-        <section className={styles.block}>
-          <div className={styles.secHead}><span className={styles.tick} /><h2>Galería</h2></div>
-          <div className={styles.mosaic}>
-            {mosaic.map((src, i) => {
-              const idx = i + 1;
-              const cls = i === 0 ? styles.big : i === 5 ? styles.wide : '';
-              const last = i === mosaic.length - 1 && extra > 0;
-              return (
-                <figure key={src} className={`${styles.cell} ${cls}`} onClick={() => setLightbox(idx)}>
-                  <Image src={src} alt="" fill sizes="(max-width: 860px) 50vw, 25vw" className={styles.cellImg} />
-                  {last && <span className={styles.more}>+{extra}</span>}
-                </figure>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       {/* COMODIDADES */}
       {property.amenities?.length > 0 && (
         <section className={styles.block}>
@@ -196,12 +199,31 @@ export default function FichaView({ property }) {
         </section>
       )}
 
+      {/* GALERÍA */}
+      {tiles.length > 0 && (
+        <section className={styles.block}>
+          <div className={styles.secHead}><span className={styles.tick} /><h2>Galería</h2></div>
+          <div className={styles.mosaic}>
+            {tiles.map((src, i) => {
+              const cls = i === 0 ? styles.big : i === 3 ? styles.wide : '';
+              const last = i === tiles.length - 1 && extra > 0;
+              return (
+                <figure key={src} className={`${styles.cell} ${cls}`} onClick={() => setLightbox(i + 1)}>
+                  <Image src={src} alt="" fill sizes="(max-width: 760px) 50vw, 25vw" className={styles.cellImg} />
+                  {last && <span className={styles.more}>+{extra}</span>}
+                </figure>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* UBICACIÓN */}
       <section className={styles.block}>
         <div className={styles.secHead}><span className={styles.tick} /><h2>Ubicación</h2></div>
         <div className={styles.loc}>
           <div>
-            <div className={styles.where}>{headline}<br />{property.location}</div>
+            <div className={styles.where}>{property.address || headline}<br />{property.location}</div>
             {property.lat && property.lng && (
               <div className={styles.coords}>{property.lat.toFixed(6)}, {property.lng.toFixed(6)}</div>
             )}
@@ -212,14 +234,15 @@ export default function FichaView({ property }) {
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* CIERRE */}
       <footer className={styles.footer}>
         <div className={styles.footTop}>
-          <div className={styles.footBrand}>
-            <Image src="/logohorizontal.png" alt="Cardoso Propiedades" width={230} height={36} className={styles.footLogo} />
-            <div className={styles.footTag}>{AGENTE} · Martillera &amp; Corredora · {MATRICULA}</div>
+          <div>
+            <Image src="/logohorizontal.png" alt="Cardoso Propiedades" width={210} height={34} className={styles.footLogo} />
+            <h3 className={styles.footTitle} style={{ marginTop: 16 }}>Hablemos de<br /><b>tu próxima casa</b></h3>
           </div>
           <div className={styles.footContact}>
+            <strong>{AGENTE} Propiedades</strong>
             <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer">WhatsApp +54 9 11 6609 2461</a>
             <a href={`https://${WEB}`} target="_blank" rel="noopener noreferrer">{WEB}</a>
             <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
