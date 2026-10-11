@@ -451,6 +451,67 @@
 .lbNext { right: 24px; }
 .lbCount { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); color: rgba(255, 255, 255, 0.75); font-size: 13px; }
 
+/* ---------- INTERACCIÓN / ANIMACIÓN (solo pantalla) ---------- */
+.typing::after {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: currentColor;
+  animation: caret 1s step-end infinite;
+}
+@keyframes caret { 50% { opacity: 0; } }
+
+/* hover (pantalla) */
+.hiCard, .amenItem, .spec { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s, border-color 0.28s, background 0.28s; }
+.hiCard:hover, .amenItem:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(10, 22, 40, 0.13);
+  border-color: var(--champagne);
+}
+.spec:hover { background: var(--mist); }
+.hiIco { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+.hiCard:hover .hiIco { transform: scale(1.06) rotate(-3deg); }
+.cell { transition: box-shadow 0.3s; }
+.cell:hover { box-shadow: 0 16px 34px rgba(10, 22, 40, 0.2); }
+.mapLink { transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s; }
+.mapLink:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(10, 22, 40, 0.25); }
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  .js .rv-up, .js .rv-left, .js .rv-right { opacity: 0; will-change: opacity, transform; }
+  .js .rv-up { transform: translateY(28px); }
+  .js .rv-left { transform: translateX(-30px); }
+  .js .rv-right { transform: translateX(30px); }
+  .js .rv-up.in, .js .rv-left.in, .js .rv-right.in {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .js .stagger > * { opacity: 0; transform: translateY(16px); will-change: opacity, transform; }
+  .js .stagger.in > * {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(var(--i, 0) * 65ms);
+  }
+  /* el hover no debe heredar el delay del stagger */
+  .js .stagger.in > *:hover {
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s, border-color 0.28s, background 0.28s;
+    transition-delay: 0s;
+  }
+  /* entrada del hero al cargar */
+  .js .topbar { animation: fadeUp 0.7s both; }
+  .js .pillrow { animation: fadeUp 0.7s 0.12s both; }
+  .js .title { animation: titleUp 0.85s 0.22s both; }
+  .js .subLoc { animation: fadeUp 0.7s 0.5s both; }
+  .js .heroCard { animation: cardIn 0.85s 0.3s both; }
+}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes titleUp { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes cardIn { from { opacity: 0; transform: scale(0.965) translateY(10px); } to { opacity: 1; transform: none; } }
+
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 760px) {
   .hero { padding: 24px 20px 30px; }

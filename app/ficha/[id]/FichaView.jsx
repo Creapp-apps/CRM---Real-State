@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/mockData';
 import { parseDescription, extractHighlights } from '@/lib/parseDescription';
@@ -34,6 +34,97 @@ function DescIcon({ name }) {
       {paths[name] || paths.sparkle}
     </svg>
   );
+}
+
+/* ---------- Animaciones (solo pantalla; respetan reduced-motion; no afectan el PDF) ---------- */
+
+function usePrefersReducedMotion() {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduce(m.matches);
+    const h = () => setReduce(m.matches);
+    m.addEventListener('change', h);
+    return () => m.removeEventListener('change', h);
+  }, []);
+  return reduce;
+}
+
+/** Observa un elemento y devuelve true una vez que entra en viewport. */
+function useInView() {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (!('IntersectionObserver' in window)) { setInView(true); return undefined; }
+    const io = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setInView(true); io.disconnect(); } },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return [ref, inView];
+}
+
+/** Revela su contenido al entrar en viewport (slide/fade o stagger de hijos). */
+function Reveal({ children, as: Tag = 'div', variant = 'up', className = '', style }) {
+  const [ref, inView] = useInView();
+  const v = variant === 'group' ? styles.stagger : styles[`rv-${variant}`];
+  return (
+    <Tag ref={ref} style={style} className={`${v || ''} ${inView ? styles.in : ''} ${className}`}>
+      {children}
+    </Tag>
+  );
+}
+
+/** Número que crece de 0 al valor meta cuando entra en viewport. */
+function CountUp({ to, duration = 1300, format = (n) => n }) {
+  const reduce = usePrefersReducedMotion();
+  const [ref, inView] = useInView();
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (reduce || !inView) { setVal(to); return undefined; }
+    let raf;
+    const t0 = performance.now();
+    const tick = (t) => {
+      const p = Math.min((t - t0) / duration, 1);
+      const e = 1 - Math.pow(1 - p, 3);
+      setVal(Math.round(to * e));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, reduce, to, duration]);
+  useEffect(() => {
+    const f = () => setVal(to);
+    window.addEventListener('beforeprint', f);
+    return () => window.removeEventListener('beforeprint', f);
+  }, [to]);
+  return <span ref={ref}>{format(val)}</span>;
+}
+
+/** Efecto typewriter al entrar en viewport. */
+function Typewriter({ text, speed = 24, as: Tag = 'span', className = '' }) {
+  const reduce = usePrefersReducedMotion();
+  const [ref, inView] = useInView();
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (reduce || !inView) { setN(text.length); return undefined; }
+    let i = 0;
+    let id;
+    const step = () => { i += 1; setN(i); if (i < text.length) id = setTimeout(step, speed); };
+    id = setTimeout(step, speed);
+    return () => clearTimeout(id);
+  }, [inView, reduce, text, speed]);
+  useEffect(() => {
+    const f = () => setN(text.length);
+    window.addEventListener('beforeprint', f);
+    return () => window.removeEventListener('beforeprint', f);
+  }, [text]);
+  const done = n >= text.length;
+  return <Tag ref={ref} className={`${className} ${!done ? styles.typing : ''}`}>{text.slice(0, n)}</Tag>;
 }
 
 /** Iniciales para el avatar de la agente. */
@@ -131,7 +222,7 @@ export default function FichaView({ property }) {
     : null;
 
   return (
-    <div className={styles.sheet}>
+    <div className={`${styles.sheet} ${styles.js}`}>
       {/* Barra de acciones (no se imprime) */}
       <div className={styles.actions}>
         <button type="button" onClick={handleWhatsApp} className={styles.actionBtn}>Compartir</button>
@@ -160,7 +251,9 @@ export default function FichaView({ property }) {
               {property.referenceCode && <span className={styles.ref}>Ref. {property.referenceCode}</span>}
             </div>
             <h1 className={styles.title}>{titleTop}{titleBot && <b>{titleBot}</b>}</h1>
-            <div className={styles.subLoc}>{property.address || property.location}</div>
+            <div className={styles.subLoc}>
+              <Typewriter text={property.address || property.location} />
+            </div>
           </div>
 
           <div className={styles.heroCard}>
@@ -170,7 +263,7 @@ export default function FichaView({ property }) {
             <div className={styles.heroPrice}>
               <div className={styles.plabel}>{property.operationType === 'venta' ? 'Precio de venta' : 'Valor de alquiler'}</div>
               <div className={styles.price}>
-                {formatPrice(property.price, property.currency)}
+                <CountUp to={property.price} format={(n) => formatPrice(n, property.currency)} />
                 {property.priceLabel && <span className={styles.per}> {property.priceLabel}</span>}
               </div>
             </div>
@@ -180,23 +273,25 @@ export default function FichaView({ property }) {
 
       {/* SPEC RAIL */}
       {specs.length > 0 && (
-        <div className={styles.specs} style={{ gridTemplateColumns: `repeat(${specs.length}, 1fr)` }}>
-          {specs.map((s) => (
-            <div key={s.label} className={styles.spec}>
-              <div className={styles.specN}>{s.value}{s.unit && <span className={styles.specU}>{s.unit}</span>}</div>
+        <Reveal variant="group" className={styles.specs} style={{ gridTemplateColumns: `repeat(${specs.length}, 1fr)` }}>
+          {specs.map((s, i) => (
+            <div key={s.label} className={styles.spec} style={{ '--i': i }}>
+              <div className={styles.specN}>
+                <CountUp to={Number(s.value)} />{s.unit && <span className={styles.specU}>{s.unit}</span>}
+              </div>
               <div className={styles.specL}>{s.label}</div>
             </div>
           ))}
-        </div>
+        </Reveal>
       )}
 
       {/* LA PROPIEDAD */}
       <section className={styles.block}>
-        <div className={styles.secHead}><span className={styles.tick} /><h2>La propiedad</h2></div>
+        <Reveal variant="left" className={styles.secHead}><span className={styles.tick} /><h2>La propiedad</h2></Reveal>
         {highlights.length > 0 && (
-          <div className={styles.hiGrid}>
+          <Reveal variant="group" className={styles.hiGrid}>
             {highlights.map((h, i) => (
-              <div key={i} className={`${styles.hiCard} ${h.wide ? styles.hiWide : ''}`}>
+              <div key={i} className={`${styles.hiCard} ${h.wide ? styles.hiWide : ''}`} style={{ '--i': i }}>
                 <span className={styles.hiIco}><DescIcon name={h.icon} /></span>
                 <div className={styles.hiText}>
                   <span className={styles.hiLabel}>{h.label}</span>
@@ -204,14 +299,14 @@ export default function FichaView({ property }) {
                 </div>
               </div>
             ))}
-          </div>
+          </Reveal>
         )}
         <div className={styles.propgrid}>
           <div>
-            <p className={styles.lead}>{lead}</p>
-            {desc.tagline && <p className={styles.descLead}>{desc.tagline}</p>}
+            <Typewriter as="p" className={styles.lead} text={lead} />
+            {desc.tagline && <Reveal as="p" variant="left" className={styles.descLead}>{desc.tagline}</Reveal>}
             {desc.sections.map((sec, si) => (
-              <div key={si} className={styles.descSec}>
+              <Reveal key={si} variant="up" className={styles.descSec}>
                 {sec.title && (
                   <div className={styles.descSecHead}>
                     <span className={styles.descIco}><DescIcon name={sec.icon} /></span>
@@ -227,11 +322,11 @@ export default function FichaView({ property }) {
                     <p key={bi} className={styles.descP}>{b.text}</p>
                   )
                 )}
-              </div>
+              </Reveal>
             ))}
           </div>
           {facts.length > 0 && (
-            <div className={styles.facts}>
+            <Reveal variant="right" className={styles.facts}>
               <dl>
                 {facts.map((f) => (
                   <div key={f.k} className={styles.factRow}>
@@ -239,7 +334,7 @@ export default function FichaView({ property }) {
                   </div>
                 ))}
               </dl>
-            </div>
+            </Reveal>
           )}
         </div>
       </section>
@@ -247,36 +342,36 @@ export default function FichaView({ property }) {
       {/* COMODIDADES */}
       {property.amenities?.length > 0 && (
         <section className={styles.block}>
-          <div className={styles.secHead}><span className={styles.tick} /><h2>Comodidades</h2></div>
-          <div className={styles.amen}>
-            {property.amenities.map((a) => <div key={a} className={styles.amenItem}>{a}</div>)}
-          </div>
+          <Reveal variant="left" className={styles.secHead}><span className={styles.tick} /><h2>Comodidades</h2></Reveal>
+          <Reveal variant="group" className={styles.amen}>
+            {property.amenities.map((a, i) => <div key={a} className={styles.amenItem} style={{ '--i': i }}>{a}</div>)}
+          </Reveal>
         </section>
       )}
 
       {/* GALERÍA */}
       {tiles.length > 0 && (
         <section className={styles.block}>
-          <div className={styles.secHead}><span className={styles.tick} /><h2>Galería</h2></div>
-          <div className={styles.mosaic}>
+          <Reveal variant="left" className={styles.secHead}><span className={styles.tick} /><h2>Galería</h2></Reveal>
+          <Reveal variant="group" className={styles.mosaic}>
             {tiles.map((src, i) => {
               const cls = i === 0 ? styles.big : i === 3 ? styles.wide : '';
               const last = i === tiles.length - 1 && extra > 0;
               return (
-                <figure key={src} className={`${styles.cell} ${cls}`} onClick={() => setLightbox(i + 1)}>
+                <figure key={src} className={`${styles.cell} ${cls}`} style={{ '--i': i }} onClick={() => setLightbox(i + 1)}>
                   <Image src={src} alt="" fill sizes="(max-width: 760px) 50vw, 25vw" className={styles.cellImg} />
                   {last && <span className={styles.more}>+{extra}</span>}
                 </figure>
               );
             })}
-          </div>
+          </Reveal>
         </section>
       )}
 
       {/* UBICACIÓN */}
       <section className={styles.block}>
-        <div className={styles.secHead}><span className={styles.tick} /><h2>Ubicación</h2></div>
-        <div className={styles.loc}>
+        <Reveal variant="left" className={styles.secHead}><span className={styles.tick} /><h2>Ubicación</h2></Reveal>
+        <Reveal variant="up" className={styles.loc}>
           <div>
             <div className={styles.where}>{property.address || headline}<br />{property.location}</div>
             {property.lat && property.lng && (
@@ -286,12 +381,12 @@ export default function FichaView({ property }) {
           {mapsUrl && (
             <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className={styles.mapLink}>Ver en el mapa</a>
           )}
-        </div>
+        </Reveal>
       </section>
 
       {/* CIERRE */}
       <footer className={styles.footer}>
-        <div className={styles.footTop}>
+        <Reveal variant="up" className={styles.footTop}>
           <div>
             <Image src="/logohorizontal.png" alt="Cardoso Propiedades" width={210} height={34} className={styles.footLogo} />
             <h3 className={styles.footTitle} style={{ marginTop: 16 }}>Hablemos de<br /><b>tu próxima casa</b></h3>
@@ -305,7 +400,7 @@ export default function FichaView({ property }) {
               <a href={property.publicUrl} target="_blank" rel="noopener noreferrer" className={styles.noPrint}>Ver publicación en MercadoLibre</a>
             )}
           </div>
-        </div>
+        </Reveal>
         <p className={styles.legal}>
           La información y medidas son aproximadas y deberán ratificarse con la documentación pertinente; no comprometen contractualmente. Gastos (expensas, ABL) según la última información disponible. Fotografías no vinculantes ni contractuales.
         </p>
