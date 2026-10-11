@@ -200,12 +200,71 @@
   letter-spacing: -0.01em;
   margin: 0 0 16px;
 }
-.bodyCopy p {
-  font-family: var(--font-body, 'Inter', sans-serif);
-  font-size: 13.5px;
-  line-height: 1.7;
+/* Descripción estructurada */
+.descLead {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink);
+  border-left: 2px solid var(--champagne);
+  padding-left: 14px;
+  margin: 0 0 22px;
+}
+.descSec { margin-bottom: 22px; }
+.descSec:last-child { margin-bottom: 0; }
+.descSecHead { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.descIco {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--mist);
+  border: 1px solid var(--line);
+  color: #315B80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.descIco svg { width: 16px; height: 16px; }
+.descSecHead h3 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--ink-2);
-  margin: 0 0 10px;
+  margin: 0;
+}
+.descP {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+  margin: 0 0 9px;
+  font-weight: 300;
+}
+.descList {
+  list-style: none;
+  margin: 6px 0 4px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px 18px;
+}
+.descLi {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.35;
+}
+.descLi::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23315B80' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / 14px no-repeat;
 }
 .facts { background: var(--mist); border-radius: var(--radius-sm); padding: 6px 20px; }
 .facts dl { margin: 0; }
@@ -381,10 +440,12 @@
   @page { size: A4; margin: 0; }
   .actions, .lightbox, .noPrint { display: none !important; }
   .sheet { max-width: 100%; box-shadow: none; }
-  .hero, .footer, .pill, .pillSolid, .mapLink, .ring, .more, .specs, .spec, .facts, .amenItem, .heroCard {
+  .hero, .footer, .pill, .pillSolid, .mapLink, .ring, .more, .specs, .spec, .facts, .amenItem, .heroCard, .descIco, .descLi::before {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .block { break-inside: avoid; }
-  .cell { break-inside: avoid; }
+  /* no forzar break en bloques grandes (dejaba hueco blanco); solo proteger átomos chicos */
+  .specs, .heroCard, .amenItem, .cell, .descLi, .factRow, .loc { break-inside: avoid; }
+  /* headers no quedan huérfanos al pie de página */
+  .secHead, .descSecHead { break-after: avoid; }
 }

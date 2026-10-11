@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/mockData';
+import { parseDescription } from '@/lib/parseDescription';
 import styles from './ficha.module.css';
 
 const WHATSAPP = '5491166092461';
@@ -10,6 +11,22 @@ const WEB = 'www.cardosopropiedades.com.ar';
 const EMAIL = 'cardosom.prop@gmail.com';
 const AGENTE = 'Mónica Cardoso';
 const MATRICULA = 'CMCPSI 4464';
+
+/** Íconos de línea para las secciones de la descripción. */
+function DescIcon({ name }) {
+  const paths = {
+    building: <><path d="M3 21h18" /><path d="M6 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16" /><path d="M15 21V9h3a1 1 0 0 1 1 1v11" /><path d="M9 7h2M9 10.5h2M9 14h2" /></>,
+    pin: <><path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z" /><circle cx="12" cy="11" r="2.2" /></>,
+    clipboard: <><rect x="6" y="4" width="12" height="16" rx="2" /><path d="M9 4.5V3.5h6v1" /><path d="M9 10h6M9 14h4" /></>,
+    home: <><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /><path d="M10 20v-6h4v6" /></>,
+    sparkle: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />,
+  };
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {paths[name] || paths.sparkle}
+    </svg>
+  );
+}
 
 /** Iniciales para el avatar de la agente. */
 function initials(name) {
@@ -44,7 +61,8 @@ export default function FichaView({ property }) {
   const place = placeOf(property);
   const titleTop = place || property.type;
   const titleBot = place ? property.type : '';
-  const hasDesc = property.description && !/^sin descripci/i.test(property.description);
+  const desc = parseDescription(property.description);
+  const hasDesc = desc.tagline || desc.sections.length > 0;
 
   const specs = [
     { label: 'Ambientes', value: property.bedrooms },
@@ -68,7 +86,7 @@ export default function FichaView({ property }) {
 
   const lead = [
     property.type,
-    property.bedrooms > 0 ? `de ${property.bedrooms} ambientes` : null,
+    property.bedrooms > 0 ? `de ${property.bedrooms} ambiente${property.bedrooms > 1 ? 's' : ''}` : null,
     `en ${property.operation.toLowerCase()}`,
     property.coveredArea > 0 ? `· ${property.coveredArea} m² cubiertos` : null,
   ].filter(Boolean).join(' ') + (place ? ` en ${place}.` : '.');
@@ -169,11 +187,26 @@ export default function FichaView({ property }) {
         <div className={styles.propgrid}>
           <div>
             <p className={styles.lead}>{lead}</p>
-            {hasDesc && (
-              <div className={styles.bodyCopy}>
-                {property.description.split('\n').filter((l) => l.trim()).map((para, i) => <p key={i}>{para}</p>)}
+            {desc.tagline && <p className={styles.descLead}>{desc.tagline}</p>}
+            {desc.sections.map((sec, si) => (
+              <div key={si} className={styles.descSec}>
+                {sec.title && (
+                  <div className={styles.descSecHead}>
+                    <span className={styles.descIco}><DescIcon name={sec.icon} /></span>
+                    <h3>{sec.title}</h3>
+                  </div>
+                )}
+                {sec.blocks.map((b, bi) =>
+                  b.type === 'ul' ? (
+                    <ul key={bi} className={styles.descList}>
+                      {b.items.map((it, ii) => <li key={ii} className={styles.descLi}>{it}</li>)}
+                    </ul>
+                  ) : (
+                    <p key={bi} className={styles.descP}>{b.text}</p>
+                  )
+                )}
               </div>
-            )}
+            ))}
           </div>
           {facts.length > 0 && (
             <div className={styles.facts}>
