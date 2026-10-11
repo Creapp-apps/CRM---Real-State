@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/mockData';
-import { parseDescription } from '@/lib/parseDescription';
+import { parseDescription, extractHighlights } from '@/lib/parseDescription';
 import styles from './ficha.module.css';
 
 const WHATSAPP = '5491166092461';
@@ -19,6 +19,14 @@ function DescIcon({ name }) {
     pin: <><path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z" /><circle cx="12" cy="11" r="2.2" /></>,
     clipboard: <><rect x="6" y="4" width="12" height="16" rx="2" /><path d="M9 4.5V3.5h6v1" /><path d="M9 10h6M9 14h4" /></>,
     home: <><path d="M3 11l9-7 9 7" /><path d="M5 10v10h14V10" /><path d="M10 20v-6h4v6" /></>,
+    users: <><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.2 2.7-5 6-5s6 1.8 6 5" /><path d="M16 5.2a3 3 0 0 1 0 5.6" /><path d="M21 20c0-2.5-1.8-4.2-4.2-4.8" /></>,
+    ruler: <><rect x="3" y="8" width="18" height="8" rx="1.2" /><path d="M7 8v3M11 8v4M15 8v3M19 8v4" /></>,
+    layers: <><path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 13l9 5 9-5" /></>,
+    flame: <path d="M12 3c2 3 5 4.5 5 8a5 5 0 0 1-10 0c0-1.8.8-3 2-4 .2 1.2 1 2 2 2 .5-2-1-3.5 1-6z" />,
+    droplet: <path d="M12 3c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z" />,
+    star: <path d="M12 3l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.3l6-.8z" />,
+    check: <><circle cx="12" cy="12" r="9" /><path d="M8.5 12.5l2.4 2.4 4.6-5" /></>,
+    eye: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="2.6" /></>,
     sparkle: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />,
   };
   return (
@@ -62,6 +70,7 @@ export default function FichaView({ property }) {
   const titleTop = place || property.type;
   const titleBot = place ? property.type : '';
   const desc = parseDescription(property.description);
+  const highlights = extractHighlights(property.description);
   const hasDesc = desc.tagline || desc.sections.length > 0;
 
   const specs = [
@@ -184,6 +193,19 @@ export default function FichaView({ property }) {
       {/* LA PROPIEDAD */}
       <section className={styles.block}>
         <div className={styles.secHead}><span className={styles.tick} /><h2>La propiedad</h2></div>
+        {highlights.length > 0 && (
+          <div className={styles.hiGrid}>
+            {highlights.map((h, i) => (
+              <div key={i} className={`${styles.hiCard} ${h.wide ? styles.hiWide : ''}`}>
+                <span className={styles.hiIco}><DescIcon name={h.icon} /></span>
+                <div className={styles.hiText}>
+                  <span className={styles.hiLabel}>{h.label}</span>
+                  <span className={styles.hiValue}>{h.value}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         <div className={styles.propgrid}>
           <div>
             <p className={styles.lead}>{lead}</p>
