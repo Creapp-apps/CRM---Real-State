@@ -4,10 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
 import AiSearchAssistant from './AiSearchAssistant';
+import { CONTENT_DEFAULTS } from '@/lib/content/defaults';
 import styles from './HeroSection.module.css';
-
-/* ── Rotating Word Component ── */
-const ROTATING_WORDS = ['lugar', 'espacio', 'hogar', 'local', 'negocio'];
 
 function RotatingWord({ words }) {
   const [index, setIndex] = useState(0);
@@ -130,7 +128,11 @@ function CustomSelect({ label, options, placeholder, value, onChange }) {
 }
 
 /* ── Hero Section ── */
-export default function HeroSection() {
+export default function HeroSection({ hero } = {}) {
+  const h = { ...CONTENT_DEFAULTS.hero, ...(hero || {}) };
+  const rotatingWords = Array.isArray(h.rotatingWords) && h.rotatingWords.length
+    ? h.rotatingWords
+    : CONTENT_DEFAULTS.hero.rotatingWords;
   const [loaded, setLoaded] = useState(false);
   const [selectedOperacion, setSelectedOperacion] = useState('');
   const [selectedTipo, setSelectedTipo] = useState('');
@@ -163,14 +165,14 @@ export default function HeroSection() {
       <div className={`container ${styles.content}`}>
         {/* Title with Rotating Word */}
         <h1 className={`${styles.title} ${loaded ? styles.visible : ''}`}>
-          Te acompañamos a encontrar tu{' '}
-          <RotatingWord words={ROTATING_WORDS} />{' '}
-          ideal
+          {h.titlePrefix}{' '}
+          <RotatingWord words={rotatingWords} />{' '}
+          {h.titleSuffix}
         </h1>
 
         {/* Subtitle */}
         <p className={`${styles.subtitle} ${loaded ? styles.visible : ''}`}>
-          Venta, alquiler y tasaciones de propiedades en Argentina
+          {h.subtitle}
         </p>
 
         {/* Unified Search Section: Coexisting AI Assistant + Classic Filters */}
@@ -245,7 +247,7 @@ export default function HeroSection() {
 
       {/* Scroll Indicator */}
       <div className={`${styles.scrollIndicator} ${loaded ? styles.visible : ''}`}>
-        <span className={styles.scrollText}>Descubrí más</span>
+        <span className={styles.scrollText}>{h.scrollText}</span>
         <div className={styles.scrollArrow}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 12 15 18 9"/>
