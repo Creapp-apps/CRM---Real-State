@@ -21,6 +21,21 @@
   --gold-dark: #E9ECEF;
   --gold-glow: rgba(255, 255, 255, 0.15);
 
+  /* Acento del panel admin (dorado bronce) */
+  --admin-gold: #C9A96E;
+  --admin-gold-03: rgba(201, 169, 110, 0.03);
+  --admin-gold-05: rgba(201, 169, 110, 0.05);
+  --admin-gold-06: rgba(201, 169, 110, 0.06);
+  --admin-gold-08: rgba(201, 169, 110, 0.08);
+  --admin-gold-10: rgba(201, 169, 110, 0.10);
+  --admin-gold-12: rgba(201, 169, 110, 0.12);
+  --admin-gold-15: rgba(201, 169, 110, 0.15);
+  --admin-gold-18: rgba(201, 169, 110, 0.18);
+  --admin-gold-20: rgba(201, 169, 110, 0.20);
+  --admin-gold-25: rgba(201, 169, 110, 0.25);
+  --admin-gold-40: rgba(201, 169, 110, 0.40);
+  --admin-gold-glow: rgba(201, 169, 110, 0.25);
+
   /* Neutrals */
   --white: #FFFFFF;
   --cream: #F5F0EB;
