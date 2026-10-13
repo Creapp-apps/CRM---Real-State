@@ -4,15 +4,15 @@
 // (ítems repetidos), o special ('colors' | 'media').
 
 export const CATEGORIES = [
-  { key: 'hero', label: 'Hero', scope: 'content' },
-  { key: 'stats', label: 'Estadísticas', scope: 'content' },
-  { key: 'values', label: 'Valores', scope: 'content' },
-  { key: 'operations', label: 'Operaciones', scope: 'content' },
-  { key: 'cta', label: 'CTA', scope: 'content' },
-  { key: 'footer', label: 'Footer', scope: 'content' },
-  { key: 'navbar', label: 'Navbar', scope: 'content' },
-  { key: 'colors', label: 'Colores', scope: 'theme' },
-  { key: 'media', label: 'Media', scope: 'theme' },
+  { key: 'hero', label: 'Hero', scope: 'content', icon: 'home', description: 'Título, subtítulo y palabras rotativas de la portada' },
+  { key: 'stats', label: 'Estadísticas', scope: 'content', icon: 'activity', description: 'Los contadores de la franja de métricas' },
+  { key: 'values', label: 'Valores', scope: 'content', icon: 'star', description: "Las tarjetas de 'por qué elegirnos'" },
+  { key: 'operations', label: 'Operaciones', scope: 'content', icon: 'grid', description: 'Las tarjetas de tipos de operación' },
+  { key: 'cta', label: 'CTA', scope: 'content', icon: 'dollar', description: 'El bloque de llamada a tasación' },
+  { key: 'footer', label: 'Footer', scope: 'content', icon: 'file-text', description: 'Texto de marca y datos de contacto del pie' },
+  { key: 'navbar', label: 'Navbar', scope: 'content', icon: 'sliders', description: 'El botón destacado de la barra superior' },
+  { key: 'colors', label: 'Colores', scope: 'theme', icon: 'palette', description: 'Paleta de marca del sitio' },
+  { key: 'media', label: 'Media', scope: 'theme', icon: 'image', description: 'Video de fondo de la portada' },
 ];
 
 export const FIELDS = {
