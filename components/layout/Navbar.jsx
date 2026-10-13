@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { CONTENT_DEFAULTS } from '@/lib/content/defaults';
 import styles from './Navbar.module.css';
 
 const NAV_LINKS = [
@@ -14,7 +15,8 @@ const NAV_LINKS = [
   { href: '/contacto', label: 'Contacto' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ navbar } = {}) {
+  const n = { ...CONTENT_DEFAULTS.navbar, ...(navbar || {}) };
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -64,7 +66,7 @@ export default function Navbar() {
 
         {/* CTA Button */}
         <Link href="/tasar" className={`btn btn-primary ${styles.ctaBtn}`}>
-          Tasá tu propiedad
+          {n.ctaText}
         </Link>
 
         {/* Mobile Hamburger */}
@@ -99,7 +101,7 @@ export default function Navbar() {
               className={`btn btn-primary ${styles.mobileCta}`}
               onClick={() => setMenuOpen(false)}
             >
-              Tasá tu propiedad
+              {n.ctaText}
             </Link>
           </li>
         </ul>
