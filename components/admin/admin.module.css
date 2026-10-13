@@ -1138,14 +1138,14 @@
 
 .catItemActive {
   background: var(--admin-gold-15);
-  color: #C9A96E;
+  color: var(--admin-gold);
 }
 
 .catDot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #C9A96E;
+  background: var(--admin-gold);
   flex-shrink: 0;
 }
 
@@ -1204,7 +1204,7 @@
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #C9A96E;
+  color: var(--admin-gold);
   margin-bottom: 0.6rem;
 }
 
@@ -1247,7 +1247,7 @@
 
 .uploadProgress {
   font-size: 0.8rem;
-  color: #C9A96E;
+  color: var(--admin-gold);
   margin-top: 0.5rem;
 }
 
