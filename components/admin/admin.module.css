@@ -114,6 +114,7 @@
 .navLinkActive {
   background: var(--admin-gold-12);
   color: var(--admin-gold);
+  box-shadow: inset 2px 0 0 var(--admin-gold), 0 0 16px var(--admin-gold-glow);
 }
 
 .navLinkActive:hover {
@@ -263,17 +264,19 @@
 
 /* ── Cards ── */
 .card {
-  background: rgba(15, 33, 64, 0.4);
-  border: 1px solid var(--admin-gold-08);
-  border-radius: var(--radius-lg, 0.75rem);
+  background: linear-gradient(180deg, rgba(20, 44, 84, 0.35), rgba(10, 22, 40, 0.5));
+  border: 1px solid var(--admin-gold-12);
+  border-radius: 0.9rem;
   padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(10, 22, 40, 0.35);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: border-color 0.2s;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .card:hover {
-  border-color: var(--admin-gold-15);
+  border-color: var(--admin-gold-25);
+  box-shadow: 0 12px 40px rgba(10, 22, 40, 0.45), 0 0 24px var(--admin-gold-glow);
 }
 
 /* ── Stats Cards ── */
@@ -434,6 +437,12 @@
   color: var(--gray-400);
 }
 
+.badgeGold {
+  background: var(--admin-gold-15);
+  color: var(--admin-gold);
+  border: 1px solid var(--admin-gold-25);
+}
+
 /* ── Buttons ── */
 .btnPrimary {
   display: inline-flex;
@@ -451,9 +460,20 @@
   text-decoration: none;
 }
 
-.btnPrimary:hover {
-  filter: brightness(1.1);
+.btnPrimary:hover:not(:disabled) {
+  filter: brightness(1.08);
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--admin-gold-glow);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--admin-gold-25);
 }
 
 .btnSecondary {
@@ -563,7 +583,7 @@
 .formTextarea:focus {
   outline: none;
   border-color: var(--admin-gold);
-  box-shadow: 0 0 0 3px var(--admin-gold-10);
+  box-shadow: 0 0 0 3px var(--admin-gold-15);
 }
 
 .formTextarea {
