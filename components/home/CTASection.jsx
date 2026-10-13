@@ -1,29 +1,29 @@
 import Link from 'next/link';
 import AnimatedSection from '@/components/ui/AnimatedSection';
 import MovingBorderButton from '@/components/ui/MovingBorderButton';
+import { CONTENT_DEFAULTS } from '@/lib/content/defaults';
 import styles from './CTASection.module.css';
 
-export default function CTASection() {
+export default function CTASection({ cta } = {}) {
+  const c = { ...CONTENT_DEFAULTS.cta, ...(cta || {}) };
   return (
     <section className={styles.section}>
 
       <div className={`container ${styles.content}`}>
         <AnimatedSection animation="fade-up">
-          <span className="subtitle">Valorá tu inmueble</span>
+          <span className="subtitle">{c.subtitle}</span>
           <h2 className={styles.title}>
-            ¿Querés <span className="text-gold">tasar</span> tu propiedad?
+            {c.titlePrefix} <span className="text-gold">{c.titleHighlight}</span> {c.titleSuffix}
           </h2>
           <p className={styles.desc}>
-            Obtené una tasación profesional sin cargo. Nuestro equipo de expertos
-            evalúa tu propiedad con los mejores datos del mercado para que tomes
-            las mejores decisiones.
+            {c.description}
           </p>
           <div className={styles.buttons}>
             <MovingBorderButton href="/tasar" borderRadius="1.75rem">
-              Solicitar tasación gratuita
+              {c.btnPrimary}
             </MovingBorderButton>
             <MovingBorderButton href="/contacto" borderRadius="1.75rem">
-              Contactanos
+              {c.btnSecondary}
             </MovingBorderButton>
           </div>
         </AnimatedSection>
