@@ -6,20 +6,24 @@ import FeaturedProperties from '@/components/home/FeaturedProperties';
 import StorytellingSection from '@/components/home/StorytellingSection';
 import OperationsSection from '@/components/home/OperationsSection';
 import CTASection from '@/components/home/CTASection';
+import { getSiteContent } from '@/lib/siteContent';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const { content, theme } = await getSiteContent();
   return (
     <>
-      <VideoBackground />
-      <Navbar />
+      <VideoBackground video={theme?.media?.heroVideo} />
+      <Navbar navbar={content.navbar} />
       <main>
-        <HeroSection />
+        <HeroSection hero={content.hero} />
         <FeaturedProperties />
-        <StorytellingSection />
-        <OperationsSection />
-        <CTASection />
+        <StorytellingSection stats={content.stats} values={content.values} />
+        <OperationsSection operations={content.operations} />
+        <CTASection cta={content.cta} />
       </main>
-      <Footer />
+      <Footer footer={content.footer} />
     </>
   );
 }

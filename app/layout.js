@@ -1,5 +1,9 @@
 import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
+import { getSiteContent } from "@/lib/siteContent";
+import ThemeStyle from "@/components/ThemeStyle";
+
+export const dynamic = "force-dynamic";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -45,9 +49,13 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const { theme } = await getSiteContent();
   return (
     <html lang="es">
+      <head>
+        <ThemeStyle theme={theme} />
+      </head>
       <body className={`${outfit.variable} ${inter.variable}`}>
         {children}
       </body>
