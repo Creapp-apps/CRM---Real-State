@@ -181,7 +181,7 @@ export default function ContentEditor() {
         </div>
 
         <div className={styles.editorPreview}>
-          <LivePreview category={active} content={draft.content} theme={draft.theme} />
+          <LivePreview category={active} content={draft.content} theme={draft.theme} isCustom={dirtyKeys.has(active)} />
         </div>
       </div>
 

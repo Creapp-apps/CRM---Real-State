@@ -1404,3 +1404,69 @@
   color: var(--gray-400);
   margin-top: 0.15rem;
 }
+
+/* ── Editor: simulador en vivo ── */
+.simHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+.simTag {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--admin-gold);
+  font-weight: 600;
+}
+.simBadges { display: flex; gap: 0.4rem; }
+.simBadge {
+  font-size: 0.6rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--admin-gold-25);
+  color: var(--admin-gold);
+}
+.simBadgeLive {
+  font-size: 0.6rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.simBadgeLive::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.simNavbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.simNavLinks {
+  display: flex;
+  gap: 0.9rem;
+  font-size: 0.68rem;
+  color: var(--gray-300, #d1d5db);
+}
+.simHero {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 1rem;
+  padding: 1rem 0.9rem;
+  align-items: center;
+}
+.simHeroImg {
+  aspect-ratio: 16 / 10;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--navy-700), var(--navy-900));
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}

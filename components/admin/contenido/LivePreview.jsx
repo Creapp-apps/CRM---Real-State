@@ -17,23 +17,45 @@ const white = { color: 'var(--white)' };
 const muted = { color: 'var(--gray-300)' };
 const subtitle = { color: 'var(--gold)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em' };
 
-export default function LivePreview({ category, content, theme }) {
+export default function LivePreview({ category, content, theme, isCustom }) {
   const style = cssVars(theme?.colors);
   const c = content;
+  const showSite = category === 'hero' || category === 'navbar' || category === 'colors' || category === 'media';
 
   return (
     <div>
-      <div className={styles.previewLabel}>Vista previa</div>
+      <div className={styles.simHeader}>
+        <span className={styles.simTag}>Simulador en Vivo</span>
+        <span className={styles.simBadges}>
+          <span className={styles.simBadge}>{isCustom ? 'Personalizado' : 'Predeterminado'}</span>
+          <span className={styles.simBadgeLive}>En Vivo</span>
+        </span>
+      </div>
       <div className={styles.previewFrame} style={style}>
-        {category === 'hero' && (
+        {showSite && (
           <div>
-            <h2 style={white}>
-              {c.hero.titlePrefix}{' '}
-              <em style={gold}>{c.hero.rotatingWords?.[0]}</em>{' '}
-              {c.hero.titleSuffix}
-            </h2>
-            <p style={muted}>{c.hero.subtitle}</p>
-            <small style={gold}>{c.hero.scrollText} ↓</small>
+            <div className={styles.simNavbar}>
+              <strong style={{ ...gold, fontFamily: 'var(--font-heading)' }}>Cardoso</strong>
+              <span className={styles.simNavLinks}>
+                <span>Inicio</span><span>Propiedades</span><span>Contacto</span>
+              </span>
+              <span style={{ background: 'var(--gold)', color: 'var(--navy-900)', padding: '0.25rem 0.7rem', borderRadius: '1rem', fontSize: '0.65rem', fontWeight: 600 }}>{c.navbar.ctaText}</span>
+            </div>
+            <div className={styles.simHero}>
+              <div>
+                <h2 style={white}>
+                  {c.hero.titlePrefix}{' '}
+                  <em style={gold}>{c.hero.rotatingWords?.[0]}</em>{' '}
+                  {c.hero.titleSuffix}
+                </h2>
+                <p style={{ ...muted, fontSize: '0.8rem' }}>{c.hero.subtitle}</p>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem' }}>
+                  <span style={{ background: 'var(--gold)', color: 'var(--navy-900)', padding: '0.35rem 0.7rem', borderRadius: '0.4rem', fontSize: '0.7rem', fontWeight: 600 }}>{c.cta.btnPrimary}</span>
+                </div>
+                <small style={{ ...gold, display: 'block', marginTop: '0.5rem' }}>{c.hero.scrollText} ↓</small>
+              </div>
+              <div className={styles.simHeroImg} />
+            </div>
           </div>
         )}
 
@@ -101,15 +123,8 @@ export default function LivePreview({ category, content, theme }) {
           </div>
         )}
 
-        {category === 'navbar' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-            <strong style={white}>Cardoso Propiedades</strong>
-            <span style={{ background: 'var(--gold)', color: 'var(--navy-900)', padding: '0.4rem 0.9rem', borderRadius: '1rem', fontSize: '0.78rem', fontWeight: 600 }}>{c.navbar.ctaText}</span>
-          </div>
-        )}
-
         {category === 'colors' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
             {Object.entries(COLOR_VAR_MAP).map(([k, v]) => (
               <div key={k} style={{ textAlign: 'center' }}>
                 <div style={{ height: '36px', borderRadius: '0.35rem', background: `var(${v})`, border: '1px solid rgba(255,255,255,0.15)' }} />
