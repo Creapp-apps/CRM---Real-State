@@ -4,6 +4,7 @@ import { useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AnimatedSection from '@/components/ui/AnimatedSection';
+import { CONTENT_DEFAULTS } from '@/lib/content/defaults';
 import styles from './OperationsSection.module.css';
 
 const OPERATIONS = [
@@ -74,20 +75,27 @@ function Card3D({ children }) {
   );
 }
 
-export default function OperationsSection() {
+export default function OperationsSection({ operations } = {}) {
+  const o = { ...CONTENT_DEFAULTS.operations, ...(operations || {}) };
+  const items = OPERATIONS.map((op, i) => ({
+    ...op,
+    title: o.items?.[i]?.title ?? op.title,
+    description: o.items?.[i]?.description ?? op.description,
+  }));
+
   return (
     <section className={styles.section}>
       <div className="container">
         <AnimatedSection animation="fade-up" className={styles.header}>
-          <span className="subtitle">Explorá</span>
+          <span className="subtitle">{o.subtitle}</span>
           <h2 className={styles.title}>
-            ¿Qué estás <span className="text-gold">buscando</span>?
+            {o.titlePrefix} <span className="text-gold">{o.titleHighlight}</span>?
           </h2>
           <hr className="divider divider-center" />
         </AnimatedSection>
 
         <div className={styles.grid}>
-          {OPERATIONS.map((op, i) => (
+          {items.map((op, i) => (
             <AnimatedSection
               key={i}
               animation="scale-in"
