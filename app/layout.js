@@ -1,6 +1,6 @@
 import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
-import { getSiteContent } from "@/lib/siteContent";
+import { getSiteContentCached } from "@/lib/siteContentServer";
 import ThemeStyle from "@/components/ThemeStyle";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +50,7 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  const { theme } = await getSiteContent();
+  const { theme } = await getSiteContentCached();
   return (
     <html lang="es">
       <head>

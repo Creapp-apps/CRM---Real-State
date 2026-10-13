@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import { getSiteContent, saveSiteContent } from '@/lib/siteContent';
+import { cleanStringArrays } from '@/lib/content/defaults';
 import { CATEGORIES, FIELDS } from './fields';
 import ContentCategorySidebar from './ContentCategorySidebar';
 import FieldGroup from './FieldGroup';
@@ -46,6 +47,17 @@ export default function ContentEditor() {
     [draft, saved]
   );
 
+  // Aviso del navegador si hay cambios sin guardar al intentar salir.
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
   const dirtyKeys = useMemo(() => {
     const s = new Set();
     if (!draft || !saved) return s;
@@ -74,10 +86,14 @@ export default function ContentEditor() {
 
   async function handleSave() {
     setSaving(true);
-    const res = await saveSiteContent('cardoso', { content: draft.content, theme: draft.theme });
+    // Limpia strings vacíos de listas (ej. rotatingWords) antes de persistir.
+    const cleanContent = cleanStringArrays(draft.content);
+    const payload = { content: cleanContent, theme: draft.theme };
+    const res = await saveSiteContent('cardoso', payload);
     setSaving(false);
     if (res.ok) {
-      setSaved(draft);
+      setDraft(payload);
+      setSaved(payload);
       setToast({ type: 'success', message: 'Cambios guardados ✓' });
     } else {
       setToast({ type: 'error', message: `No se pudo guardar: ${res.error}` });

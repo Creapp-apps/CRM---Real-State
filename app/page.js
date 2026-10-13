@@ -6,12 +6,12 @@ import FeaturedProperties from '@/components/home/FeaturedProperties';
 import StorytellingSection from '@/components/home/StorytellingSection';
 import OperationsSection from '@/components/home/OperationsSection';
 import CTASection from '@/components/home/CTASection';
-import { getSiteContent } from '@/lib/siteContent';
+import { getSiteContentCached } from '@/lib/siteContentServer';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const { content, theme } = await getSiteContent();
+  const { content, theme } = await getSiteContentCached();
   return (
     <>
       <VideoBackground video={theme?.media?.heroVideo} />

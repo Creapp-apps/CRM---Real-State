@@ -17,20 +17,15 @@ export default function FieldGroup({ field, value, onChange }) {
       />
     );
   } else if (type === 'list') {
+    // Preserva lo que el usuario escribe (incluidas líneas nuevas vacías
+    // mientras tipea). La limpieza de vacíos se hace al guardar.
     const text = Array.isArray(value) ? value.join('\n') : (value ?? '');
     control = (
       <textarea
         className={styles.formTextarea}
         rows={4}
         value={text}
-        onChange={(e) =>
-          onChange(
-            e.target.value
-              .split('\n')
-              .map((s) => s.trim())
-              .filter((s) => s.length > 0)
-          )
-        }
+        onChange={(e) => onChange(e.target.value.split('\n'))}
       />
     );
   } else {
