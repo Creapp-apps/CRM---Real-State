@@ -5,6 +5,7 @@ import { getSiteContent, saveSiteContent } from '@/lib/siteContent';
 import { cleanStringArrays } from '@/lib/content/defaults';
 import { CATEGORIES, FIELDS } from './fields';
 import ContentCategorySidebar from './ContentCategorySidebar';
+import Icon from '@/components/admin/Icon';
 import FieldGroup from './FieldGroup';
 import ColorEditor from './ColorEditor';
 import MediaUploader from './MediaUploader';
@@ -129,6 +130,13 @@ export default function ContentEditor() {
         <ContentCategorySidebar active={active} onSelect={setActive} dirtyKeys={dirtyKeys} />
 
         <div className={styles.editorForm}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionHeaderIcon}><Icon name={cat.icon} size={20} /></span>
+            <div>
+              <div className={styles.sectionHeaderTitle}>{cat.label}</div>
+              <div className={styles.sectionHeaderDesc}>{cat.description}</div>
+            </div>
+          </div>
           {def.intro && <p className={styles.fieldDesc} style={{ marginBottom: '1rem' }}>{def.intro}</p>}
 
           {/* Campos simples */}

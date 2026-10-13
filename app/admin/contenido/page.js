@@ -4,14 +4,11 @@ import ContentEditor from '@/components/admin/contenido/ContentEditor';
 
 export default function AdminContenido() {
   return (
-    <>
-      <div className={styles.pageHeader}>
-        <div>
-          <h2 className={styles.pageTitle}>Contenido del Sitio</h2>
-          <p className={styles.pageSubtitle}>Editá los textos, colores y media de la página principal</p>
-        </div>
-      </div>
+    <div className={styles.systemHeader}>
+      <span className={styles.systemHeaderTag}>Sistema de Diseño</span>
+      <h2 className={styles.pageTitle}>Personalización Web</h2>
+      <p className={styles.pageSubtitle}>Configuración integral de estética, copys y llamadas a la acción del sitio</p>
       <ContentEditor />
-    </>
+    </div>
   );
 }
