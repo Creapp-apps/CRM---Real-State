@@ -1470,3 +1470,87 @@
   background: linear-gradient(135deg, var(--navy-700), var(--navy-900));
   border: 1px dashed rgba(255, 255, 255, 0.12);
 }
+
+/* ── Media dropzone ── */
+.dropzone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border: 2px dashed var(--admin-gold-25);
+  border-radius: 0.9rem;
+  background: var(--admin-gold-03);
+  color: var(--gray-300, #d1d5db);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.dropzone:hover {
+  border-color: var(--admin-gold);
+  background: var(--admin-gold-06);
+}
+.dropzoneDragging {
+  border-color: var(--admin-gold);
+  background: var(--admin-gold-12);
+  box-shadow: 0 0 28px var(--admin-gold-glow);
+}
+.dropzoneIcon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--admin-gold-12);
+  color: var(--admin-gold);
+}
+.dropzoneTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--white);
+}
+.dropzoneTitle b { color: var(--admin-gold); }
+.dropzoneHint {
+  font-size: 0.72rem;
+  color: var(--gray-500);
+}
+.dropzonePreview {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.9rem;
+  border: 1px solid var(--admin-gold-15);
+  border-radius: 0.7rem;
+  background: rgba(10, 22, 40, 0.5);
+}
+.dropzonePreviewMedia {
+  width: 92px;
+  height: 58px;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  background: var(--navy-900);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dropzonePreviewBody { flex: 1; min-width: 0; text-align: left; }
+.dropzonePreviewName {
+  font-size: 0.8rem;
+  color: var(--white);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dropzonePreviewMeta { font-size: 0.7rem; color: var(--gray-500); margin-top: 0.15rem; }
+.dropzoneActions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.dropzoneSpinner {
+  width: 28px; height: 28px;
+  border: 2.5px solid var(--admin-gold-25);
+  border-top-color: var(--admin-gold);
+  border-radius: 50%;
+  animation: adminSpin 0.8s linear infinite;
+}
+@keyframes adminSpin { to { transform: rotate(360deg); } }
