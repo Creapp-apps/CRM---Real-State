@@ -3,7 +3,8 @@
 import { useRef, useEffect, useState } from 'react';
 import styles from './VideoBackground.module.css';
 
-export default function VideoBackground() {
+export default function VideoBackground({ video } = {}) {
+  const src = video || '/videohero.mov';
   const videoRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -19,6 +20,7 @@ export default function VideoBackground() {
   return (
     <div className={styles.videoBg}>
       <video
+        key={src}
         ref={videoRef}
         className={`${styles.video} ${isLoaded ? styles.videoLoaded : ''}`}
         autoPlay
@@ -28,8 +30,7 @@ export default function VideoBackground() {
         preload="auto"
         onLoadedData={() => setIsLoaded(true)}
       >
-        <source src="/videohero.mov" type="video/quicktime" />
-        <source src="/videohero.mov" type="video/mp4" />
+        <source src={src} />
       </video>
       {/* 75% dark overlay */}
       <div className={styles.overlay} />
