@@ -1322,3 +1322,42 @@
     position: static;
   }
 }
+
+/* ── Editor: categoría con ícono + descripción ── */
+.catItemFull {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  text-align: left;
+  padding: 0.7rem 0.75rem;
+}
+.catItemIcon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: var(--admin-gold-10);
+  color: var(--admin-gold);
+}
+.catItemBody { min-width: 0; flex: 1; }
+.catItemLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-200, #e5e7eb);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.catItemDesc {
+  font-size: 0.68rem;
+  color: var(--gray-500);
+  line-height: 1.35;
+  margin-top: 0.1rem;
+}
+.catItemActive .catItemLabel { color: var(--admin-gold); }
+.catItemActive .catItemIcon {
+  background: var(--admin-gold-25);
+  box-shadow: 0 0 14px var(--admin-gold-glow);
+}
