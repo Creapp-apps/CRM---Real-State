@@ -6,17 +6,24 @@ const PAGE_TITLES = {
   '/admin': 'Dashboard',
   '/admin/propiedades': 'Propiedades',
   '/admin/emprendimientos': 'Emprendimientos',
-  '/admin/contenido': 'Contenido del Sitio',
+  '/admin/contenido': 'Personalización Web',
+  '/admin/media': 'Galería de Media',
+  '/admin/administraciones/clientes': 'Clientes',
+  '/admin/administraciones/contratos': 'Contratos',
+  '/admin/administraciones/inmuebles': 'Inmuebles',
+  '/admin/administraciones': 'Administraciones',
+  '/admin/pipeline': 'Pipeline de Operaciones',
+  '/admin/tasador': 'Tasador Online',
   '/admin/contacto': 'Mensajes de Contacto',
   '/admin/tasaciones': 'Solicitudes de Tasación',
-  '/admin/media': 'Galería de Media',
 };
 
 export default function AdminTopbar({ pathname, onToggleSidebar }) {
-  const title = Object.entries(PAGE_TITLES).reduce((acc, [path, t]) => {
-    if (pathname === path || (path !== '/admin' && pathname.startsWith(path))) return t;
-    return acc;
-  }, 'Admin');
+  // Elegir el match más largo (ej. .../clientes gana sobre .../administraciones).
+  const match = Object.keys(PAGE_TITLES)
+    .filter((p) => pathname === p || (p !== '/admin' && pathname.startsWith(p)))
+    .sort((a, b) => b.length - a.length)[0];
+  const title = match ? PAGE_TITLES[match] : 'Admin';
 
   return (
     <header className={styles.topbar}>
