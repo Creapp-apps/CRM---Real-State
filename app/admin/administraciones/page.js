@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 
 export default function AdministracionesDashboard() {
@@ -74,22 +75,13 @@ export default function AdministracionesDashboard() {
 
   const STAT_CARDS = [
     { label: 'Contratos Activos', value: stats.contratos, color: 'Blue', icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-      </svg>
+      <Icon name="file-text" size={22} />
     )},
     { label: 'Clientes Registrados', value: stats.clientes, color: 'Green', icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-      </svg>
+      <Icon name="users" size={22} />
     )},
     { label: 'Inmuebles Administrados', value: stats.inmuebles, color: 'Gold', icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
-      </svg>
+      <Icon name="building" size={22} />
     )},
     { label: 'Próximos Vencimientos', value: stats.vencimientos, color: 'Purple', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -97,9 +89,7 @@ export default function AdministracionesDashboard() {
       </svg>
     )},
     { label: 'Cobros Pendientes', value: stats.pendientes, color: 'Red', icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
+      <Icon name="dollar" size={22} />
     )},
   ];
 
@@ -130,9 +120,7 @@ export default function AdministracionesDashboard() {
       {/* Quick Actions */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <Link href="/admin/administraciones/contratos" className={styles.btnPrimary}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <Icon name="plus" size={16} />
           Nuevo Contrato
         </Link>
         <Link href="/admin/administraciones/clientes" className={styles.btnSecondary}>
@@ -143,9 +131,7 @@ export default function AdministracionesDashboard() {
           Nuevo Cliente
         </Link>
         <Link href="/admin/administraciones/inmuebles" className={styles.btnSecondary}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          </svg>
+          <Icon name="building" size={16} />
           Nuevo Inmueble
         </Link>
       </div>

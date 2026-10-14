@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 
 const EMPTY_FORM = {
@@ -164,9 +165,7 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
             {editData?.id ? 'Editar Contrato' : 'Cargar Contrato'}
           </h3>
           <button className={styles.modalClose} onClick={onClose}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <Icon name="x" size={16} />
           </button>
         </div>
 
@@ -180,12 +179,12 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               onDrop={handleDrop}
               onClick={() => fileRef.current?.click()}
               style={{
-                border: `2px dashed ${pdfName ? 'rgba(201,169,110,0.4)' : 'rgba(255,255,255,0.12)'}`,
+                border: `2px dashed ${pdfName ? 'var(--admin-gold-40)' : 'rgba(255,255,255,0.12)'}`,
                 borderRadius: '0.75rem',
                 padding: '2rem',
                 textAlign: 'center',
                 cursor: 'pointer',
-                background: pdfName ? 'rgba(201,169,110,0.05)' : 'rgba(255,255,255,0.02)',
+                background: pdfName ? 'var(--admin-gold-05)' : 'rgba(255,255,255,0.02)',
                 transition: 'all 0.2s',
                 marginBottom: '1.5rem',
               }}
@@ -193,7 +192,7 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange} style={{ display: 'none' }} />
               {pdfName ? (
                 <>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5" style={{ margin: '0 auto 0.75rem' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" strokeWidth="1.5" style={{ margin: '0 auto 0.75rem' }}>
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
                     <line x1="9" y1="15" x2="15" y2="15" />
@@ -221,8 +220,8 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
             </div>
 
             {/* ── Metadata Section ── */}
-            <div style={{ borderTop: '1px solid rgba(201,169,110,0.08)', paddingTop: '1rem', marginBottom: '0.25rem' }}>
-              <label className={styles.formLabel} style={{ color: 'var(--gold)', marginBottom: '0', letterSpacing: '2px' }}>
+            <div style={{ borderTop: '1px solid var(--admin-gold-08)', paddingTop: '1rem', marginBottom: '0.25rem' }}>
+              <label className={styles.formLabel} style={{ color: 'var(--admin-gold)', marginBottom: '0', letterSpacing: '2px' }}>
                 DATOS DEL CONTRATO
               </label>
               <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem', marginBottom: '1rem' }}>
@@ -307,8 +306,8 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               </div>
 
               {/* Honorarios */}
-              <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{ borderTop: '1px solid rgba(201,169,110,0.08)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                <label className={styles.formLabel} style={{ color: 'var(--gold)', marginBottom: '0' }}>Honorarios del Martillero</label>
+              <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{ borderTop: '1px solid var(--admin-gold-08)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                <label className={styles.formLabel} style={{ color: 'var(--admin-gold)', marginBottom: '0' }}>Honorarios del Martillero</label>
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Porcentaje Pactado (%)</label>
@@ -336,8 +335,8 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
                 const netoTransferir = monto - totalDeducciones;
                 return (
                   <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{
-                    background: 'rgba(201,169,110,0.04)',
-                    border: '1px solid rgba(201,169,110,0.12)',
+                    background: 'var(--admin-gold-05)',
+                    border: '1px solid var(--admin-gold-12)',
                     borderRadius: '0.5rem',
                     padding: '0.75rem 1rem',
                   }}>
@@ -362,9 +361,9 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
                           </span>
                         </div>
                       )}
-                      <div style={{ borderTop: '1px solid rgba(201,169,110,0.15)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--gold)', fontWeight: 600 }}>Neto a transferir al propietario</span>
-                        <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--gold)' }}>
+                      <div style={{ borderTop: '1px solid var(--admin-gold-15)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--admin-gold)', fontWeight: 600 }}>Neto a transferir al propietario</span>
+                        <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--admin-gold)' }}>
                           $ {netoTransferir.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -379,8 +378,8 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               </div>
 
               {/* Punitorios */}
-              <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{ borderTop: '1px solid rgba(201,169,110,0.08)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                <label className={styles.formLabel} style={{ color: 'var(--gold)', marginBottom: '0' }}>Punitorios por Mora</label>
+              <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{ borderTop: '1px solid var(--admin-gold-08)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                <label className={styles.formLabel} style={{ color: 'var(--admin-gold)', marginBottom: '0' }}>Punitorios por Mora</label>
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tasa diaria (%)</label>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 import InmuebleModal from '@/components/admin/administraciones/InmuebleModal';
 
@@ -64,9 +65,7 @@ export default function InmueblesPage() {
           <p className={styles.pageSubtitle}>Gestión de propiedades en administración</p>
         </div>
         <button className={styles.btnPrimary} onClick={handleNew}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <Icon name="plus" size={16} />
           Nuevo Inmueble
         </button>
       </div>
@@ -87,9 +86,7 @@ export default function InmueblesPage() {
       <div className={styles.tableWrapper}>
         <div className={styles.tableHeader}>
           <div className={styles.searchBar}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Icon name="search" size={16} />
             <input placeholder="Buscar por dirección..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
@@ -139,21 +136,14 @@ export default function InmueblesPage() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.375rem' }}>
-                      <button className={styles.btnIcon} onClick={() => setFichaInmueble(i)} title="Ver ficha" style={{ color: 'var(--gold)' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                        </svg>
+                      <button className={styles.btnIcon} onClick={() => setFichaInmueble(i)} title="Ver ficha" style={{ color: 'var(--admin-gold)' }}>
+                        <Icon name="eye" size={14} />
                       </button>
                       <button className={styles.btnIcon} onClick={() => handleEdit(i)} title="Editar">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
+                        <Icon name="edit" size={14} />
                       </button>
                       <button className={styles.btnIcon} onClick={() => handleDelete(i.id)} title="Eliminar" style={{ color: '#f87171' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
+                        <Icon name="trash" size={14} />
                       </button>
                     </div>
                   </td>
@@ -178,16 +168,14 @@ export default function InmueblesPage() {
             <div className={styles.modalHeader}>
               <h3 className={styles.modalTitle}>Ficha del Inmueble</h3>
               <button className={styles.modalClose} onClick={() => setFichaInmueble(null)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <Icon name="x" size={16} />
               </button>
             </div>
             <div className={styles.modalBody}>
               {/* Header */}
               <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(201,169,110,0.2), rgba(201,169,110,0.05))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c9a96e" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, var(--admin-gold-20), var(--admin-gold-08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem', color: 'var(--admin-gold)' }}>
+                  <Icon name="building" size={24} />
                 </div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--white)' }}>{fichaInmueble.direccion}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '0.375rem' }}>
@@ -217,13 +205,13 @@ export default function InmueblesPage() {
 
               {/* Servicios */}
               <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#c9a96e', fontWeight: 600, marginBottom: '0.5rem' }}>Servicios</div>
-                <div style={{ background: 'rgba(201,169,110,0.03)', border: '1px solid rgba(201,169,110,0.1)', borderRadius: '0.5rem', padding: '0.75rem' }}>
+                <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--admin-gold)', fontWeight: 600, marginBottom: '0.5rem' }}>Servicios</div>
+                <div style={{ background: 'var(--admin-gold-08)', border: '1px solid var(--admin-gold-10)', borderRadius: '0.5rem', padding: '0.75rem' }}>
                   {Object.entries({ gas: 'Gas', agua: 'Agua', luz: 'Luz', boleta_municipal: 'Boleta Municipal' }).map(([key, label]) => {
                     const serv = fichaInmueble.servicios?.[key];
                     const activo = typeof serv === 'boolean' ? serv : serv?.activo;
                     return (
-                      <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: '1px solid rgba(201,169,110,0.06)', fontSize: '0.85rem' }}>
+                      <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: '1px solid var(--admin-gold-08)', fontSize: '0.85rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span style={{ color: activo ? '#4ade80' : '#f87171', fontSize: '0.7rem' }}>{activo ? '●' : '○'}</span>
                           <span style={{ color: '#888' }}>{label}</span>

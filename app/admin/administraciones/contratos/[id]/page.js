@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 import CalculadoraActualizacion from '@/components/admin/administraciones/CalculadoraActualizacion';
 import CalculadoraHonorarios from '@/components/admin/administraciones/CalculadoraHonorarios';
@@ -97,9 +98,7 @@ export default function ContratoDetailPage() {
               {formatDate(contrato.fecha_inicio)} — {formatDate(contrato.fecha_fin)}
             </div>
             <div className={styles.detailMetaItem}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
+              <Icon name="dollar" size={14} />
               {contrato.moneda} {montoActual.toLocaleString('es-AR')} / mes
             </div>
             <span className={`${styles.badge} ${ESTADO_BADGE[contrato.estado] || styles.badgeGray}`}>
@@ -137,7 +136,7 @@ export default function ContratoDetailPage() {
                 style={{ width: '100%', height: '70vh', border: 'none' }}
                 title="Documento del Contrato"
               />
-              <div style={{ padding: '1rem', borderTop: '1px solid rgba(201,169,110,0.08)', display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ padding: '1rem', borderTop: '1px solid var(--admin-gold-08)', display: 'flex', justifyContent: 'flex-end' }}>
                 <a
                   href={contrato.contrato_pdf_url}
                   target="_blank"
@@ -155,10 +154,9 @@ export default function ContratoDetailPage() {
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin: '0 auto 1rem' }}>
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
+              <div style={{ margin: '0 auto 1rem', display: 'inline-flex' }}>
+                <Icon name="file-text" size={48} />
+              </div>
               <p style={{ fontWeight: 500, color: 'var(--gray-400)' }}>No hay documento cargado para este contrato</p>
               <p style={{ fontSize: '0.75rem', marginTop: '0.375rem' }}>Editá el contrato para subir el archivo (PDF o Word)</p>
             </div>

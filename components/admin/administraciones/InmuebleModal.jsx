@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 
 const TIPOS = [
@@ -142,9 +143,7 @@ export default function InmuebleModal({ isOpen, onClose, onSaved, editData }) {
             {editData?.id ? 'Editar Inmueble' : 'Nuevo Inmueble'}
           </h3>
           <button className={styles.modalClose} onClick={onClose}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <Icon name="x" size={16} />
           </button>
         </div>
 
@@ -200,8 +199,8 @@ export default function InmuebleModal({ isOpen, onClose, onSaved, editData }) {
               </div>
 
               {/* ── Servicios con datos de cuenta ── */}
-              <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{ borderTop: '1px solid rgba(201,169,110,0.08)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                <label className={styles.formLabel} style={{ color: 'var(--gold)', marginBottom: '0', letterSpacing: '2px' }}>SERVICIOS</label>
+              <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{ borderTop: '1px solid var(--admin-gold-08)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                <label className={styles.formLabel} style={{ color: 'var(--admin-gold)', marginBottom: '0', letterSpacing: '2px' }}>SERVICIOS</label>
                 <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
                   Datos identificatorios únicos del inmueble por servicio
                 </p>
@@ -211,8 +210,8 @@ export default function InmuebleModal({ isOpen, onClose, onSaved, editData }) {
                 const serv = form.servicios[servKey];
                 return (
                   <div key={servKey} className={styles.formGridFull} style={{
-                    background: serv.activo ? 'rgba(201,169,110,0.03)' : 'transparent',
-                    border: `1px solid ${serv.activo ? 'rgba(201,169,110,0.1)' : 'rgba(255,255,255,0.04)'}`,
+                    background: serv.activo ? 'var(--admin-gold-08)' : 'transparent',
+                    border: `1px solid ${serv.activo ? 'var(--admin-gold-10)' : 'rgba(255,255,255,0.04)'}`,
                     borderRadius: '0.5rem',
                     padding: '0.75rem 1rem',
                     transition: 'all 0.2s',

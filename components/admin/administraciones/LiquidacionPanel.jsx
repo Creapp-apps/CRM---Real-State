@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 
 function formatCurrency(n) {
@@ -130,7 +131,7 @@ export default function LiquidacionPanel({ contratoId, contrato }) {
       {/* Generator */}
       <div className={styles.card} style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--white)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" strokeWidth="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
             <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
@@ -197,9 +198,7 @@ export default function LiquidacionPanel({ contratoId, contrato }) {
                       </button>
                     )}
                     <button className={styles.btnIcon} onClick={() => handleDelete(l.id)} title="Eliminar" style={{ color: '#f87171' }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
+                      <Icon name="trash" size={14} />
                     </button>
                   </div>
                 </td>
@@ -242,8 +241,8 @@ export default function LiquidacionPanel({ contratoId, contrato }) {
                 <span>$ {formatCurrency(liquidaciones[0].impuestos)}</span>
               </div>
             )}
-            <div style={{ borderTop: '1px solid rgba(201,169,110,0.2)', marginTop: '0.5rem', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-              <span style={{ color: 'var(--gold)' }}>NETO A TRANSFERIR:</span>
+            <div style={{ borderTop: '1px solid var(--admin-gold-20)', marginTop: '0.5rem', paddingTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+              <span style={{ color: 'var(--admin-gold)' }}>NETO A TRANSFERIR:</span>
               <span style={{ color: '#4ade80', fontSize: '1.1rem' }}>$ {formatCurrency(liquidaciones[0].neto_propietario)}</span>
             </div>
           </div>

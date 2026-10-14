@@ -27,7 +27,7 @@ export default function CalculadoraHonorarios({ montoAlquiler: propMonto, porcen
     <div className={styles.calcCard}>
       <div className={styles.calcSection}>
         <div className={styles.calcSectionTitle}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" strokeWidth="2">
             <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
           Calculadora de Honorarios
@@ -88,7 +88,7 @@ export default function CalculadoraHonorarios({ montoAlquiler: propMonto, porcen
             )}
             <div className={styles.calcResultItem}>
               <div className={styles.calcResultItemLabel}>Total Honorarios</div>
-              <div className={styles.calcResultItemValue} style={{ color: 'var(--gold)' }}>
+              <div className={styles.calcResultItemValue} style={{ color: 'var(--admin-gold)' }}>
                 $ {totalHonorarios.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>

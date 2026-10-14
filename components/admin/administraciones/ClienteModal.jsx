@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 
 const EMPTY_FORM = {
@@ -49,9 +50,7 @@ export default function ClienteModal({ isOpen, onClose, onSaved, editData }) {
             {editData?.id ? 'Editar Cliente' : 'Nuevo Cliente'}
           </h3>
           <button className={styles.modalClose} onClick={onClose}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <Icon name="x" size={16} />
           </button>
         </div>
 
@@ -88,8 +87,8 @@ export default function ClienteModal({ isOpen, onClose, onSaved, editData }) {
               </div>
 
               {/* Datos Bancarios */}
-              <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{ borderTop: '1px solid rgba(201,169,110,0.08)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                <label className={styles.formLabel} style={{ color: 'var(--gold)', marginBottom: '0.75rem' }}>Datos Bancarios</label>
+              <div className={`${styles.formGroup} ${styles.formGridFull}`} style={{ borderTop: '1px solid var(--admin-gold-08)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                <label className={styles.formLabel} style={{ color: 'var(--admin-gold)', marginBottom: '0.75rem' }}>Datos Bancarios</label>
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>CBU</label>

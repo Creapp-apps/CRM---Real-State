@@ -150,7 +150,7 @@ export default function CalculadoraActualizacion({ montoBase: propMonto, indice:
       <div className={styles.calcSection}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div className={styles.calcSectionTitle}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" strokeWidth="2">
               <rect x="4" y="2" width="16" height="20" rx="2" />
               <line x1="8" y1="6" x2="16" y2="6" /><line x1="8" y1="10" x2="16" y2="10" />
               <line x1="8" y1="14" x2="12" y2="14" /><line x1="8" y1="18" x2="12" y2="18" />
@@ -201,9 +201,9 @@ export default function CalculadoraActualizacion({ montoBase: propMonto, indice:
                 style={{
                   width: 36, height: 36,
                   borderRadius: '0.375rem',
-                  border: cadaMeses === n ? '2px solid var(--gold)' : '1px solid rgba(255,255,255,0.1)',
-                  background: cadaMeses === n ? 'rgba(201,169,110,0.15)' : 'rgba(255,255,255,0.03)',
-                  color: cadaMeses === n ? 'var(--gold)' : 'var(--gray-400)',
+                  border: cadaMeses === n ? '2px solid var(--admin-gold)' : '1px solid rgba(255,255,255,0.1)',
+                  background: cadaMeses === n ? 'var(--admin-gold-15)' : 'rgba(255,255,255,0.03)',
+                  color: cadaMeses === n ? 'var(--admin-gold)' : 'var(--gray-400)',
                   fontWeight: cadaMeses === n ? 700 : 500,
                   fontSize: '0.85rem',
                   cursor: 'pointer',
@@ -228,9 +228,9 @@ export default function CalculadoraActualizacion({ montoBase: propMonto, indice:
                 style={{
                   padding: '0.5rem 1rem',
                   borderRadius: '0.375rem',
-                  border: indice === idx ? '2px solid var(--gold)' : '1px solid rgba(255,255,255,0.1)',
-                  background: indice === idx ? 'rgba(201,169,110,0.15)' : 'rgba(255,255,255,0.03)',
-                  color: indice === idx ? 'var(--gold)' : 'var(--gray-400)',
+                  border: indice === idx ? '2px solid var(--admin-gold)' : '1px solid rgba(255,255,255,0.1)',
+                  background: indice === idx ? 'var(--admin-gold-15)' : 'rgba(255,255,255,0.03)',
+                  color: indice === idx ? 'var(--admin-gold)' : 'var(--gray-400)',
                   fontWeight: indice === idx ? 700 : 500,
                   fontSize: '0.85rem',
                   cursor: 'pointer',
@@ -265,10 +265,10 @@ export default function CalculadoraActualizacion({ montoBase: propMonto, indice:
                   <div style={{
                     padding: '1.25rem',
                     textAlign: 'center',
-                    borderRight: nextApprox ? '1px solid rgba(201,169,110,0.1)' : 'none',
-                    background: 'rgba(201,169,110,0.05)',
+                    borderRight: nextApprox ? '1px solid var(--admin-gold-10)' : 'none',
+                    background: 'var(--admin-gold-05)',
                   }}>
-                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--gold)', fontWeight: 700, marginBottom: '0.375rem' }}>
+                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--admin-gold)', fontWeight: 700, marginBottom: '0.375rem' }}>
                       CONFIRMADO
                     </div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: '0.25rem' }}>

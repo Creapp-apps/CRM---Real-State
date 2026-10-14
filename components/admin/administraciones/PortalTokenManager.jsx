@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 
 function generateToken() {
@@ -69,17 +70,13 @@ export default function PortalTokenManager({ contratoId, locatarioId, locadorId 
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         {!inquilinoToken && locatarioId && (
           <button className={styles.btnPrimary} onClick={() => createToken('inquilino', locatarioId)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <Icon name="plus" size={14} />
             Crear Acceso Inquilino
           </button>
         )}
         {!propietarioToken && locadorId && (
           <button className={styles.btnSecondary} onClick={() => createToken('propietario', locadorId)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <Icon name="plus" size={14} />
             Crear Acceso Propietario
           </button>
         )}
@@ -109,7 +106,7 @@ export default function PortalTokenManager({ contratoId, locatarioId, locadorId 
                   {!t.activo && <span className={`${styles.badge} ${styles.badgeRed}`}>Desactivado</span>}
                 </div>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  <button className={styles.btnIcon} onClick={() => copyLink(t.token)} title="Copiar link" style={{ color: copied === t.token ? '#4ade80' : 'var(--gold)' }}>
+                  <button className={styles.btnIcon} onClick={() => copyLink(t.token)} title="Copiar link" style={{ color: copied === t.token ? '#4ade80' : 'var(--admin-gold)' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       {copied === t.token ? (
                         <polyline points="20 6 9 17 4 12" />
@@ -128,9 +125,7 @@ export default function PortalTokenManager({ contratoId, locatarioId, locadorId 
                     </svg>
                   </button>
                   <button className={styles.btnIcon} onClick={() => deleteToken(t.id)} title="Eliminar" style={{ color: '#f87171' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
+                    <Icon name="trash" size={14} />
                   </button>
                 </div>
               </div>

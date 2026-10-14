@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 import ClienteModal from '@/components/admin/administraciones/ClienteModal';
 
@@ -62,9 +63,7 @@ export default function ClientesPage() {
           <p className={styles.pageSubtitle}>Base de datos de locadores y locatarios</p>
         </div>
         <button className={styles.btnPrimary} onClick={handleNew}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <Icon name="plus" size={16} />
           Nuevo Cliente
         </button>
       </div>
@@ -86,9 +85,7 @@ export default function ClientesPage() {
       <div className={styles.tableWrapper}>
         <div className={styles.tableHeader}>
           <div className={styles.searchBar}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Icon name="search" size={16} />
             <input placeholder="Buscar por nombre, DNI o teléfono..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
@@ -131,21 +128,14 @@ export default function ClientesPage() {
                   <td>{c.email || '-'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.375rem' }}>
-                      <button className={styles.btnIcon} onClick={() => setFichaCliente(c)} title="Ver ficha" style={{ color: 'var(--gold)' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                        </svg>
+                      <button className={styles.btnIcon} onClick={() => setFichaCliente(c)} title="Ver ficha" style={{ color: 'var(--admin-gold)' }}>
+                        <Icon name="eye" size={14} />
                       </button>
                       <button className={styles.btnIcon} onClick={() => handleEdit(c)} title="Editar">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
+                        <Icon name="edit" size={14} />
                       </button>
                       <button className={styles.btnIcon} onClick={() => handleDelete(c.id)} title="Eliminar" style={{ color: '#f87171' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
+                        <Icon name="trash" size={14} />
                       </button>
                     </div>
                   </td>
@@ -170,15 +160,13 @@ export default function ClientesPage() {
             <div className={styles.modalHeader}>
               <h3 className={styles.modalTitle}>Ficha del Cliente</h3>
               <button className={styles.modalClose} onClick={() => setFichaCliente(null)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <Icon name="x" size={16} />
               </button>
             </div>
             <div className={styles.modalBody}>
               {/* Nombre y tipo */}
               <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(201,169,110,0.2), rgba(201,169,110,0.05))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem', fontSize: '1.3rem', fontWeight: 700, color: '#c9a96e' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, var(--admin-gold-20), var(--admin-gold-08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem', fontSize: '1.3rem', fontWeight: 700, color: 'var(--admin-gold)' }}>
                   {fichaCliente.nombre?.charAt(0)?.toUpperCase()}
                 </div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--white)' }}>{fichaCliente.nombre}</div>
@@ -202,10 +190,10 @@ export default function ClientesPage() {
 
               {/* Datos Bancarios */}
               <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#c9a96e', fontWeight: 600, marginBottom: '0.5rem' }}>Datos Bancarios</div>
-                <div style={{ background: 'rgba(201,169,110,0.03)', border: '1px solid rgba(201,169,110,0.1)', borderRadius: '0.5rem', padding: '0.75rem' }}>
+                <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--admin-gold)', fontWeight: 600, marginBottom: '0.5rem' }}>Datos Bancarios</div>
+                <div style={{ background: 'var(--admin-gold-08)', border: '1px solid var(--admin-gold-10)', borderRadius: '0.5rem', padding: '0.75rem' }}>
                   {[['CBU', fichaCliente.cbu], ['Alias', fichaCliente.alias], ['Banco', fichaCliente.banco], ['Titular', fichaCliente.titular_cuenta]].map(([label, val]) => (
-                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.375rem 0', borderBottom: '1px solid rgba(201,169,110,0.06)', fontSize: '0.85rem' }}>
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.375rem 0', borderBottom: '1px solid var(--admin-gold-08)', fontSize: '0.85rem' }}>
                       <span style={{ color: '#888' }}>{label}</span>
                       <span style={{ color: val ? 'var(--white)' : '#555', fontWeight: val ? 500 : 400, fontFamily: label === 'CBU' ? 'monospace' : 'inherit' }}>{val || '—'}</span>
                     </div>
