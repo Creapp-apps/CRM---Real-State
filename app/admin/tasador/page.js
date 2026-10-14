@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 
 const TIPOS = ['Departamento', 'Casa', 'PH', 'Local Comercial', 'Oficina', 'Galpón', 'Terreno', 'Cochera'];
@@ -143,9 +144,9 @@ export default function TasadorPage() {
         {/* Form */}
         <div className={styles.card} style={{ padding: '1.5rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--white)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            </svg>
+            <span style={{ color: 'var(--admin-gold)', display: 'inline-flex' }}>
+              <Icon name="home" size={18} />
+            </span>
             Datos de la Propiedad
           </h3>
           <div className={styles.formGrid}>
@@ -194,16 +195,14 @@ export default function TasadorPage() {
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>¿Tiene cochera?</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: '38px' }}>
-                <input type="checkbox" name="cochera" checked={form.cochera} onChange={handleChange} style={{ width: 18, height: 18, accentColor: '#c9a96e' }} />
+                <input type="checkbox" name="cochera" checked={form.cochera} onChange={handleChange} style={{ width: 18, height: 18, accentColor: 'var(--admin-gold)' }} />
                 <span style={{ fontSize: '0.85rem', color: 'var(--gray-300)' }}>{form.cochera ? 'Sí' : 'No'}</span>
               </div>
             </div>
           </div>
 
           <button className={styles.btnPrimary} onClick={calcular} style={{ width: '100%', marginTop: '1rem', justifyContent: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
+            <Icon name="activity" size={16} />
             Calcular Valuación
           </button>
         </div>
@@ -213,14 +212,14 @@ export default function TasadorPage() {
           <div>
             {/* Main value */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(201,169,110,0.12), rgba(201,169,110,0.03))',
-              border: '1px solid rgba(201,169,110,0.2)',
+              background: 'linear-gradient(135deg, var(--admin-gold-12), var(--admin-gold-03))',
+              border: '1px solid var(--admin-gold-20)',
               borderRadius: '0.75rem',
               padding: '2rem',
               textAlign: 'center',
               marginBottom: '1rem',
             }}>
-              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '2px', color: '#c9a96e', fontWeight: 700, marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--admin-gold)', fontWeight: 700, marginBottom: '0.5rem' }}>
                 Valor Estimado
               </div>
               <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff' }}>
@@ -245,9 +244,9 @@ export default function TasadorPage() {
                     top: '-4px',
                     left: `${((resultado.valorUSD - resultado.valorMin) / (resultado.valorMax - resultado.valorMin)) * 100}%`,
                     width: '10px', height: '10px',
-                    background: '#c9a96e', borderRadius: '50%',
+                    background: 'var(--admin-gold)', borderRadius: '50%',
                     transform: 'translateX(-50%)',
-                    boxShadow: '0 0 6px rgba(201,169,110,0.5)',
+                    boxShadow: '0 0 6px color-mix(in srgb, var(--admin-gold) 50%, transparent)',
                   }} />
                 </div>
                 <div style={{ textAlign: 'center', flex: 1 }}>
@@ -287,10 +286,7 @@ export default function TasadorPage() {
             {/* Actions */}
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button className={styles.btnPrimary} onClick={guardar} disabled={saving} style={{ flex: 1, justifyContent: 'center' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                  <polyline points="17 21 17 13 7 13 7 21" />
-                </svg>
+                <Icon name="save" size={14} />
                 {saving ? 'Guardando...' : 'Guardar Tasación'}
               </button>
             </div>
