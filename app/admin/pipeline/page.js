@@ -122,9 +122,7 @@ export default function PipelinePage() {
         </div>
         <div className={styles.statCard}>
           <div className={`${styles.statIconWrap} ${styles.statIconGreen}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            <Icon name="check" size={22} />
           </div>
           <div className={styles.statInfo}><h3>Cerrados</h3><p>{cerrados}</p></div>
         </div>
@@ -136,9 +134,7 @@ export default function PipelinePage() {
         </div>
         <div className={styles.statCard}>
           <div className={`${styles.statIconWrap} ${styles.statIconPurple}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-            </svg>
+            <Icon name="clock" size={22} />
           </div>
           <div className={styles.statInfo}><h3>Conversión</h3><p>{conversion}%</p></div>
         </div>

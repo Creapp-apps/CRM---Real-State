@@ -57,6 +57,8 @@ export default function MediaUploader({ value, onChange, bucket = 'site-media' }
         {isVideo ? (
           <video className={styles.dropzonePreviewMedia} src={value} muted loop autoPlay playsInline />
         ) : (
+          // Preview de una URL dinámica de Storage; <img> es apropiado (no vale next/image + config de dominios para un thumbnail de admin).
+          // eslint-disable-next-line @next/next/no-img-element
           <img className={styles.dropzonePreviewMedia} src={value} alt="Media actual" />
         )}
         <div className={styles.dropzonePreviewBody}>

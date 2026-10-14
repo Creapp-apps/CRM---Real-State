@@ -74,9 +74,9 @@ export default function ImpuestosPanel({ inmuebleId }) {
       <div className={styles.calcSection}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className={styles.calcSectionTitle}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" strokeWidth="2">
-              <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
-            </svg>
+            <span style={{ color: 'var(--admin-gold)', display: 'inline-flex' }}>
+              <Icon name="credit-card" size={18} />
+            </span>
             Impuestos Regionales / Municipales
           </div>
           <button className={styles.btnSecondary} onClick={() => setShowForm(!showForm)} style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}>

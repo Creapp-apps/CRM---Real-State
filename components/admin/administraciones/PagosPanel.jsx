@@ -163,9 +163,7 @@ export default function PagosPanel({ contratoId, contrato }) {
                     <div style={{ display: 'flex', gap: '0.25rem' }}>
                       {p.estado !== 'pagado' && (
                         <button className={styles.btnIcon} onClick={() => handleMarkPaid(p)} title="Marcar pagado" style={{ color: '#4ade80' }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
+                          <Icon name="check" size={14} />
                         </button>
                       )}
                       <button className={styles.btnIcon} onClick={() => { setEditPago(p); setShowModal(true); }} title="Editar">

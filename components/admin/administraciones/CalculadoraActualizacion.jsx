@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
+import Icon from '@/components/admin/Icon';
 
 const MESES_OPCIONES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const INDICES = ['ICL', 'IPC', 'UVA'];
@@ -150,11 +151,9 @@ export default function CalculadoraActualizacion({ montoBase: propMonto, indice:
       <div className={styles.calcSection}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div className={styles.calcSectionTitle}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" strokeWidth="2">
-              <rect x="4" y="2" width="16" height="20" rx="2" />
-              <line x1="8" y1="6" x2="16" y2="6" /><line x1="8" y1="10" x2="16" y2="10" />
-              <line x1="8" y1="14" x2="12" y2="14" /><line x1="8" y1="18" x2="12" y2="18" />
-            </svg>
+            <span style={{ color: 'var(--admin-gold)', display: 'inline-flex' }}>
+              <Icon name="layers" size={18} />
+            </span>
             Calculadora de Actualización
           </div>
           {!loading && ipcData.length > 0 && (

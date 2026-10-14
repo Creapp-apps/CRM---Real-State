@@ -192,11 +192,9 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange} style={{ display: 'none' }} />
               {pdfName ? (
                 <>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--admin-gold)" strokeWidth="1.5" style={{ margin: '0 auto 0.75rem' }}>
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="9" y1="15" x2="15" y2="15" />
-                  </svg>
+                  <div style={{ color: 'var(--admin-gold)', display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                    <Icon name="file-text" size={40} />
+                  </div>
                   <div style={{ color: 'var(--white)', fontWeight: 600, fontSize: '0.9rem' }}>{pdfName}</div>
                   <div style={{ color: 'var(--gray-500)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
                     Click para reemplazar
@@ -204,11 +202,9 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
                 </>
               ) : (
                 <>
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="1.5" style={{ margin: '0 auto 0.75rem' }}>
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
+                  <div style={{ color: 'var(--gray-500)', display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                    <Icon name="upload" size={48} />
+                  </div>
                   <div style={{ color: 'var(--white)', fontWeight: 600, fontSize: '0.95rem' }}>
                     Arrastrá el contrato o hacé click para seleccionar
                   </div>

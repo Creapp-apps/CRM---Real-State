@@ -84,9 +84,7 @@ export default function AdministracionesDashboard() {
       <Icon name="building" size={22} />
     )},
     { label: 'Próximos Vencimientos', value: stats.vencimientos, color: 'Purple', icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-      </svg>
+      <Icon name="clock" size={22} />
     )},
     { label: 'Cobros Pendientes', value: stats.pendientes, color: 'Red', icon: (
       <Icon name="dollar" size={22} />
@@ -124,10 +122,7 @@ export default function AdministracionesDashboard() {
           Nuevo Contrato
         </Link>
         <Link href="/admin/administraciones/clientes" className={styles.btnSecondary}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" />
-            <line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" />
-          </svg>
+          <Icon name="user-plus" size={16} />
           Nuevo Cliente
         </Link>
         <Link href="/admin/administraciones/inmuebles" className={styles.btnSecondary}>
