@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
 
@@ -123,13 +124,13 @@ export default function AdminTasaciones() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
               <h3 style={{ color: 'var(--white)', fontFamily: 'var(--font-heading)', fontSize: '1.1rem' }}>Detalle de Tasación</h3>
               <button onClick={() => setSelected(null)} className={styles.btnIcon}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <Icon name="x" size={14} />
               </button>
             </div>
             <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Nombre</span><div style={{ color: 'var(--white)', marginTop: '0.25rem' }}>{selected.full_name}</div></div>
-                <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Email</span><div style={{ color: 'var(--gold)', marginTop: '0.25rem' }}>{selected.email}</div></div>
+                <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Email</span><div style={{ color: 'var(--admin-gold)', marginTop: '0.25rem' }}>{selected.email}</div></div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Tipo</span><div style={{ color: 'var(--white)', marginTop: '0.25rem' }}>{selected.property_type || '-'}</div></div>

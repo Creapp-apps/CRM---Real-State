@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
 
@@ -79,7 +80,7 @@ export default function AdminContacto() {
         <div className={styles.tableWrapper}>
           <div className={styles.tableHeader}>
             <div className={styles.searchBar}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <Icon name="search" size={16} />
               <input placeholder="Buscar remitente o email..." value={search} onChange={e => setSearch(e.target.value)} />
             </div>
           </div>
@@ -127,13 +128,13 @@ export default function AdminContacto() {
                 <p style={{ color: 'var(--gray-400)', fontSize: '0.8rem', marginTop: '0.25rem' }}>De: {selected.full_name} · {formatDate(selected.created_at)}</p>
               </div>
               <button onClick={() => setSelected(null)} className={styles.btnIcon}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                <Icon name="x" size={14} />
               </button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
               <div style={{ fontSize: '0.75rem' }}>
                 <span style={{ color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '1px' }}>Email</span>
-                <div style={{ color: 'var(--gold)', marginTop: '0.25rem' }}>{selected.email}</div>
+                <div style={{ color: 'var(--admin-gold)', marginTop: '0.25rem' }}>{selected.email}</div>
               </div>
               <div style={{ fontSize: '0.75rem' }}>
                 <span style={{ color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '1px' }}>Teléfono</span>
@@ -145,7 +146,7 @@ export default function AdminContacto() {
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <a href={`mailto:${selected.email}?subject=Re: Consulta a Cardoso Propiedades`} className={styles.btnPrimary}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                <Icon name="mail" size={14} />
                 Responder
               </a>
               <button className={styles.btnSecondary} onClick={() => archiveMessage(selected.id)}>Archivar</button>
