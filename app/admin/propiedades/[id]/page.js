@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 
 const MOCK_PROPERTY = {
@@ -41,6 +42,7 @@ export default function AdminPropertyEdit() {
             ← Volver
           </button>
           <button className={styles.btnPrimary}>
+            <Icon name="save" size={16} />
             Guardar Cambios
           </button>
         </div>
@@ -63,7 +65,7 @@ export default function AdminPropertyEdit() {
               <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Operación</span><div style={{ color: 'var(--white)' }}>{property.operation}</div></div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-              <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Precio</span><div style={{ color: 'var(--gold)', fontWeight: 600 }}>{property.price}</div></div>
+              <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Precio</span><div style={{ color: 'var(--admin-gold)', fontWeight: 600 }}>{property.price}</div></div>
               <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Ambientes</span><div style={{ color: 'var(--white)' }}>{property.bedrooms}</div></div>
               <div><span style={{ color: 'var(--gray-500)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Superficie</span><div style={{ color: 'var(--white)' }}>{property.area} m²</div></div>
             </div>
