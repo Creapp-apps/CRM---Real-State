@@ -151,6 +151,13 @@ export default function AdminProperties() {
                   <td>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <Link
+                        href={`/admin/propiedades/${p.id}`}
+                        className={styles.btnIcon}
+                        title="Editar publicación"
+                      >
+                        <Icon name="edit" size={14} />
+                      </Link>
+                      <Link
                         href={`/ficha/${p.id}`}
                         className={styles.btnIcon}
                         title="Ver ficha"
