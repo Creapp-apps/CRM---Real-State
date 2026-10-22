@@ -5,44 +5,41 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
-import { supabase } from '@/lib/supabase';
 
 export default function AdminProperties() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     async function fetchProperties() {
-      // In a real scenario with Tokko sync, these would come from the properties table
-      // and we'd likely join a property_images table. For now, we fetch the base table.
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (!error && data) {
-        setProperties(data);
+      try {
+        const res = await fetch('/api/meli/items?status=active&limit=50');
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error || 'Error al cargar publicaciones');
+        } else {
+          setProperties(data.properties || []);
+        }
+      } catch (e) {
+        setError('No se pudo conectar con la API');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     fetchProperties();
   }, []);
 
   const filtered = properties.filter(p =>
     p.title?.toLowerCase().includes(search.toLowerCase()) ||
-    p.neighborhood?.toLowerCase().includes(search.toLowerCase())
+    p.location?.toLowerCase().includes(search.toLowerCase()) ||
+    p.type?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const formatPrice = (currency, price) => {
+  const formatPrice = (currency, price, priceLabel) => {
     if (!price) return '-';
-    // Format number with dots: 150000 -> 150.000
-    return `${currency || 'USD'} ${Number(price).toLocaleString('es-AR')}`;
-  };
-
-  const capitalize = (str) => {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1).replace('_', ' ');
+    return `${currency} ${Number(price).toLocaleString('es-AR')}${priceLabel || ''}`;
   };
 
   return (
@@ -50,13 +47,18 @@ export default function AdminProperties() {
       <div className={styles.pageHeader}>
         <div>
           <h2 className={styles.pageTitle}>Propiedades</h2>
-          <p className={styles.pageSubtitle}>Sincronizadas con Tokko · Gestión complementaria</p>
+          <p className={styles.pageSubtitle}>Publicaciones activas en MercadoLibre</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className={styles.btnSecondary} onClick={() => alert("La sincronización de TokkoBroker será implementada pronto.")}>
-            <Icon name="activity" size={16} />
-            Sincronizar Tokko
-          </button>
+          <a
+            href="https://www.mercadolibre.com.ar/anuncios"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.btnSecondary}
+          >
+            <Icon name="external-link" size={16} />
+            Ver en MercadoLibre
+          </a>
         </div>
       </div>
 
@@ -64,11 +66,15 @@ export default function AdminProperties() {
         <div className={styles.tableHeader}>
           <div className={styles.searchBar}>
             <Icon name="search" size={16} />
-            <input placeholder="Buscar propiedades..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input
+              placeholder="Buscar por título, zona o tipo..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
           <div className={styles.tableActions}>
-             <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
-              {loading ? 'Cargando...' : `${filtered.length} propiedades`}
+            <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>
+              {loading ? 'Cargando...' : `${filtered.length} publicaciones`}
             </span>
           </div>
         </div>
@@ -79,20 +85,29 @@ export default function AdminProperties() {
               <th>Tipo</th>
               <th>Operación</th>
               <th>Precio</th>
-              <th>Estado</th>
-              <th>Destacada</th>
+              <th>Zona</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-               <tr><td colSpan="7" style={{textAlign: 'center', padding: '2rem', color: 'var(--gray-500)'}}>Cargando catálogo...</td></tr>
+              <tr>
+                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
+                  Cargando publicaciones de MercadoLibre...
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
+                  {error === 'MELI no conectado' || error?.includes('conectado')
+                    ? 'Cuenta MercadoLibre no conectada'
+                    : error}
+                </td>
+              </tr>
             ) : filtered.length === 0 ? (
-               <tr>
-                <td colSpan="7" style={{textAlign: 'center', padding: '2rem', color: 'var(--gray-500)'}}>
-                  No hay propiedades registradas o coincidiendo con la búsqueda.
-                  <br /><br />
-                  <span style={{ fontSize: '0.8rem', color: 'var(--admin-gold)' }}>Las propiedades se sincronizarán desde la API oficial.</span>
+              <tr>
+                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
+                  No hay publicaciones activas.
                 </td>
               </tr>
             ) : (
@@ -100,35 +115,59 @@ export default function AdminProperties() {
                 <tr key={p.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ width: 48, height: 36, borderRadius: '0.375rem', overflow: 'hidden', position: 'relative', flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.2)' }}>
-                        {/* Fallback image placeholder until we fetch images */}
-                        <Icon name="image" size={20} />
+                      <div style={{ width: 60, height: 44, borderRadius: '0.375rem', overflow: 'hidden', flexShrink: 0, position: 'relative', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                        {p.images?.[0] ? (
+                          <Image
+                            src={p.images[0]}
+                            alt={p.title}
+                            fill
+                            style={{ objectFit: 'cover' }}
+                            unoptimized
+                          />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.2)' }}>
+                            <Icon name="image" size={20} />
+                          </div>
+                        )}
                       </div>
                       <div>
-                        <div style={{ color: 'var(--white)', fontWeight: 500, maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{p.neighborhood}</div>
+                        <div style={{ color: 'var(--white)', fontWeight: 500, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.title}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{p.address}</div>
                       </div>
                     </div>
                   </td>
-                  <td>{capitalize(p.property_type)}</td>
+                  <td style={{ color: 'var(--gray-300)' }}>{p.type}</td>
                   <td>
-                    <span className={`${styles.badge} ${p.operation_type === 'venta' ? styles.badgeBlue : p.operation_type === 'alquiler' ? styles.badgeGreen : styles.badgeYellow}`}>
-                      {capitalize(p.operation_type)}
+                    <span className={`${styles.badge} ${p.operationType === 'venta' ? styles.badgeBlue : styles.badgeYellow}`}>
+                      {p.operation}
                     </span>
                   </td>
-                  <td style={{ fontWeight: 600, color: 'var(--white)' }}>{formatPrice(p.currency, p.price)}</td>
-                  <td>
-                    <span className={`${styles.badge} ${p.is_active ? styles.badgeGreen : styles.badgeGray}`}>
-                      {p.is_active ? 'Activa' : 'Archivada'}
-                    </span>
+                  <td style={{ fontWeight: 600, color: 'var(--white)' }}>
+                    {formatPrice(p.currency, p.price, p.priceLabel)}
                   </td>
+                  <td style={{ color: 'var(--gray-400)', fontSize: '0.875rem' }}>{p.location}</td>
                   <td>
-                    {p.is_featured && <span className={`${styles.badge} ${styles.badgeGold}`}>★ Destacada</span>}
-                  </td>
-                  <td>
-                    <Link href={`/admin/propiedades/${p.id}`} className={styles.btnIcon} title="Editar detalle (Pronto)">
-                      <Icon name="edit" size={14} />
-                    </Link>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <Link
+                        href={`/ficha/${p.id}`}
+                        className={styles.btnIcon}
+                        title="Ver ficha"
+                        target="_blank"
+                      >
+                        <Icon name="eye" size={14} />
+                      </Link>
+                      <a
+                        href={p.publicUrl}
+                        className={styles.btnIcon}
+                        title="Ver en MercadoLibre"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Icon name="external-link" size={14} />
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))
