@@ -2,33 +2,43 @@ import Link from 'next/link';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
+import { isMeliConnected, getMeliProperties } from '@/lib/mercadolibre';
 
 const ICONS = {
   home: <Icon name="home" size={22} />,
   building: <Icon name="building" size={22} />,
   mail: <Icon name="mail" size={22} />,
   file: <Icon name="file-text" size={22} />,
+  tag: <Icon name="tag" size={22} />,
 };
 
 export default async function AdminDashboard() {
-  // Fetch stats concurrently
   const [
     { count: propertiesCount },
     { count: newContactsCount },
     { count: pendingValuationsCount },
-    { data: recentActivity }
+    { data: recentActivity },
   ] = await Promise.all([
     supabase.from('properties').select('*', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('messages').select('*', { count: 'exact', head: true }).eq('message_type', 'contacto').eq('is_read', false),
     supabase.from('messages').select('*', { count: 'exact', head: true }).eq('message_type', 'tasacion').eq('is_read', false),
     supabase.from('messages').select('id, full_name, message_type, property_neighborhood, created_at, is_read')
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(5),
   ]);
+
+  const meliConnected = await isMeliConnected();
+  let meliTotal = 0;
+  let meliRecent = [];
+  if (meliConnected) {
+    const { properties, total } = await getMeliProperties({ status: 'active', limit: 5 });
+    meliTotal = total || 0;
+    meliRecent = properties || [];
+  }
 
   const STATS = [
     { label: 'Propiedades Activas', value: propertiesCount || 0, icon: 'home', color: 'Blue' },
-    { label: 'Emprendimientos', value: '0', icon: 'building', color: 'Green' }, // To be implemented
+    { label: 'Publicaciones MELI', value: meliTotal, icon: 'tag', color: 'Green' },
     { label: 'Nuevos Contactos', value: newContactsCount || 0, icon: 'mail', color: 'Gold' },
     { label: 'Tasaciones Pendientes', value: pendingValuationsCount || 0, icon: 'file', color: 'Purple' },
   ];
@@ -103,6 +113,64 @@ export default async function AdminDashboard() {
                     </span>
                   </td>
                   <td style={{ color: 'var(--gray-500)' }}>{formatTimeAgo(item.created_at)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* MELI Publications */}
+      <div className={styles.tableWrapper} style={{ marginTop: '2rem' }}>
+        <div className={styles.tableHeader}>
+          <h2 className={styles.tableTitle}>Publicaciones MercadoLibre</h2>
+          <Link href="/fichas" className={styles.btnSecondary} target="_blank">
+            Ver fichas
+          </Link>
+        </div>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Propiedad</th>
+              <th>Operación</th>
+              <th>Precio</th>
+              <th>Zona</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {!meliConnected ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', color: 'var(--gray-500)', padding: '2rem' }}>
+                  Cuenta MercadoLibre no conectada
+                </td>
+              </tr>
+            ) : meliRecent.length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', color: 'var(--gray-500)', padding: '2rem' }}>
+                  No hay publicaciones activas
+                </td>
+              </tr>
+            ) : (
+              meliRecent.map((prop) => (
+                <tr key={prop.id}>
+                  <td style={{ maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {prop.title}
+                  </td>
+                  <td>
+                    <span className={`${styles.badge} ${prop.operationType === 'venta' ? styles.badgeBlue : styles.badgeYellow}`}>
+                      {prop.operation}
+                    </span>
+                  </td>
+                  <td style={{ fontFamily: 'var(--font-heading)', fontWeight: 600 }}>
+                    {prop.currency} {prop.price.toLocaleString('es-AR')}
+                  </td>
+                  <td style={{ color: 'var(--gray-400)', fontSize: '0.875rem' }}>{prop.location}</td>
+                  <td>
+                    <Link href={`/ficha/${prop.id}`} className={styles.btnSecondary} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} target="_blank">
+                      Ficha
+                    </Link>
+                  </td>
                 </tr>
               ))
             )}

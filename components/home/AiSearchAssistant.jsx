@@ -11,14 +11,43 @@ const INITIAL_MESSAGE = {
   text: '¡Hola! 👋 ¿Cómo estás? Mi nombre es Mónica, y estoy acá para ayudarte a encontrar tu oportunidad ideal. ¿Cómo te llamás?',
 };
 
+const FEATURED_ZONES = [
+  'Barrio Costa Esmeralda',
+  'Olivos',
+  'Chapelco Golf & Resort',
+  'Nordelta',
+  'Palermo',
+  'San Martín de los Andes',
+];
+
+const ALL_ZONES = [
+  'Barrio Costa Esmeralda',
+  'Centenario',
+  'Centro',
+  'Chapelco Golf & Resort',
+  'Colón',
+  'Libertador al Río',
+  'Nordelta',
+  'Olivos',
+  'Palermo',
+  'Recoleta',
+  'San Martín de los Andes',
+  'Tigre',
+  'Vicente López',
+];
+
 export default function AiSearchAssistant({ onSelectOperacion }) {
   const router = useRouter();
   const chatThreadRef = useRef(null);
   const [userName, setUserName] = useState('');
   const [inputName, setInputName] = useState('');
+  const [customBudgetInput, setCustomBudgetInput] = useState('');
   const [messages, setMessages] = useState([]);
-  const [step, setStep] = useState('ask_name'); // 'ask_name' | 'init' | 'operacion' | 'tipo'
+  const [step, setStep] = useState('ask_name'); // 'ask_name' | 'init' | 'operacion' | 'tipo' | 'ubicacion' | 'presupuesto'
   const [selectedOperacion, setSelectedOperacion] = useState('');
+  const [selectedTipo, setSelectedTipo] = useState('');
+  const [selectedUbicacion, setSelectedUbicacion] = useState('');
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
   const [redirectLabel, setRedirectLabel] = useState('Cargando catálogo personalizado...');
   const [isTyping, setIsTyping] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -97,6 +126,26 @@ export default function AiSearchAssistant({ onSelectOperacion }) {
     }, 750);
   };
 
+  const handleSelectTipoChoice = (userText, tipoVal) => {
+    setSelectedTipo(tipoVal);
+    handleUserChoice(
+      userText,
+      'ubicacion',
+      '',
+      'Genial{name}! ¿En qué zona andás buscando?'
+    );
+  };
+
+  const handleSelectUbicacionChoice = (userText, zoneName) => {
+    setSelectedUbicacion(zoneName);
+    handleUserChoice(
+      userText,
+      'presupuesto',
+      '',
+      '¡Una última pregunta más! ¿Con qué presupuesto total contamos? (Teniendo en cuenta expensas y gastos)'
+    );
+  };
+
   const handleReset = () => {
     setMessages([]);
     setIsTyping(true);
@@ -104,9 +153,12 @@ export default function AiSearchAssistant({ onSelectOperacion }) {
     setTimeout(() => {
       setUserName('');
       setInputName('');
+      setCustomBudgetInput('');
       setMessages([INITIAL_MESSAGE]);
       setStep('ask_name');
       setSelectedOperacion('');
+      setSelectedTipo('');
+      setSelectedUbicacion('');
       if (onSelectOperacion) onSelectOperacion('');
       setIsTyping(false);
     }, 2200);
@@ -142,7 +194,15 @@ export default function AiSearchAssistant({ onSelectOperacion }) {
     }, 750);
   };
 
-  const handleNavigateCatalog = (userHumanText, operacion, tipo = '') => {
+  const handleNavigateCatalog = (
+    userHumanText,
+    operacion = selectedOperacion,
+    tipo = selectedTipo,
+    ubicacion = selectedUbicacion,
+    maxPrice = '',
+    minPrice = '',
+    currency = selectedCurrency
+  ) => {
     const userMsgId = `user-${Date.now()}`;
     setMessages((prev) => [...prev, { id: userMsgId, sender: 'user', text: userHumanText }]);
     setIsTyping(true);
@@ -150,8 +210,8 @@ export default function AiSearchAssistant({ onSelectOperacion }) {
     setTimeout(() => {
       setIsTyping(false);
       const confirmationText = userName
-        ? `Dale, ${userName}, ¡ahí te muestro las propiedades que se amoldan a lo que estás buscando! Dame un segundo...`
-        : 'Dale, ¡ahí te muestro las propiedades que se amoldan a lo que estás buscando! Dame un segundo...';
+        ? `¡Excelente, ${userName}! Ahí te busco las mejores opciones que se ajustan a tu búsqueda. Dame un segundo...`
+        : '¡Excelente! Ahí te busco las mejores opciones que se ajustan a tu búsqueda. Dame un segundo...';
 
       setMessages((prev) => [
         ...prev,
@@ -169,10 +229,23 @@ export default function AiSearchAssistant({ onSelectOperacion }) {
         const params = new URLSearchParams();
         if (operacion) params.set('operacion', operacion);
         if (tipo) params.set('tipo', tipo);
+        if (ubicacion) params.set('neighborhood', ubicacion);
+        if (currency) params.set('currency', currency);
+        if (maxPrice) params.set('maxPrice', maxPrice);
+        if (minPrice) params.set('minPrice', minPrice);
         if (params.toString()) url += `?${params.toString()}`;
         router.push(url);
       }, 1400);
     }, 700);
+  };
+
+  const handleCustomBudgetSubmit = (e) => {
+    if (e) e.preventDefault();
+    const val = customBudgetInput.trim();
+    if (!val) return;
+    const num = Number(val);
+    const currSymbol = selectedCurrency === 'ARS' ? '$' : 'USD';
+    handleNavigateCatalog(`Presupuesto de ${currSymbol} ${num.toLocaleString('es-AR')} 💵`, selectedOperacion, selectedTipo, selectedUbicacion, num, '', selectedCurrency);
   };
 
   return (
@@ -440,28 +513,28 @@ export default function AiSearchAssistant({ onSelectOperacion }) {
             >
               <button
                 className={`${styles.chipBtn} ${styles.chipPrimary}`}
-                onClick={() => handleNavigateCatalog('Un departamento 🏢', selectedOperacion, 'departamento')}
+                onClick={() => handleSelectTipoChoice('Un departamento 🏢', 'departamento')}
               >
                 🏢 Departamento
               </button>
 
               <button
                 className={`${styles.chipBtn} ${styles.chipPrimary}`}
-                onClick={() => handleNavigateCatalog('Una casa o PH 🏡', selectedOperacion, 'casa')}
+                onClick={() => handleSelectTipoChoice('Una casa o PH 🏡', 'casa')}
               >
                 🏡 Casa / PH
               </button>
 
               <button
                 className={styles.chipBtn}
-                onClick={() => handleNavigateCatalog('Un terreno 🏞️', selectedOperacion, 'terreno')}
+                onClick={() => handleSelectTipoChoice('Un terreno 🏞️', 'terreno')}
               >
                 🏞️ Terreno
               </button>
 
               <button
                 className={styles.chipBtn}
-                onClick={() => handleNavigateCatalog('Un local u oficina 💼', selectedOperacion, 'local')}
+                onClick={() => handleSelectTipoChoice('Un local u oficina 💼', 'local')}
               >
                 💼 Local / Oficina
               </button>
@@ -472,6 +545,173 @@ export default function AiSearchAssistant({ onSelectOperacion }) {
               >
                 ✨ Ver todas en {selectedOperacion}
               </button>
+            </motion.div>
+          )}
+
+          {step === 'ubicacion' && (
+            <motion.div
+              key="ubicacion-chips"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22 }}
+              className={styles.chipsRow}
+            >
+              {FEATURED_ZONES.map((zone) => (
+                <button
+                  key={zone}
+                  className={`${styles.chipBtn} ${styles.chipPrimary}`}
+                  onClick={() => handleSelectUbicacionChoice(`En ${zone} 📍`, zone)}
+                >
+                  📍 {zone}
+                </button>
+              ))}
+
+              <button
+                className={styles.chipBtn}
+                onClick={() => handleSelectUbicacionChoice('En cualquier zona 🌐', '')}
+              >
+                🌐 En cualquier zona
+              </button>
+
+              {/* Dynamic Dropdown selector chip for ALL locations */}
+              <div className={styles.chipSelectWrapper}>
+                <select
+                  className={styles.locationSelectChip}
+                  defaultValue=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const zoneName = e.target.value;
+                      handleSelectUbicacionChoice(`En ${zoneName} 📍`, zoneName);
+                    }
+                  }}
+                >
+                  <option value="" disabled hidden>
+                    🔎 Buscar otra zona...
+                  </option>
+                  {ALL_ZONES.map((zone) => (
+                    <option key={zone} value={zone}>
+                      📍 {zone}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 'presupuesto' && (
+            <motion.div
+              key="presupuesto-chips"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22 }}
+              className={styles.inputStepContainer}
+            >
+              {/* Currency Selector Row */}
+              <div className={styles.chipsRow} style={{ marginBottom: '2px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--gray-300)', fontWeight: 600 }}>Seleccionar Moneda:</span>
+                <button
+                  type="button"
+                  className={`${styles.chipBtn} ${selectedCurrency === 'USD' ? styles.chipPrimary : ''}`}
+                  onClick={() => setSelectedCurrency('USD')}
+                >
+                  💵 USD (Dólares)
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.chipBtn} ${selectedCurrency === 'ARS' ? styles.chipPrimary : ''}`}
+                  onClick={() => setSelectedCurrency('ARS')}
+                >
+                  🇦🇷 $ (Pesos ARS)
+                </button>
+              </div>
+
+              {/* Dynamic Budget Range Chips */}
+              <div className={styles.chipsRow}>
+                {selectedCurrency === 'USD' ? (
+                  <>
+                    <button
+                      className={`${styles.chipBtn} ${styles.chipPrimary}`}
+                      onClick={() => handleNavigateCatalog('Hasta USD 100.000 💵', selectedOperacion, selectedTipo, selectedUbicacion, 100000, 0, 'USD')}
+                    >
+                      💵 Hasta USD 100.000
+                    </button>
+
+                    <button
+                      className={`${styles.chipBtn} ${styles.chipPrimary}`}
+                      onClick={() => handleNavigateCatalog('USD 100.000 a 250.000 💵', selectedOperacion, selectedTipo, selectedUbicacion, 250000, 100000, 'USD')}
+                    >
+                      💵 USD 100.000 - 250.000
+                    </button>
+
+                    <button
+                      className={styles.chipBtn}
+                      onClick={() => handleNavigateCatalog('USD 250.000 a 500.000 💵', selectedOperacion, selectedTipo, selectedUbicacion, 500000, 250000, 'USD')}
+                    >
+                      💵 USD 250.000 - 500.000
+                    </button>
+
+                    <button
+                      className={styles.chipBtn}
+                      onClick={() => handleNavigateCatalog('Más de USD 500.000 💎', selectedOperacion, selectedTipo, selectedUbicacion, '', 500000, 'USD')}
+                    >
+                      💎 Más de USD 500.000
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className={`${styles.chipBtn} ${styles.chipPrimary}`}
+                      onClick={() => handleNavigateCatalog('Hasta $ 50.000.000 💵', selectedOperacion, selectedTipo, selectedUbicacion, 50000000, 0, 'ARS')}
+                    >
+                      💵 Hasta $ 50.000.000
+                    </button>
+
+                    <button
+                      className={`${styles.chipBtn} ${styles.chipPrimary}`}
+                      onClick={() => handleNavigateCatalog('$ 50M a $ 150M 💵', selectedOperacion, selectedTipo, selectedUbicacion, 150000000, 50000000, 'ARS')}
+                    >
+                      💵 $ 50M - 150M
+                    </button>
+
+                    <button
+                      className={styles.chipBtn}
+                      onClick={() => handleNavigateCatalog('$ 150M a $ 300M 💵', selectedOperacion, selectedTipo, selectedUbicacion, 300000000, 150000000, 'ARS')}
+                    >
+                      💵 $ 150M - 300M
+                    </button>
+
+                    <button
+                      className={styles.chipBtn}
+                      onClick={() => handleNavigateCatalog('Más de $ 300.000.000 💎', selectedOperacion, selectedTipo, selectedUbicacion, '', 300000000, 'ARS')}
+                    >
+                      💎 Más de $ 300.000.000
+                    </button>
+                  </>
+                )}
+
+                <button
+                  className={styles.chipBtn}
+                  onClick={() => handleNavigateCatalog('Sin límite de presupuesto ✨', selectedOperacion, selectedTipo, selectedUbicacion, '', '', selectedCurrency)}
+                >
+                  ✨ Sin límite de presupuesto
+                </button>
+              </div>
+
+              {/* Custom budget input form */}
+              <form onSubmit={handleCustomBudgetSubmit} className={styles.nameInputForm} style={{ marginTop: '4px' }}>
+                <input
+                  type="number"
+                  className={styles.nameInput}
+                  placeholder={selectedCurrency === 'ARS' ? "O ingresá tu presupuesto máximo en $ (ARS)..." : "O ingresá tu presupuesto máximo en USD..."}
+                  value={customBudgetInput}
+                  onChange={(e) => setCustomBudgetInput(e.target.value)}
+                />
+                <button type="submit" className={styles.nameSubmitBtn}>
+                  Buscar ➔
+                </button>
+              </form>
             </motion.div>
           )}
         </AnimatePresence>

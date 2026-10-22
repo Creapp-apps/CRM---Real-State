@@ -118,6 +118,39 @@ function PropertyFilters({ filters, setFilters, resultCount, availableOptions })
         </div>
       </div>
 
+      {/* Presupuesto / Precio Máximo */}
+      <div className={styles.filterGroup}>
+        <label className={styles.filterLabel}>Moneda y Presupuesto Máximo</label>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+          <button
+            type="button"
+            className={`${styles.chip} ${styles.chipSmall} ${(!filters.currency || filters.currency === 'USD') ? styles.chipActive : ''}`}
+            onClick={() => handleChange('currency', 'USD')}
+          >
+            💵 USD
+          </button>
+          <button
+            type="button"
+            className={`${styles.chip} ${styles.chipSmall} ${filters.currency === 'ARS' ? styles.chipActive : ''}`}
+            onClick={() => handleChange('currency', 'ARS')}
+          >
+            🇦🇷 $ (ARS)
+          </button>
+        </div>
+        <div className={styles.searchWrapper}>
+          <span style={{ color: 'var(--gold)', fontWeight: 600, fontSize: '13px', paddingLeft: '8px' }}>
+            {filters.currency === 'ARS' ? '$' : 'USD'}
+          </span>
+          <input
+            type="number"
+            className={styles.searchInput}
+            placeholder={filters.currency === 'ARS' ? 'Ej: 150000000' : 'Ej: 150000'}
+            value={filters.maxPrice || ''}
+            onChange={e => handleChange('maxPrice', e.target.value ? Number(e.target.value) : '')}
+          />
+        </div>
+      </div>
+
       {/* Result count */}
       <div className={styles.resultCount}>
         <span className={styles.resultNumber}>{resultCount}</span> propiedad{resultCount !== 1 ? 'es' : ''} encontrada{resultCount !== 1 ? 's' : ''}
@@ -129,11 +162,21 @@ function PropertyFilters({ filters, setFilters, resultCount, availableOptions })
 function CatalogContent() {
   const searchParams = useSearchParams();
   const initialOperation = searchParams.get('operacion') || '';
+  const initialType = searchParams.get('tipo') || '';
+  const initialNeighborhood = searchParams.get('neighborhood') || '';
+  const initialCurrency = searchParams.get('currency') || '';
+  const initialMaxPrice = searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : '';
+  const initialMinPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : '';
 
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     operation: initialOperation,
+    type: initialType,
+    neighborhood: initialNeighborhood,
+    currency: initialCurrency,
+    maxPrice: initialMaxPrice,
+    minPrice: initialMinPrice,
   });
   const [sortBy, setSortBy] = useState('recent');
   const [view, setView] = useState('grid');
