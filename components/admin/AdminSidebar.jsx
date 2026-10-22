@@ -7,41 +7,45 @@ import styles from './admin.module.css';
 
 const NAV_ITEMS = [
   {
-    section: 'General',
+    section: null,
     items: [
       { label: 'Dashboard', href: '/admin', icon: 'dashboard' },
     ],
   },
   {
-    section: 'Gestión',
+    section: 'Cartera',
     items: [
       { label: 'Propiedades', href: '/admin/propiedades', icon: 'building' },
       { label: 'Emprendimientos', href: '/admin/emprendimientos', icon: 'layers' },
-      { label: 'Contenido', href: '/admin/contenido', icon: 'edit' },
-      { label: 'Media', href: '/admin/media', icon: 'image' },
     ],
   },
   {
-    section: 'Administraciones',
+    section: 'Clientes',
     items: [
-      { label: 'Panel', href: '/admin/administraciones', icon: 'grid' },
+      { label: 'Consultas', href: '/admin/contacto', badge: 3, icon: 'message' },
+      { label: 'Tasaciones', href: '/admin/tasaciones', badge: 2, icon: 'clipboard' },
       { label: 'Clientes', href: '/admin/administraciones/clientes', icon: 'users' },
+    ],
+  },
+  {
+    section: 'Operaciones',
+    items: [
+      { label: 'Pipeline', href: '/admin/pipeline', icon: 'activity' },
       { label: 'Contratos', href: '/admin/administraciones/contratos', icon: 'file-text' },
-      { label: 'Inmuebles', href: '/admin/administraciones/inmuebles', icon: 'home' },
+      { label: 'Administración', href: '/admin/administraciones', icon: 'home' },
     ],
   },
   {
     section: 'Herramientas',
     items: [
-      { label: 'Pipeline', href: '/admin/pipeline', icon: 'activity' },
       { label: 'Tasador', href: '/admin/tasador', icon: 'dollar' },
     ],
   },
   {
-    section: 'Comunicación',
+    section: 'Contenido',
     items: [
-      { label: 'Contacto', href: '/admin/contacto', badge: 3, icon: 'message' },
-      { label: 'Tasaciones', href: '/admin/tasaciones', badge: 2, icon: 'clipboard' },
+      { label: 'Sitio web', href: '/admin/contenido', icon: 'edit' },
+      { label: 'Media', href: '/admin/media', icon: 'image' },
     ],
   },
 ];
@@ -70,8 +74,8 @@ export default function AdminSidebar({ isOpen, onClose }) {
 
         <nav className={styles.sidebarNav}>
           {NAV_ITEMS.map((section) => (
-            <div key={section.section} className={styles.navSection}>
-              <div className={styles.navSectionTitle}>{section.section}</div>
+            <div key={section.section ?? '_top'} className={styles.navSection}>
+              {section.section && <div className={styles.navSectionTitle}>{section.section}</div>}
               {section.items.map((item) => (
                 <Link
                   key={item.href}
