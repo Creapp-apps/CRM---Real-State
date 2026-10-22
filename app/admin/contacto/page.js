@@ -69,9 +69,9 @@ export default function AdminContacto() {
     <>
       <div className={styles.pageHeader}>
         <div>
-          <h2 className={styles.pageTitle}>Mensajes de Contacto</h2>
+          <h2 className={styles.pageTitle}>Consultas</h2>
           <p className={styles.pageSubtitle}>
-            {loading ? 'Cargando...' : `${messages.filter(m => !m.is_read && !m.is_archived).length} mensajes nuevos`}
+            {loading ? 'Cargando...' : `${messages.filter(m => !m.is_read && !m.is_archived).length} consultas sin leer`}
           </p>
         </div>
       </div>

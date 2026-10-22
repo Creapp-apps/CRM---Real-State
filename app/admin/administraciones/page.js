@@ -95,7 +95,7 @@ export default function AdministracionesDashboard() {
     <>
       <div className={styles.pageHeader}>
         <div>
-          <h2 className={styles.pageTitle}>Administraciones</h2>
+          <h2 className={styles.pageTitle}>Administración</h2>
           <p className={styles.pageSubtitle}>Control de contratos, clientes e inmuebles administrados</p>
         </div>
       </div>
