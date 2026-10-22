@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -10,14 +10,25 @@ import styles from '@/components/admin/admin.module.css';
 const EMPTY = {
   title: '', price: '', currency: 'USD', status: 'active',
   description: '', bedrooms: '', bathrooms: '', garages: '',
-  totalArea: '', coveredArea: '',
+  totalArea: '', coveredArea: '', videoUrl: '',
 };
+
+function extractYouTubeId(url) {
+  if (!url) return '';
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : url.replace(/^https?:\/\/(www\.)?youtube\.com\/.*v=/, '').split('&')[0].slice(0, 11);
+}
 
 export default function AdminPropertyEdit() {
   const { id } = useParams();
   const router = useRouter();
+  const fileInputRef = useRef(null);
+
   const [prop, setProp] = useState(null);
   const [form, setForm] = useState(EMPTY);
+  const [pictures, setPictures] = useState([]); // [{id, url}]
+  const [uploading, setUploading] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState([]); // [{file, status, error}]
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -31,6 +42,7 @@ export default function AdminPropertyEdit() {
         const p = data.property;
         if (p) {
           setProp(p);
+          setPictures(p.pictureIds || []);
           setForm({
             title: p.title || '',
             price: p.price || '',
@@ -42,6 +54,7 @@ export default function AdminPropertyEdit() {
             garages: p.garages ?? '',
             totalArea: p.totalArea || '',
             coveredArea: p.coveredArea || '',
+            videoUrl: p.videoId ? `https://www.youtube.com/watch?v=${p.videoId}` : '',
           });
         }
       })
@@ -49,6 +62,42 @@ export default function AdminPropertyEdit() {
   }, [id]);
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+
+  async function handleUploadFiles(files) {
+    const fileArr = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!fileArr.length) return;
+    setUploading(true);
+    setUploadQueue(fileArr.map(f => ({ name: f.name, status: 'uploading' })));
+
+    const results = [];
+    for (let i = 0; i < fileArr.length; i++) {
+      const f = fileArr[i];
+      try {
+        const fd = new FormData();
+        fd.append('file', f);
+        const res = await fetch('/api/meli/pictures', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+        results.push({ id: data.id, url: data.url });
+        setUploadQueue(q => q.map((item, idx) => idx === i ? { ...item, status: 'done' } : item));
+      } catch (e) {
+        setUploadQueue(q => q.map((item, idx) => idx === i ? { ...item, status: 'error', error: e.message } : item));
+      }
+    }
+
+    setPictures(prev => [...prev, ...results.filter(r => r.id)]);
+    setUploading(false);
+    setTimeout(() => setUploadQueue([]), 3000);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    handleUploadFiles(e.dataTransfer.files);
+  }
+
+  function removePicture(picId) {
+    setPictures(prev => prev.filter(p => p.id !== picId));
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -63,7 +112,19 @@ export default function AdminPropertyEdit() {
     if (meliCurrency !== currentCurrency) fields.currency_id = meliCurrency;
     if (form.status !== prop.status) fields.status = form.status;
 
-    // Attributes changed
+    // Pictures changed?
+    const origIds = (prop.pictureIds || []).map(p => p.id).join(',');
+    const newIds = pictures.map(p => p.id).join(',');
+    if (origIds !== newIds) {
+      fields.pictures = pictures.map(p => ({ id: p.id }));
+    }
+
+    // Video
+    const newVideoId = extractYouTubeId(form.videoUrl) || '';
+    const origVideoId = prop.videoId || '';
+    if (newVideoId !== origVideoId) fields.video_id = newVideoId || null;
+
+    // Attributes
     const attrs = [];
     if (String(form.bedrooms) !== String(prop.bedrooms))
       attrs.push({ id: 'BEDROOMS', value_name: String(form.bedrooms) });
@@ -78,8 +139,8 @@ export default function AdminPropertyEdit() {
     if (attrs.length > 0) fields.attributes = attrs;
 
     const descChanged = form.description !== (prop.description === 'Sin descripción disponible.' ? '' : (prop.description || ''));
-
     const hasChanges = Object.keys(fields).length > 0 || descChanged;
+
     if (!hasChanges) { setSaving(false); setSuccess(true); return; }
 
     const res = await fetch('/api/meli/items', {
@@ -100,20 +161,17 @@ export default function AdminPropertyEdit() {
     } else {
       setErrors(data.errors || []);
       setSuccess(true);
-      // Refresh prop data
       const updated = await fetch(`/api/meli/items?id=${id}`).then(r => r.json());
-      if (updated.property) setProp(updated.property);
+      if (updated.property) {
+        setProp(updated.property);
+        setPictures(updated.property.pictureIds || []);
+      }
     }
   }
 
   if (loading) {
-    return (
-      <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--gray-500)' }}>
-        Cargando publicación...
-      </div>
-    );
+    return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--gray-500)' }}>Cargando publicación...</div>;
   }
-
   if (!prop) {
     return (
       <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--gray-500)' }}>
@@ -136,12 +194,10 @@ export default function AdminPropertyEdit() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className={styles.btnSecondary} onClick={() => router.push('/admin/propiedades')}>
-            ← Volver
-          </button>
-          <button className={styles.btnPrimary} onClick={handleSave} disabled={saving}>
+          <button className={styles.btnSecondary} onClick={() => router.push('/admin/propiedades')}>← Volver</button>
+          <button className={styles.btnPrimary} onClick={handleSave} disabled={saving || uploading}>
             <Icon name="save" size={16} />
-            {saving ? 'Guardando en MercadoLibre...' : 'Guardar en MercadoLibre'}
+            {saving ? 'Guardando en MELI...' : 'Guardar en MercadoLibre'}
           </button>
         </div>
       </div>
@@ -167,31 +223,21 @@ export default function AdminPropertyEdit() {
             <h3 style={{ color: 'var(--white)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>Título</h3>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Título de la publicación</label>
-              <input
-                className={styles.formInput}
-                value={form.title}
-                onChange={e => set('title', e.target.value)}
-                maxLength={60}
-              />
-              <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
-                {form.title.length}/60 caracteres
-              </div>
+              <input className={styles.formInput} value={form.title} onChange={e => set('title', e.target.value)} maxLength={60} />
+              <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>{form.title.length}/60 caracteres</div>
             </div>
           </div>
 
           {/* Descripción */}
           <div className={styles.card}>
             <h3 style={{ color: 'var(--white)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>Descripción</h3>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Descripción de la propiedad</label>
-              <textarea
-                className={styles.formTextarea}
-                value={form.description}
-                onChange={e => set('description', e.target.value)}
-                rows={8}
-                placeholder="Describí la propiedad con detalle: ubicación, características, entorno, financiación..."
-              />
-            </div>
+            <textarea
+              className={styles.formTextarea}
+              value={form.description}
+              onChange={e => set('description', e.target.value)}
+              rows={8}
+              placeholder="Describí la propiedad: ubicación, características, entorno, financiación..."
+            />
           </div>
 
           {/* Características */}
@@ -225,37 +271,119 @@ export default function AdminPropertyEdit() {
 
           {/* Fotos */}
           <div className={styles.card}>
-            <h3 style={{ color: 'var(--white)', marginBottom: '0.25rem', fontFamily: 'var(--font-heading)' }}>
+            <h3 style={{ color: 'var(--white)', marginBottom: '1rem', fontFamily: 'var(--font-heading)' }}>
               Fotos
-              <span className={`${styles.badge} ${styles.badgeGray}`} style={{ marginLeft: '0.75rem', fontSize: '0.7rem' }}>
-                {prop.images?.length || 0} fotos
-              </span>
+              <span className={`${styles.badge} ${styles.badgeGray}`} style={{ marginLeft: '0.75rem', fontSize: '0.7rem' }}>{pictures.length} fotos</span>
             </h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--gray-500)', marginBottom: '1rem' }}>
-              Para agregar o eliminar fotos usá{' '}
-              <a href={prop.publicUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--admin-gold)' }}>
-                MercadoLibre directamente →
-              </a>
-            </p>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {prop.images?.slice(0, 8).map((img, i) => (
-                <div key={i} style={{ position: 'relative', width: 80, height: 60, borderRadius: '0.375rem', overflow: 'hidden', flexShrink: 0 }}>
-                  <Image src={img} alt={`foto ${i + 1}`} fill style={{ objectFit: 'cover' }} unoptimized />
-                </div>
-              ))}
-              {(prop.images?.length || 0) > 8 && (
-                <div style={{ width: 80, height: 60, borderRadius: '0.375rem', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)', fontSize: '0.8rem' }}>
-                  +{prop.images.length - 8}
-                </div>
-              )}
+
+            {/* Fotos actuales */}
+            {pictures.length > 0 && (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                {pictures.map((pic, i) => (
+                  <div key={pic.id || i} style={{ position: 'relative', width: 96, height: 72, borderRadius: '0.375rem', overflow: 'hidden', flexShrink: 0 }}>
+                    {pic.url && (
+                      <Image src={pic.url} alt={`foto ${i + 1}`} fill style={{ objectFit: 'cover' }} unoptimized />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removePicture(pic.id)}
+                      style={{
+                        position: 'absolute', top: 3, right: 3,
+                        background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%',
+                        width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', color: '#fff', padding: 0,
+                      }}
+                      title="Quitar foto"
+                    >
+                      <Icon name="x" size={10} />
+                    </button>
+                    {i === 0 && (
+                      <div style={{ position: 'absolute', bottom: 2, left: 4, fontSize: '0.6rem', color: '#fff', background: 'rgba(0,0,0,0.6)', borderRadius: 2, padding: '1px 4px' }}>
+                        Portada
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Zona de upload */}
+            <div
+              onDrop={handleDrop}
+              onDragOver={e => e.preventDefault()}
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                border: `2px dashed ${uploading ? 'var(--admin-gold)' : 'var(--admin-gold-20)'}`,
+                borderRadius: '0.5rem', padding: '1.5rem',
+                textAlign: 'center', color: 'var(--gray-500)',
+                cursor: 'pointer', transition: 'border-color 0.2s',
+              }}
+            >
+              <div style={{ color: 'var(--admin-gold)', display: 'inline-flex', marginBottom: '0.4rem' }}>
+                <Icon name="upload" size={28} />
+              </div>
+              <div style={{ fontSize: '0.85rem' }}>
+                {uploading ? 'Subiendo a MercadoLibre...' : 'Arrastrá fotos aquí o hacé click para seleccionar'}
+              </div>
+              <div style={{ fontSize: '0.7rem', marginTop: '0.25rem' }}>JPG, PNG, WEBP · Múltiples archivos aceptados</div>
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={e => handleUploadFiles(e.target.files)}
+            />
+
+            {/* Estado de uploads en progreso */}
+            {uploadQueue.length > 0 && (
+              <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {uploadQueue.map((item, i) => (
+                  <div key={i} style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {item.status === 'uploading' && <span style={{ color: 'var(--admin-gold)' }}>↑</span>}
+                    {item.status === 'done' && <span style={{ color: '#4ade80' }}>✓</span>}
+                    {item.status === 'error' && <span style={{ color: '#f87171' }}>✗</span>}
+                    <span style={{ color: item.status === 'error' ? '#f87171' : 'var(--gray-400)' }}>
+                      {item.name}{item.error ? ` — ${item.error}` : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Video */}
+          <div className={styles.card}>
+            <h3 style={{ color: 'var(--white)', marginBottom: '1rem', fontFamily: 'var(--font-heading)' }}>Video</h3>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>URL de YouTube</label>
+              <input
+                className={styles.formInput}
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={form.videoUrl}
+                onChange={e => set('videoUrl', e.target.value)}
+              />
+              <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
+                Solo YouTube. El video aparece en la publicación de MercadoLibre.
+              </div>
+            </div>
+            {form.videoUrl && extractYouTubeId(form.videoUrl) && (
+              <div style={{ marginTop: '0.75rem', borderRadius: '0.5rem', overflow: 'hidden', aspectRatio: '16/9', position: 'relative' }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${extractYouTubeId(form.videoUrl)}`}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Columna lateral */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-          {/* Estado y precio */}
           <div className={styles.card}>
             <h3 style={{ color: 'var(--white)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>Publicación</h3>
             <div className={styles.formGroup}>
@@ -275,29 +403,17 @@ export default function AdminPropertyEdit() {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Precio</label>
-              <input
-                className={styles.formInput}
-                type="number"
-                min={0}
-                value={form.price}
-                onChange={e => set('price', e.target.value)}
-              />
+              <input className={styles.formInput} type="number" min={0} value={form.price} onChange={e => set('price', e.target.value)} />
             </div>
           </div>
 
-          {/* Info de solo lectura */}
           <div className={styles.card}>
             <h3 style={{ color: 'var(--white)', marginBottom: '1rem', fontFamily: 'var(--font-heading)', fontSize: '0.875rem' }}>
-              Info de la publicación
+              Info fija
               <span className={`${styles.badge} ${styles.badgeGray}`} style={{ marginLeft: '0.5rem', fontSize: '0.65rem' }}>Solo lectura</span>
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              {[
-                ['Tipo', prop.type],
-                ['Operación', prop.operation],
-                ['Dirección', prop.address],
-                ['Zona', prop.location],
-              ].map(([label, val]) => (
+              {[['Tipo', prop.type], ['Operación', prop.operation], ['Dirección', prop.address], ['Zona', prop.location]].map(([label, val]) => (
                 <div key={label}>
                   <div style={{ fontSize: '0.65rem', color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
                   <div style={{ color: 'var(--gray-300)', fontSize: '0.875rem' }}>{val || '—'}</div>
@@ -306,7 +422,6 @@ export default function AdminPropertyEdit() {
             </div>
           </div>
 
-          {/* Links */}
           <div className={styles.card}>
             <h3 style={{ color: 'var(--white)', marginBottom: '1rem', fontFamily: 'var(--font-heading)', fontSize: '0.875rem' }}>Acciones rápidas</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
