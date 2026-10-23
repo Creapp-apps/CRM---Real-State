@@ -4,39 +4,55 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Icon from '@/components/admin/Icon';
+import GooglePlacePicker from '@/components/admin/GooglePlacePicker';
 import styles from '@/components/admin/admin.module.css';
 
 /* ─── Categorías MELI ─────────────────────────────────────────────────── */
+/* Leafs verificados contra api.mercadolibre.com/categories/MLA1459 (árbol Inmuebles) */
 const CATEGORY_MAP = {
-  casa:         { venta: 'MLA1468', alquiler: 'MLA1467', temporario: 'MLA50278' },
-  departamento: { venta: 'MLA1474', alquiler: 'MLA1473', temporario: 'MLA50279' },
-  ph:           { venta: 'MLA105182', alquiler: 'MLA105181', temporario: 'MLA105180' },
-  local:        { venta: 'MLA79244', alquiler: 'MLA79243' },
-  oficina:      { venta: 'MLA50540', alquiler: 'MLA50539' },
-  cochera:      { venta: 'MLA50543', alquiler: 'MLA50542' },
-  deposito:     { venta: 'MLA1477', alquiler: 'MLA1476' },
-  campo:        { venta: 'MLA6413', alquiler: 'MLA6414' },
-  quinta:       { venta: 'MLA50551', alquiler: 'MLA50549', temporario: 'MLA52745' },
-  otro:         { venta: 'MLA6396', alquiler: 'MLA6395', temporario: 'MLA50283' },
+  departamento:      { venta: 'MLA1474',   alquiler: 'MLA1473',   temporario: 'MLA50279' },
+  casa:              { venta: 'MLA1468',   alquiler: 'MLA1467',   temporario: 'MLA50278' },
+  camas_nauticas:    { venta: 'MLA374732', alquiler: 'MLA374731' },
+  campo:             { venta: 'MLA6413',   alquiler: 'MLA6414' },
+  cochera:           { venta: 'MLA50543',  alquiler: 'MLA50542' },
+  consultorio:       { venta: 'MLA392267', alquiler: 'MLA392266' },
+  deposito:          { venta: 'MLA1477',   alquiler: 'MLA1476' },
+  fondo_comercio:    { venta: 'MLA50550',  alquiler: 'MLA50546' },
+  local:             { venta: 'MLA79244',  alquiler: 'MLA79243' },
+  oficina:           { venta: 'MLA50540',  alquiler: 'MLA50539' },
+  otro:              { venta: 'MLA6396',   alquiler: 'MLA6395',   temporario: 'MLA50283' },
+  ph:                { venta: 'MLA105182', alquiler: 'MLA105181', temporario: 'MLA105180' },
+  parcelas:          { venta: 'MLA50548' },
+  quinta:            { venta: 'MLA50551',  alquiler: 'MLA50549',  temporario: 'MLA52745' },
+  terreno:           { venta: 'MLA1495',   alquiler: 'MLA1494' },
+  tiempo_compartido: { venta: 'MLA50537',                        temporario: 'MLA52741' },
 };
 
+/* Orden y etiquetas idénticos a la lista de MELI. `label` = lista (plural), `singular` = auto-título. */
 const TIPOS = [
-  { key: 'casa',         label: 'Casa',           icon: 'home' },
-  { key: 'departamento', label: 'Departamento',    icon: 'building' },
-  { key: 'ph',           label: 'PH',              icon: 'layers' },
-  { key: 'local',        label: 'Local Comercial', icon: 'store' },
-  { key: 'oficina',      label: 'Oficina',         icon: 'briefcase' },
-  { key: 'cochera',      label: 'Cochera',         icon: 'car' },
-  { key: 'deposito',     label: 'Depósito/Galpón', icon: 'package' },
-  { key: 'campo',        label: 'Campo',           icon: 'map' },
-  { key: 'quinta',       label: 'Quinta',          icon: 'tree' },
-  { key: 'otro',         label: 'Otro',            icon: 'more-horizontal' },
+  { key: 'departamento',      label: 'Departamentos',          singular: 'Departamento' },
+  { key: 'casa',              label: 'Casas',                  singular: 'Casa' },
+  { key: 'camas_nauticas',    label: 'Camas Náuticas',         singular: 'Cama Náutica' },
+  { key: 'campo',             label: 'Campos',                 singular: 'Campo' },
+  { key: 'cochera',           label: 'Cocheras',               singular: 'Cochera' },
+  { key: 'consultorio',       label: 'Consultorios',           singular: 'Consultorio' },
+  { key: 'deposito',          label: 'Depósitos y Galpones',   singular: 'Depósito / Galpón' },
+  { key: 'fondo_comercio',    label: 'Fondo de Comercio',      singular: 'Fondo de Comercio' },
+  { key: 'local',             label: 'Locales',                singular: 'Local' },
+  { key: 'oficina',           label: 'Oficinas',               singular: 'Oficina' },
+  { key: 'otro',              label: 'Otros Inmuebles',        singular: 'Inmueble' },
+  { key: 'ph',                label: 'PH',                     singular: 'PH' },
+  { key: 'parcelas',          label: 'Parcelas, Nichos y Bóvedas', singular: 'Parcela / Nicho / Bóveda' },
+  { key: 'quinta',            label: 'Quintas',                singular: 'Quinta' },
+  { key: 'terreno',           label: 'Terrenos y Lotes',       singular: 'Terreno / Lote' },
+  { key: 'tiempo_compartido', label: 'Tiempo Compartido',      singular: 'Tiempo Compartido' },
 ];
 
+/* Orden y nombres idénticos a MELI (hijos de cada categoría) */
 const OPS = [
-  { key: 'venta',      label: 'Venta' },
   { key: 'alquiler',   label: 'Alquiler' },
-  { key: 'temporario', label: 'Alquiler temporario' },
+  { key: 'temporario', label: 'Alquiler Temporario' },
+  { key: 'venta',      label: 'Venta' },
 ];
 
 /* Tipos residenciales (muestran campos de ambientes/dorms/baños) */
@@ -91,12 +107,15 @@ const FACINGS = [
   { value: 'Oeste', label: 'Oeste' },
 ];
 
+/* Pasos macro visibles (3, como MELI). El flujo interno `step` es más granular:
+   macro 1 = step 1 · macro 2 = step 2 · macro 3 = steps 3-5. */
 const STEPS = [
-  { n: 1, label: '¿Qué publicás?' },
-  { n: 2, label: 'Datos del inmueble' },
-  { n: 3, label: 'Fotos' },
-  { n: 4, label: 'Revisión' },
+  { n: 1, label: 'Categoría' },
+  { n: 2, label: 'Ubicación' },
+  { n: 3, label: 'Detalles y fotos' },
 ];
+const macroOf = (step) => (step <= 1 ? 1 : step === 2 ? 2 : 3);
+const LAST_STEP = 5;
 
 /* ─── Normalización 4:3 ────────────────────────────────────────────────── */
 function normalizeImageForMeli(file) {
@@ -133,9 +152,10 @@ export default function NuevaPublicacion() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  /* — Paso 1 — */
+  /* — Paso 1 — sub-pantallas MELI: 'cat' → 'op' → 'confirm' */
   const [tipo, setTipo] = useState('');
   const [operacion, setOperacion] = useState('');
+  const [catStep, setCatStep] = useState('cat');
 
   /* — Paso 2: precio — */
   const [price, setPrice] = useState('');
@@ -157,6 +177,12 @@ export default function NuevaPublicacion() {
   const [neighborhoodId, setNeighborhoodId]     = useState('');
   const [neighborhoodName, setNeighborhoodName] = useState('');
   const [loadingLoc, setLoadingLoc]     = useState(false);
+  /* — Paso 2: dirección + geo (Google Maps) — */
+  const [addressLine, setAddressLine] = useState('');
+  const [lat, setLat] = useState(null);
+  const [lng, setLng] = useState(null);
+  const [zip, setZip] = useState('');
+  const [geoMatchMsg, setGeoMatchMsg] = useState('');
 
   /* — Paso 2: superficies y características — */
   const [coveredArea, setCoveredArea] = useState('');
@@ -182,7 +208,7 @@ export default function NuevaPublicacion() {
 
   /* ── Auto-título (se regenera mientras no fue editado manualmente) ── */
   const autoTitle = useMemo(() => {
-    const tipoLabel = TIPOS.find(t => t.key === tipo)?.label || '';
+    const tipoLabel = TIPOS.find(t => t.key === tipo)?.singular || '';
     const opLabel = operacion === 'venta' ? 'en Venta'
       : operacion === 'temporario' ? 'en Alquiler Temporario' : 'en Alquiler';
     const parts = [rooms && `${rooms} amb.`, coveredArea && `${coveredArea} m²`].filter(Boolean);
@@ -234,16 +260,67 @@ export default function NuevaPublicacion() {
     } finally { setLoadingLoc(false); }
   }
 
-  /* ── Validación por step ── */
+  /* ── Google Maps: dirección elegida o pin movido ── */
+  const norm = (s) => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+  async function matchMeliLocation(provincia, ciudad) {
+    if (!provincia) { setGeoMatchMsg(''); return; }
+    setGeoMatchMsg('Resolviendo provincia y ciudad…');
+    try {
+      let st = states;
+      if (!st) {
+        const r = await fetch('/api/meli/locations?type=states');
+        st = (await r.json()).states || [];
+        setStates(st);
+      }
+      const p = norm(provincia);
+      const isCABA = p.includes('ciudad autonoma') || p.includes('caba') || p.includes('capital federal');
+      const match = st.find(s =>
+        isCABA ? norm(s.name).includes('capital federal')
+               : norm(s.name) === p || norm(s.name).includes(p) || p.includes(norm(s.name)));
+      if (!match) { setGeoMatchMsg('No pudimos autodetectar la provincia. Seleccionala abajo.'); return; }
+      setStateId(match.id); setStateName(match.name);
+      setCityId(''); setCityName(''); setNeighborhoodId(''); setNeighborhoodName(''); setNeighborhoods(null);
+      const rc = await fetch(`/api/meli/locations?type=cities&stateId=${encodeURIComponent(match.id)}`);
+      const cs = (await rc.json()).cities || [];
+      setCities(cs);
+      if (ciudad) {
+        const c = norm(ciudad);
+        const cm = cs.find(x => norm(x.name) === c || norm(x.name).includes(c) || c.includes(norm(x.name)));
+        if (cm) {
+          setCityId(cm.id); setCityName(cm.name);
+          const rn = await fetch(`/api/meli/locations?type=neighborhoods&cityId=${encodeURIComponent(cm.id)}`);
+          setNeighborhoods((await rn.json()).neighborhoods || []);
+          setGeoMatchMsg('');
+          return;
+        }
+      }
+      setGeoMatchMsg('Detectamos la provincia. Confirmá la ciudad abajo.');
+    } catch {
+      setGeoMatchMsg('No pudimos autodetectar la ubicación. Completala abajo.');
+    }
+  }
+
+  function handlePick(d) {
+    if (d.lat != null) setLat(d.lat);
+    if (d.lng != null) setLng(d.lng);
+    if (!('addressLine' in d)) return; // drag del pin: sólo coordenadas
+    if (d.addressLine) setAddressLine(d.addressLine);
+    if (d.zip) setZip(d.zip);
+    matchMeliLocation(d.provincia, d.ciudad);
+  }
+
+  /* ── Validación por step (flujo interno 1-5) ── */
   function canNext() {
-    if (step === 1) return !!tipo && !!operacion;
-    if (step === 2) return !!price && !!stateId && !!cityId && title.trim().length >= 10;
-    if (step === 3) return true;
-    return false;
+    if (step === 2) return !!stateId && !!cityId;
+    if (step === 3) return !!price && title.trim().length >= 10;
+    if (step === 4) return true;
+    if (step === 5) return true;
+    return !!tipo && !!operacion;
   }
 
   function goNext() {
-    if (step === 4) { publish(); return; }
+    if (step === LAST_STEP) { publish(); return; }
     setError(null);
     setStep(s => s + 1);
   }
@@ -336,6 +413,9 @@ export default function NuevaPublicacion() {
         currency_id: currency,
         listing_type_id: 'silver',
         location: {
+          ...(addressLine ? { address_line: addressLine } : {}),
+          ...(zip ? { zip_code: zip } : {}),
+          ...(lat != null && lng != null ? { latitude: Number(lat), longitude: Number(lng) } : {}),
           state: { id: stateId },
           city:  { id: cityId },
           ...(neighborhoodId ? { neighborhood: { id: neighborhoodId } } : {}),
@@ -374,21 +454,23 @@ export default function NuevaPublicacion() {
         </Link>
       </div>
 
-      {/* ── Step indicator ─────────────────────────────────────────────── */}
+      {/* ── Step indicator (3 pasos macro, como MELI) ──────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem', gap: 0 }}>
-        {STEPS.map((s, i) => (
+        {STEPS.map((s, i) => {
+          const macro = macroOf(step);
+          return (
           <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: s.n > step ? 0.35 : 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: s.n > macro ? 0.35 : 1 }}>
               <div style={{
                 width: 28, height: 28, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '0.75rem', fontWeight: 700, flexShrink: 0,
-                background: s.n < step ? 'var(--admin-gold)' : s.n === step ? 'var(--admin-gold)' : 'rgba(255,255,255,0.08)',
-                color: s.n <= step ? 'var(--navy-900, #0a1628)' : 'var(--gray-500)',
+                background: s.n <= macro ? 'var(--admin-gold)' : 'rgba(255,255,255,0.08)',
+                color: s.n <= macro ? 'var(--navy-900, #0a1628)' : 'var(--gray-500)',
               }}>
-                {s.n < step ? <Icon name="check" size={13} /> : s.n}
+                {s.n < macro ? <Icon name="check" size={13} /> : s.n}
               </div>
-              <span style={{ fontSize: '0.8rem', color: s.n === step ? 'var(--white)' : 'var(--gray-500)', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.8rem', color: s.n === macro ? 'var(--white)' : 'var(--gray-500)', whiteSpace: 'nowrap' }}>
                 {s.label}
               </span>
             </div>
@@ -396,102 +478,100 @@ export default function NuevaPublicacion() {
               <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 0.75rem' }} />
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* ══════════════════ PASO 1 — Tipo y operación ══════════════════ */}
+      {/* ══════════════════ PASO 1 — Empezá describiendo el inmueble ══════ */}
       {step === 1 && (
         <div className={styles.card} style={{ maxWidth: 680 }}>
-          <h3 style={sectionTitle}>Tipo de propiedad</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem', marginBottom: '1.75rem' }}>
-            {TIPOS.map(t => (
-              <button key={t.key} onClick={() => { setTipo(t.key); setOperacion(''); }}
-                style={{
-                  padding: '0.75rem 0.5rem', borderRadius: '0.5rem', cursor: 'pointer',
-                  background: tipo === t.key ? 'var(--admin-gold-15)' : 'rgba(255,255,255,0.04)',
-                  border: tipo === t.key ? '1px solid var(--admin-gold-40)' : '1px solid rgba(255,255,255,0.08)',
-                  color: tipo === t.key ? 'var(--admin-gold)' : 'var(--gray-300)',
-                  fontWeight: tipo === t.key ? 600 : 400, fontSize: '0.8rem',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', transition: 'all 0.15s',
-                }}>
-                <Icon name={t.icon} size={20} />
-                {t.label}
-              </button>
-            ))}
-          </div>
 
-          {tipo && (
+          {/* ─ 1A · Categoría ─ */}
+          {catStep === 'cat' && (
             <>
-              <h3 style={sectionTitle}>Operación</h3>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                {OPS.filter(o => CATEGORY_MAP[tipo]?.[o.key]).map(o => (
-                  <button key={o.key} onClick={() => setOperacion(o.key)}
-                    style={{
-                      padding: '0.6rem 1.5rem', borderRadius: '0.5rem', cursor: 'pointer',
-                      background: operacion === o.key ? 'var(--admin-gold)' : 'rgba(255,255,255,0.05)',
-                      border: operacion === o.key ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                      color: operacion === o.key ? 'var(--navy-900, #0a1628)' : 'var(--gray-300)',
-                      fontWeight: 600, fontSize: '0.875rem', transition: 'all 0.15s',
-                    }}>
-                    {o.label}
+              <h3 style={sectionTitle}>¿A qué categoría pertenece?</h3>
+              <div style={listWrap}>
+                {TIPOS.map(t => (
+                  <button key={t.key} type="button"
+                    onClick={() => { setTipo(t.key); setOperacion(''); setCatStep('op'); }}
+                    style={listRow(tipo === t.key)}>
+                    <span style={{ paddingLeft: '0.25rem' }}>{t.label}</span>
+                    <Icon name="chevron-right" size={18} style={{ color: 'var(--gray-500)', flexShrink: 0 }} />
                   </button>
                 ))}
               </div>
             </>
           )}
 
-          <NavBar step={step} canNext={canNext()} saving={saving} onPrev={goPrev} onNext={goNext} />
+          {/* ─ 1B · Operación ─ */}
+          {catStep === 'op' && (
+            <>
+              <h3 style={sectionTitle}>¿A qué categoría pertenece?</h3>
+              <div style={listWrap}>
+                {OPS.filter(o => CATEGORY_MAP[tipo]?.[o.key]).map(o => (
+                  <button key={o.key} type="button"
+                    onClick={() => { setOperacion(o.key); setCatStep('confirm'); }}
+                    style={listRow(operacion === o.key)}>
+                    <span style={{ paddingLeft: '0.25rem' }}>{o.label}</span>
+                    <Icon name="chevron-right" size={18} style={{ color: 'var(--gray-500)', flexShrink: 0 }} />
+                  </button>
+                ))}
+              </div>
+              <button type="button" onClick={() => setCatStep('cat')} style={backLink}>← Anterior</button>
+            </>
+          )}
+
+          {/* ─ 1C · Confirmación (breadcrumb MELI) ─ */}
+          {catStep === 'confirm' && (
+            <>
+              <h3 style={sectionTitle}>Confirmá la categoría</h3>
+              <div style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.5rem', padding: '1.1rem 1.25rem' }}>
+                <div style={{ fontSize: '1rem', color: 'var(--white)', fontWeight: 600, marginBottom: '0.6rem' }}>
+                  {OPS.find(o => o.key === operacion)?.label}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--admin-gold)' }}>
+                  <span>Inmuebles</span>
+                  <Icon name="chevron-right" size={12} style={{ color: 'var(--gray-500)' }} />
+                  <span>{TIPOS.find(t => t.key === tipo)?.label}</span>
+                  <Icon name="chevron-right" size={12} style={{ color: 'var(--gray-500)' }} />
+                  <span>{OPS.find(o => o.key === operacion)?.label}</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1.5rem', marginTop: '1.5rem' }}>
+                <button type="button" onClick={() => setCatStep('cat')}
+                  style={{ background: 'none', border: 'none', color: 'var(--admin-gold)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                  Cambiar categoría
+                </button>
+                <button type="button" onClick={() => setStep(2)}
+                  style={{ padding: '0.55rem 1.5rem', background: 'var(--admin-gold)', color: 'var(--navy-900, #0a1628)', border: 'none', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
+                  Confirmar
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
-      {/* ══════════════════ PASO 2 — Datos del inmueble ══════════════════ */}
+      {/* ══════════════════ PASO 2 — Ubicación (Google Maps) ═════════════ */}
       {step === 2 && (
         <div className={styles.card} style={{ maxWidth: 720 }}>
 
-          {/* ─ Precio ─ */}
-          <FormSection title="Precio">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.75rem' }}>
-              <div>
-                <label style={lbl}>Precio *</label>
-                <input type="number" min="0" style={inp}
-                  value={price} onChange={e => setPrice(e.target.value)} placeholder="Ej: 150000" />
-              </div>
-              <div>
-                <label style={lbl}>Moneda</label>
-                <select style={sel} value={currency} onChange={e => setCurrency(e.target.value)}>
-                  <option value="USD" style={opt}>USD (dólares)</option>
-                  <option value="ARS" style={opt}>$ (pesos)</option>
-                </select>
-              </div>
-            </div>
-            {(operacion === 'alquiler' || operacion === 'temporario') && (
-              <div style={{ marginTop: '0.75rem' }}>
-                <label style={lbl}>Expensas mensuales (ARS, opcional)</label>
-                <input type="number" min="0" style={inp}
-                  value={expensas} onChange={e => setExpensas(e.target.value)} placeholder="Ej: 50000" />
+          <FormSection title="Ubicación">
+            <p style={{ color: 'var(--gray-500)', fontSize: '0.82rem', margin: '-0.5rem 0 1rem' }}>
+              Ingresá la dirección del inmueble. Ésta se verá en la publicación.
+            </p>
+            <GooglePlacePicker onPick={handlePick} />
+            {addressLine && (
+              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--gray-300)' }}>
+                <Icon name="map-pin" size={13} style={{ color: 'var(--admin-gold)', verticalAlign: '-2px', marginRight: 4 }} />
+                {addressLine}
               </div>
             )}
           </FormSection>
 
-          {/* ─ Título ─ */}
-          <FormSection title="Título de la publicación">
-            <input style={inp} value={title}
-              onChange={e => { setTitle(e.target.value); setTitleTouched(true); }}
-              onBlur={() => !title.trim() && setTitleTouched(false)}
-              placeholder="Ej: Casa en Venta · 3 amb · Palermo, Capital Federal"
-              maxLength={200} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.3rem' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--gray-500)' }}>
-                Se genera automáticamente a medida que completás los datos
-              </span>
-              <span style={{ fontSize: '0.7rem', color: title.length > 180 ? '#f87171' : 'var(--gray-500)' }}>
-                {title.length}/200
-              </span>
-            </div>
-          </FormSection>
-
-          {/* ─ Ubicación ─ */}
-          <FormSection title="Ubicación">
+          {/* Provincia/ciudad → IDs que MELI necesita (autocompletados desde la dirección) */}
+          <FormSection title="Provincia y ciudad (para MercadoLibre)">
+            {geoMatchMsg && <p style={{ ...hint, marginTop: 0, marginBottom: '0.75rem' }}>{geoMatchMsg}</p>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
                 <label style={lbl}>Provincia *</label>
@@ -534,6 +614,56 @@ export default function NuevaPublicacion() {
                   </select>
                 </div>
               )}
+            </div>
+          </FormSection>
+
+          <NavBar step={step} canNext={canNext()} saving={saving} onPrev={goPrev} onNext={goNext} />
+        </div>
+      )}
+
+      {/* ══════════════════ PASO 3 — Datos del inmueble ══════════════════ */}
+      {step === 3 && (
+        <div className={styles.card} style={{ maxWidth: 720 }}>
+
+          {/* ─ Precio ─ */}
+          <FormSection title="Precio">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.75rem' }}>
+              <div>
+                <label style={lbl}>Precio *</label>
+                <input type="number" min="0" style={inp}
+                  value={price} onChange={e => setPrice(e.target.value)} placeholder="Ej: 150000" />
+              </div>
+              <div>
+                <label style={lbl}>Moneda</label>
+                <select style={sel} value={currency} onChange={e => setCurrency(e.target.value)}>
+                  <option value="USD" style={opt}>USD (dólares)</option>
+                  <option value="ARS" style={opt}>$ (pesos)</option>
+                </select>
+              </div>
+            </div>
+            {(operacion === 'alquiler' || operacion === 'temporario') && (
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={lbl}>Expensas mensuales (ARS, opcional)</label>
+                <input type="number" min="0" style={inp}
+                  value={expensas} onChange={e => setExpensas(e.target.value)} placeholder="Ej: 50000" />
+              </div>
+            )}
+          </FormSection>
+
+          {/* ─ Título ─ */}
+          <FormSection title="Título de la publicación">
+            <input style={inp} value={title}
+              onChange={e => { setTitle(e.target.value); setTitleTouched(true); }}
+              onBlur={() => !title.trim() && setTitleTouched(false)}
+              placeholder="Ej: Casa en Venta · 3 amb · Palermo, Capital Federal"
+              maxLength={200} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.3rem' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--gray-500)' }}>
+                Se genera automáticamente a medida que completás los datos
+              </span>
+              <span style={{ fontSize: '0.7rem', color: title.length > 180 ? '#f87171' : 'var(--gray-500)' }}>
+                {title.length}/200
+              </span>
             </div>
           </FormSection>
 
@@ -671,8 +801,8 @@ export default function NuevaPublicacion() {
         </div>
       )}
 
-      {/* ══════════════════ PASO 3 — Fotos ══════════════════════════════ */}
-      {step === 3 && (
+      {/* ══════════════════ PASO 4 — Fotos ══════════════════════════════ */}
+      {step === 4 && (
         <div className={styles.card} style={{ maxWidth: 720 }}>
           <h3 style={sectionTitle}>Fotos de la propiedad</h3>
           <p style={{ color: 'var(--gray-500)', fontSize: '0.8rem', marginBottom: '1.25rem', marginTop: '-0.5rem' }}>
@@ -739,8 +869,8 @@ export default function NuevaPublicacion() {
         </div>
       )}
 
-      {/* ══════════════════ PASO 4 — Revisión ════════════════════════════ */}
-      {step === 4 && (
+      {/* ══════════════════ PASO 5 — Revisión ════════════════════════════ */}
+      {step === 5 && (
         <div className={styles.card} style={{ maxWidth: 720 }}>
           <h3 style={sectionTitle}>Revisión antes de publicar</h3>
 
@@ -750,7 +880,9 @@ export default function NuevaPublicacion() {
             <ReviewRow label="Título" value={title} />
             <ReviewRow label="Precio" value={`${currency} ${Number(price || 0).toLocaleString('es-AR')}${operacion !== 'venta' ? '/mes' : ''}`} />
             {expensas && <ReviewRow label="Expensas" value={`$ ${Number(expensas).toLocaleString('es-AR')}/mes`} />}
+            {addressLine && <ReviewRow label="Dirección" value={addressLine} />}
             <ReviewRow label="Ubicación" value={[neighborhoodName, cityName, stateName].filter(Boolean).join(', ')} />
+            {lat != null && lng != null && <ReviewRow label="Coordenadas" value={`${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`} mono />}
             {coveredArea && <ReviewRow label="Sup. cubierta" value={`${coveredArea} m²`} />}
             {totalArea && <ReviewRow label="Sup. total" value={`${totalArea} m²`} />}
             {isResidential && rooms && <ReviewRow label="Ambientes" value={rooms} />}
@@ -832,6 +964,23 @@ function NavBar({ step, canNext, saving, onPrev, onNext, publishLabel }) {
 /* ─── Estilos ────────────────────────────────────────────────────────────── */
 const sectionTitle = {
   color: 'var(--white)', marginBottom: '1.5rem', fontSize: '1rem', fontWeight: 600,
+};
+
+/* Lista vertical estilo MELI (filas texto + chevron) */
+const listWrap = {
+  display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.06)',
+};
+const listRow = (selected) => ({
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  width: '100%', padding: '0.9rem 0.25rem', cursor: 'pointer', textAlign: 'left',
+  background: selected ? 'var(--admin-gold-15)' : 'transparent',
+  border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)',
+  color: selected ? 'var(--admin-gold)' : 'var(--gray-200)',
+  fontWeight: selected ? 600 : 400, fontSize: '0.95rem', transition: 'background 0.12s',
+});
+const backLink = {
+  marginTop: '1.25rem', background: 'none', border: 'none',
+  color: 'var(--gray-300)', fontSize: '0.8rem', cursor: 'pointer', padding: 0,
 };
 
 const lbl = {
