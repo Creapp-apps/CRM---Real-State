@@ -42,28 +42,53 @@ const OPS = [
 /* Tipos residenciales (muestran campos de ambientes/dorms/baños) */
 const RESIDENTIAL = new Set(['casa', 'departamento', 'ph', 'quinta']);
 
-/* Comodidades — atributos booleanos MELI */
+/* Comodidades — atributos booleanos MELI (IDs verificados contra /categories/{id}/attributes) */
 const AMENITIES = [
-  { id: 'HAS_SWIMMING_POOL',   label: 'Pileta' },
-  { id: 'HAS_GRILL',           label: 'Parrilla' },
-  { id: 'HAS_GARDEN',          label: 'Jardín / Parque' },
-  { id: 'HAS_BALCONY',         label: 'Balcón' },
-  { id: 'HAS_TERRACE',         label: 'Terraza' },
-  { id: 'HAS_LAUNDRY_ROOM',    label: 'Lavadero' },
-  { id: 'HAS_STORAGE_ROOM',    label: 'Baulera' },
-  { id: 'HAS_SECURITY_SYSTEM', label: 'Seguridad/Vigilancia' },
-  { id: 'HAS_GYM',             label: 'Gimnasio' },
-  { id: 'ACCEPTS_PETS',        label: 'Acepta mascotas' },
-  { id: 'PROFESSIONAL_USE',    label: 'Apto profesional' },
+  { id: 'HAS_SWIMMING_POOL',     label: 'Pileta' },
+  { id: 'HAS_GRILL',             label: 'Parrilla' },
+  { id: 'HAS_GARDEN',            label: 'Jardín / Parque' },
+  { id: 'HAS_BALCONY',           label: 'Balcón' },
+  { id: 'HAS_TERRACE',           label: 'Terraza' },
+  { id: 'HAS_PATIO',             label: 'Patio' },
+  { id: 'HAS_LAUNDRY',           label: 'Lavadero' },
+  { id: 'HAS_SECURITY',          label: 'Seguridad' },
+  { id: 'HAS_GYM',               label: 'Gimnasio' },
+  { id: 'IS_SUITABLE_FOR_PETS',  label: 'Admite mascotas' },
+  { id: 'PROFESSIONAL_USE_ALLOWED', label: 'Apto profesional' },
+  { id: 'FURNISHED',             label: 'Amoblado' },
+  { id: 'HAS_AIR_CONDITIONING',  label: 'Aire acondicionado' },
+  { id: 'HAS_HEATING',           label: 'Calefacción' },
+  { id: 'HAS_CLOSETS',           label: 'Placards' },
+  { id: 'IN_GATED_COMMUNITY',    label: 'Barrio cerrado' },
+  { id: 'HAS_NATURAL_GAS',       label: 'Gas natural' },
+  { id: 'HAS_HALF_BATH',         label: 'Toilette' },
+  { id: 'HAS_INTERNET_ACCESS',   label: 'Internet' },
+  { id: 'HAS_JACUZZI',           label: 'Jacuzzi' },
 ];
 
 const CONDITIONS = [
-  { value: '',           label: '— No especificado —' },
-  { value: 'A ESTRENAR', label: 'A estrenar' },
-  { value: 'EXCELENTE',  label: 'Excelente' },
-  { value: 'MUY BUENO',  label: 'Muy bueno' },
-  { value: 'BUENO',      label: 'Bueno' },
-  { value: 'REGULAR',    label: 'Regular' },
+  { value: '',               label: '— No especificado —' },
+  { value: 'Nuevo',          label: 'Nuevo / A estrenar' },
+  { value: 'Renovado',       label: 'Renovado' },
+  { value: 'Buen estado',    label: 'Buen estado' },
+  { value: 'En construcción',label: 'En construcción' },
+  { value: 'Usado',          label: 'Usado' },
+];
+
+const DISPOSITIONS = [
+  { value: '',              label: '— No especificada —' },
+  { value: 'Frente',        label: 'Frente' },
+  { value: 'Contrafrente',  label: 'Contrafrente' },
+  { value: 'Lateral',       label: 'Lateral' },
+  { value: 'Interno',       label: 'Interno' },
+];
+
+const FACINGS = [
+  { value: '',      label: '— No especificada —' },
+  { value: 'Norte', label: 'Norte' },
+  { value: 'Sur',   label: 'Sur' },
+  { value: 'Este',  label: 'Este' },
+  { value: 'Oeste', label: 'Oeste' },
 ];
 
 const STEPS = [
@@ -140,8 +165,12 @@ export default function NuevaPublicacion() {
   const [bedrooms, setBedrooms]       = useState('');
   const [bathrooms, setBathrooms]     = useState('');
   const [parking, setParking]         = useState('');
-  const [age, setAge]                 = useState('');
-  const [condition, setCondition]     = useState('');
+  const [age, setAge]               = useState('');
+  const [condition, setCondition]   = useState('');
+  const [disposition, setDisposition] = useState('');
+  const [facing, setFacing]         = useState('');
+  const [warehouses, setWarehouses] = useState('');
+  const [unitFloor, setUnitFloor]   = useState('');
 
   /* — Paso 2: descripción y comodidades — */
   const [description, setDescription] = useState('');
@@ -277,16 +306,23 @@ export default function NuevaPublicacion() {
       if (!categoryId) throw new Error('Categoría no encontrada.');
 
       const attrs = [];
-      if (rooms)       attrs.push({ id: 'ROOMS',           value_name: String(rooms) });
-      if (bedrooms)    attrs.push({ id: 'BEDROOMS',        value_name: String(bedrooms) });
-      if (bathrooms)   attrs.push({ id: 'FULL_BATHROOMS',  value_name: String(bathrooms) });
-      if (parking)     attrs.push({ id: 'PARKING_LOTS',    value_name: String(parking) });
-      if (coveredArea) attrs.push({ id: 'COVERED_AREA',    value_name: String(coveredArea) });
-      if (totalArea)   attrs.push({ id: 'TOTAL_AREA',      value_name: String(totalArea) });
-      if (age)         attrs.push({ id: 'PROPERTY_AGE',    value_name: String(age) });
+      if (rooms)       attrs.push({ id: 'ROOMS',              value_name: String(rooms) });
+      if (bedrooms)    attrs.push({ id: 'BEDROOMS',           value_name: String(bedrooms) });
+      if (bathrooms)   attrs.push({ id: 'FULL_BATHROOMS',     value_name: String(bathrooms) });
+      if (parking !== '') attrs.push({ id: 'PARKING_LOTS',   value_name: String(parking || 0) });
+      // number_unit: MELI espera "valor unidad" (ej: "120 m²")
+      if (coveredArea) attrs.push({ id: 'COVERED_AREA',    value_name: `${coveredArea} m²` });
+      if (totalArea)   attrs.push({ id: 'TOTAL_AREA',      value_name: `${totalArea} m²` });
+      if (age)         attrs.push({ id: 'PROPERTY_AGE',    value_name: `${age} años` });
+      if (expensas)    attrs.push({ id: 'MAINTENANCE_FEE', value_name: `${expensas} ARS` });
+      // list attributes
       if (condition)   attrs.push({ id: 'PROPERTY_CONDITION', value_name: condition });
-      if (expensas)    attrs.push({ id: 'MAINTENANCE_FEE', value_name: String(expensas) });
-
+      if (disposition) attrs.push({ id: 'DISPOSITION',        value_name: disposition });
+      if (facing)      attrs.push({ id: 'FACING',             value_name: facing });
+      // number attributes adicionales
+      if (warehouses)  attrs.push({ id: 'WAREHOUSES',   value_name: String(warehouses) });
+      if (unitFloor)   attrs.push({ id: 'UNIT_FLOOR',   value_name: String(unitFloor) });
+      // booleanos — MELI value "Sí" (con tilde)
       amenities.forEach(id => attrs.push({ id, value_name: 'Sí' }));
 
       const pictures = photos
@@ -554,13 +590,45 @@ export default function NuevaPublicacion() {
                   value={age} onChange={e => setAge(e.target.value)} placeholder="0 = a estrenar" />
               </div>
               <div>
-                <label style={lbl}>Estado</label>
+                <label style={lbl}>Estado del inmueble</label>
                 <select style={sel} value={condition} onChange={e => setCondition(e.target.value)}>
                   {CONDITIONS.map(c => (
                     <option key={c.value} value={c.value} style={opt}>{c.label}</option>
                   ))}
                 </select>
               </div>
+              {(isResidential || tipo === 'oficina') && (
+                <>
+                  <div>
+                    <label style={lbl}>Disposición</label>
+                    <select style={sel} value={disposition} onChange={e => setDisposition(e.target.value)}>
+                      {DISPOSITIONS.map(d => (
+                        <option key={d.value} value={d.value} style={opt}>{d.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={lbl}>Orientación</label>
+                    <select style={sel} value={facing} onChange={e => setFacing(e.target.value)}>
+                      {FACINGS.map(f => (
+                        <option key={f.value} value={f.value} style={opt}>{f.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+              <div>
+                <label style={lbl}>Bauleras</label>
+                <input type="number" min="0" max="10" style={inp}
+                  value={warehouses} onChange={e => setWarehouses(e.target.value)} placeholder="0" />
+              </div>
+              {(tipo === 'departamento' || tipo === 'ph' || tipo === 'oficina') && (
+                <div>
+                  <label style={lbl}>Piso de la unidad</label>
+                  <input type="number" min="1" max="99" style={inp}
+                    value={unitFloor} onChange={e => setUnitFloor(e.target.value)} placeholder="Ej: 3" />
+                </div>
+              )}
             </div>
           </FormSection>
 
