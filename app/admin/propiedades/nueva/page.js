@@ -391,9 +391,9 @@ export default function NuevaPublicacion() {
                   }}
                   onClick={() => { if (!states) loadStates(); }}
                 >
-                  <option value="">— Seleccionar provincia —</option>
+                  <option value="" style={optStyle}>— Seleccionar provincia —</option>
                   {(states || []).map(s => (
-                    <option key={s.id} value={s.id} data-name={s.name}>{s.name}</option>
+                    <option key={s.id} value={s.id} data-name={s.name} style={optStyle}>{s.name}</option>
                   ))}
                 </select>
                 {loadingLoc && <span style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.25rem', display: 'block' }}>Cargando...</span>}
@@ -409,9 +409,9 @@ export default function NuevaPublicacion() {
                       onCityChange(e.target.value, opt.dataset.name || '');
                     }}
                   >
-                    <option value="">— Seleccionar ciudad —</option>
+                    <option value="" style={optStyle}>— Seleccionar ciudad —</option>
                     {cities.map(c => (
-                      <option key={c.id} value={c.id} data-name={c.name}>{c.name}</option>
+                      <option key={c.id} value={c.id} data-name={c.name} style={optStyle}>{c.name}</option>
                     ))}
                   </select>
                 </div>
@@ -428,9 +428,9 @@ export default function NuevaPublicacion() {
                       setNeighborhoodName(opt.dataset.name || '');
                     }}
                   >
-                    <option value="">— Seleccionar barrio —</option>
+                    <option value="" style={optStyle}>— Seleccionar barrio —</option>
                     {neighborhoods.map(n => (
-                      <option key={n.id} value={n.id} data-name={n.name}>{n.name}</option>
+                      <option key={n.id} value={n.id} data-name={n.name} style={optStyle}>{n.name}</option>
                     ))}
                   </select>
                 </div>
@@ -455,8 +455,8 @@ export default function NuevaPublicacion() {
               <div>
                 <label style={labelStyle}>Moneda</label>
                 <select style={selectStyle} value={currency} onChange={e => setCurrency(e.target.value)}>
-                  <option value="USD">USD</option>
-                  <option value="ARS">ARS $</option>
+                  <option value="USD" style={optStyle}>USD</option>
+                  <option value="ARS" style={optStyle}>ARS $</option>
                 </select>
               </div>
 
@@ -647,6 +647,7 @@ const inputStyle = {
 
 const selectStyle = {
   ...inputStyle,
+  background: '#0d1f3c', // sólido — evita que el dropdown nativo quede blanco
   cursor: 'pointer',
   appearance: 'none',
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
@@ -654,3 +655,5 @@ const selectStyle = {
   backgroundPosition: 'right 0.75rem center',
   paddingRight: '2.25rem',
 };
+
+const optStyle = { background: '#0d1f3c', color: '#e5e7eb' };
