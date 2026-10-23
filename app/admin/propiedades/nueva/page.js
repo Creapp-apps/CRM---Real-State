@@ -111,11 +111,11 @@ const FACINGS = [
    macro 1 = step 1 · macro 2 = step 2 · macro 3 = steps 3-5. */
 const STEPS = [
   { n: 1, label: 'Categoría' },
-  { n: 2, label: 'Ubicación' },
-  { n: 3, label: 'Detalles y fotos' },
+  { n: 2, label: 'Ubicación y fotos' },
+  { n: 3, label: 'Detalles' },
 ];
 const macroOf = (step) => (step <= 1 ? 1 : step === 2 ? 2 : 3);
-const LAST_STEP = 5;
+const LAST_STEP = 4;
 
 /* ─── Normalización 4:3 ────────────────────────────────────────────────── */
 function normalizeImageForMeli(file) {
@@ -179,10 +179,16 @@ export default function NuevaPublicacion() {
   const [loadingLoc, setLoadingLoc]     = useState(false);
   /* — Paso 2: dirección + geo (Google Maps) — */
   const [addressLine, setAddressLine] = useState('');
+  const [calle, setCalle] = useState('');
+  const [altura, setAltura] = useState('');
+  const [localidad, setLocalidad] = useState('');
+  const [hideExact, setHideExact] = useState(false);
   const [lat, setLat] = useState(null);
   const [lng, setLng] = useState(null);
   const [zip, setZip] = useState('');
   const [geoMatchMsg, setGeoMatchMsg] = useState('');
+  /* Paso 2: cards reveladas MELI → 'ubicacion' confirma y despliega 'fotos' */
+  const [locStep, setLocStep] = useState('ubicacion');
 
   /* — Paso 2: superficies y características — */
   const [coveredArea, setCoveredArea] = useState('');
@@ -307,15 +313,30 @@ export default function NuevaPublicacion() {
     if (!('addressLine' in d)) return; // drag del pin: sólo coordenadas
     if (d.addressLine) setAddressLine(d.addressLine);
     if (d.zip) setZip(d.zip);
+    setCalle(d.calle || '');
+    setAltura(d.altura || '');
+    setLocalidad(d.ciudad || '');
     matchMeliLocation(d.provincia, d.ciudad);
   }
 
+  /* Dirección aproximada (rango de altura) cuando se oculta la exacta — como MELI */
+  const rangoDireccion = useMemo(() => {
+    const loc = cityName || localidad;
+    const n = parseInt(altura, 10);
+    if (calle && Number.isFinite(n)) {
+      const base = Math.floor(n / 100) * 100;
+      const low = Math.max(0, base - 200);
+      const high = base + 100;
+      return `${calle} ${low} - ${high}${loc ? `, ${loc}` : ''}`;
+    }
+    if (calle) return `${calle}${loc ? `, ${loc}` : ''}`;
+    return addressLine;
+  }, [calle, altura, localidad, cityName, addressLine]);
+
   /* ── Validación por step (flujo interno 1-5) ── */
   function canNext() {
-    if (step === 2) return !!stateId && !!cityId;
     if (step === 3) return !!price && title.trim().length >= 10;
     if (step === 4) return true;
-    if (step === 5) return true;
     return !!tipo && !!operacion;
   }
 
@@ -335,48 +356,60 @@ export default function NuevaPublicacion() {
     });
   }
 
-  /* ── Upload fotos ── */
+  /* ── Upload fotos ── (cada foto tiene uid estable: se actualiza por uid, no por índice) */
   const handleFiles = useCallback(async (fileList) => {
     const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
     if (!files.length) return;
 
-    setPhotos(prev => [
-      ...prev,
-      ...files.map(file => ({
-        file,
-        preview: URL.createObjectURL(file),
-        status: 'pending',
-        pictureId: null,
-      })),
-    ]);
+    const items = files.map(file => ({
+      uid: (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+      file,
+      preview: URL.createObjectURL(file),
+      status: 'pending',
+      pictureId: null,
+      errorMsg: null,
+    }));
+    setPhotos(prev => [...prev, ...items]);
 
-    for (let i = 0; i < files.length; i++) {
-      const globalIdx = photos.length + i;
-      setPhotos(prev => prev.map((p, j) => j === globalIdx ? { ...p, status: 'uploading' } : p));
+    for (const it of items) {
+      setPhotos(prev => prev.map(p => p.uid === it.uid ? { ...p, status: 'uploading' } : p));
       try {
-        const normalized = await normalizeImageForMeli(files[i]);
+        const normalized = await normalizeImageForMeli(it.file);
         const fd = new FormData();
-        fd.append('file', normalized, normalized.name);
+        fd.append('file', normalized, normalized.name || 'foto.jpg');
         const res = await fetch('/api/meli/pictures', { method: 'POST', body: fd });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const { id: pictureId } = await res.json();
-        setPhotos(prev => prev.map((p, j) => j === globalIdx ? { ...p, status: 'done', pictureId } : p));
+        const data = await res.json().catch(() => ({}));
+        // Falla si no hay id: evita marcar "done" una foto que MELI no guardó.
+        if (!res.ok || !data.id) throw new Error(data.error || `HTTP ${res.status} (sin id de MELI)`);
+        setPhotos(prev => prev.map(p => p.uid === it.uid ? { ...p, status: 'done', pictureId: data.id } : p));
       } catch (e) {
-        setPhotos(prev => prev.map((p, j) => j === globalIdx ? { ...p, status: 'error', errorMsg: e.message } : p));
+        setPhotos(prev => prev.map(p => p.uid === it.uid ? { ...p, status: 'error', errorMsg: e.message } : p));
       }
     }
-  }, [photos.length]);
+  }, []);
 
-  function removePhoto(idx) {
+  function removePhoto(uid) {
     setPhotos(prev => {
-      URL.revokeObjectURL(prev[idx]?.preview);
-      return prev.filter((_, i) => i !== idx);
+      const tgt = prev.find(p => p.uid === uid);
+      if (tgt) URL.revokeObjectURL(tgt.preview);
+      return prev.filter(p => p.uid !== uid);
     });
   }
+
+  function retryPhoto(uid) {
+    const tgt = photos.find(p => p.uid === uid);
+    if (tgt?.file) { removePhoto(uid); handleFiles([tgt.file]); }
+  }
+
+  /* Estado agregado de las fotos */
+  const photosUploading = photos.some(p => p.status === 'pending' || p.status === 'uploading');
+  const photosError = photos.filter(p => p.status === 'error');
+  const photosDone = photos.filter(p => p.status === 'done' && p.pictureId);
 
   /* ── Publicar ── */
   async function publish() {
     setError(null);
+    if (photosUploading) { setError('Esperá a que terminen de subir las fotos.'); return; }
     setSaving(true);
     try {
       const categoryId = CATEGORY_MAP[tipo]?.[operacion];
@@ -413,9 +446,9 @@ export default function NuevaPublicacion() {
         currency_id: currency,
         listing_type_id: 'silver',
         location: {
-          ...(addressLine ? { address_line: addressLine } : {}),
+          ...(addressLine ? { address_line: hideExact ? rangoDireccion : addressLine } : {}),
           ...(zip ? { zip_code: zip } : {}),
-          ...(lat != null && lng != null ? { latitude: Number(lat), longitude: Number(lng) } : {}),
+          ...(!hideExact && lat != null && lng != null ? { latitude: Number(lat), longitude: Number(lng) } : {}),
           state: { id: stateId },
           city:  { id: cityId },
           ...(neighborhoodId ? { neighborhood: { id: neighborhoodId } } : {}),
@@ -552,73 +585,206 @@ export default function NuevaPublicacion() {
         </div>
       )}
 
-      {/* ══════════════════ PASO 2 — Ubicación (Google Maps) ═════════════ */}
+      {/* ══════════════════ PASO 2 — Ubicación → Fotos (cards reveladas) ══ */}
       {step === 2 && (
-        <div className={styles.card} style={{ maxWidth: 720 }}>
+        <>
+          {/* ─ Card Ubicación ─ */}
+          <div className={styles.card} style={{ maxWidth: 720, marginBottom: '1.25rem' }}>
+            {locStep === 'ubicacion' ? (
+              <>
+                <FormSection title="Ubicación">
+                  <p style={{ color: 'var(--gray-500)', fontSize: '0.82rem', margin: '-0.5rem 0 1rem' }}>
+                    Ingresá la dirección del inmueble. Ésta se verá en la publicación.
+                  </p>
+                  <GooglePlacePicker onPick={handlePick} />
+                  {addressLine && (
+                    <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--gray-300)' }}>
+                      <Icon name="map-pin" size={13} style={{ color: 'var(--admin-gold)', verticalAlign: '-2px', marginRight: 4 }} />
+                      {addressLine}
+                    </div>
+                  )}
 
-          <FormSection title="Ubicación">
-            <p style={{ color: 'var(--gray-500)', fontSize: '0.82rem', margin: '-0.5rem 0 1rem' }}>
-              Ingresá la dirección del inmueble. Ésta se verá en la publicación.
-            </p>
-            <GooglePlacePicker onPick={handlePick} />
-            {addressLine && (
-              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--gray-300)' }}>
-                <Icon name="map-pin" size={13} style={{ color: 'var(--admin-gold)', verticalAlign: '-2px', marginRight: 4 }} />
-                {addressLine}
+                  {addressLine && (
+                    <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.9rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={hideExact} onChange={e => setHideExact(e.target.checked)}
+                        style={{ marginTop: 2, width: 16, height: 16, accentColor: 'var(--admin-gold)', cursor: 'pointer', flexShrink: 0 }} />
+                      <span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--gray-200)' }}>Ocultar dirección exacta</span>
+                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: 2 }}>
+                          {hideExact
+                            ? <>Se mostrará: <strong style={{ color: 'var(--gray-300)', fontWeight: 600 }}>{rangoDireccion}</strong></>
+                            : 'Se mostrará la dirección exacta en la publicación.'}
+                        </span>
+                      </span>
+                    </label>
+                  )}
+                </FormSection>
+
+                {/* Provincia/ciudad → IDs que MELI necesita (autocompletados desde la dirección) */}
+                <FormSection title="Provincia y ciudad (para MercadoLibre)">
+                  {geoMatchMsg && <p style={{ ...hint, marginTop: 0, marginBottom: '0.75rem' }}>{geoMatchMsg}</p>}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                      <label style={lbl}>Provincia *</label>
+                      <select style={sel} value={stateId}
+                        onChange={e => onStateChange(e.target.value, e.target.options[e.target.selectedIndex].dataset.name || '')}>
+                        <option value="" style={opt}>— Seleccioná una provincia —</option>
+                        {(states || []).map(s => (
+                          <option key={s.id} value={s.id} data-name={s.name} style={opt}>{s.name}</option>
+                        ))}
+                      </select>
+                      {loadingLoc && !stateId && <span style={hint}>Cargando provincias...</span>}
+                    </div>
+
+                    {cities && (
+                      <div>
+                        <label style={lbl}>Ciudad / Municipio *</label>
+                        <select style={sel} value={cityId}
+                          onChange={e => onCityChange(e.target.value, e.target.options[e.target.selectedIndex].dataset.name || '')}>
+                          <option value="" style={opt}>— Seleccioná una ciudad —</option>
+                          {cities.map(c => (
+                            <option key={c.id} value={c.id} data-name={c.name} style={opt}>{c.name}</option>
+                          ))}
+                        </select>
+                        {loadingLoc && cityId === '' && <span style={hint}>Cargando ciudades...</span>}
+                      </div>
+                    )}
+
+                    {neighborhoods && neighborhoods.length > 0 && (
+                      <div>
+                        <label style={lbl}>Barrio (opcional)</label>
+                        <select style={sel} value={neighborhoodId}
+                          onChange={e => {
+                            setNeighborhoodId(e.target.value);
+                            setNeighborhoodName(e.target.options[e.target.selectedIndex].dataset.name || '');
+                          }}>
+                          <option value="" style={opt}>— Seleccioná un barrio —</option>
+                          {neighborhoods.map(n => (
+                            <option key={n.id} value={n.id} data-name={n.name} style={opt}>{n.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </FormSection>
+
+                <CardActions
+                  onCancel={goPrev}
+                  onConfirm={() => setLocStep('fotos')}
+                  confirmEnabled={!!stateId && !!cityId}
+                />
+              </>
+            ) : (
+              /* Resumen colapsado al confirmar */
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>
+                    Ubicación
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--white)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Icon name="map-pin" size={14} style={{ color: 'var(--admin-gold)', flexShrink: 0 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {(hideExact ? rangoDireccion : addressLine) || [neighborhoodName, cityName, stateName].filter(Boolean).join(', ')}
+                    </span>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setLocStep('ubicacion')}
+                  style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--gray-300)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', borderRadius: '0.4rem', padding: '0.35rem 0.8rem', flexShrink: 0 }}>
+                  Editar
+                </button>
               </div>
             )}
-          </FormSection>
+          </div>
 
-          {/* Provincia/ciudad → IDs que MELI necesita (autocompletados desde la dirección) */}
-          <FormSection title="Provincia y ciudad (para MercadoLibre)">
-            {geoMatchMsg && <p style={{ ...hint, marginTop: 0, marginBottom: '0.75rem' }}>{geoMatchMsg}</p>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div>
-                <label style={lbl}>Provincia *</label>
-                <select style={sel} value={stateId}
-                  onChange={e => onStateChange(e.target.value, e.target.options[e.target.selectedIndex].dataset.name || '')}>
-                  <option value="" style={opt}>— Seleccioná una provincia —</option>
-                  {(states || []).map(s => (
-                    <option key={s.id} value={s.id} data-name={s.name} style={opt}>{s.name}</option>
-                  ))}
-                </select>
-                {loadingLoc && !stateId && <span style={hint}>Cargando provincias...</span>}
+          {/* ─ Card Fotos (se despliega al confirmar la ubicación) ─ */}
+          {locStep === 'fotos' && (
+            <div className={styles.card} style={{ maxWidth: 720 }}>
+              <h3 style={sectionTitle}>Fotos de la propiedad</h3>
+              <p style={{ color: 'var(--gray-500)', fontSize: '0.8rem', marginBottom: '1.25rem', marginTop: '-0.5rem' }}>
+                Agregá hasta 24 fotos. La primera es la portada. Las verticales se convierten a 4:3 automáticamente.
+              </p>
+
+              <div
+                onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: `2px dashed ${dragging ? 'var(--admin-gold)' : 'rgba(255,255,255,0.12)'}`,
+                  borderRadius: '0.75rem', padding: '2.5rem 1.5rem', textAlign: 'center', cursor: 'pointer',
+                  background: dragging ? 'rgba(212,175,55,0.05)' : 'rgba(255,255,255,0.02)', transition: 'all 0.15s',
+                  marginBottom: '1.25rem',
+                }}
+              >
+                <Icon name="upload" size={30} style={{ color: 'var(--gray-500)' }} />
+                <p style={{ color: 'var(--gray-400)', fontSize: '0.875rem', margin: '0.75rem 0 0.25rem' }}>
+                  Seleccioná o arrastrá los archivos aquí
+                </p>
+                <p style={{ color: 'var(--gray-600)', fontSize: '0.75rem', margin: 0 }}>JPG, PNG o WEBP · mínimo 600×400 · hasta 10 MB</p>
+                <input ref={fileInputRef} type="file" multiple accept="image/*" style={{ display: 'none' }}
+                  onChange={e => handleFiles(e.target.files)} />
               </div>
 
-              {cities && (
-                <div>
-                  <label style={lbl}>Ciudad / Municipio *</label>
-                  <select style={sel} value={cityId}
-                    onChange={e => onCityChange(e.target.value, e.target.options[e.target.selectedIndex].dataset.name || '')}>
-                    <option value="" style={opt}>— Seleccioná una ciudad —</option>
-                    {cities.map(c => (
-                      <option key={c.id} value={c.id} data-name={c.name} style={opt}>{c.name}</option>
-                    ))}
-                  </select>
-                  {loadingLoc && cityId === '' && <span style={hint}>Cargando ciudades...</span>}
+              {photos.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.5rem' }}>
+                  {photos.map((p, i) => (
+                    <div key={p.uid} style={{ position: 'relative', borderRadius: '0.375rem', overflow: 'hidden', aspectRatio: '4/3', background: 'rgba(255,255,255,0.05)' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      {p.status === 'uploading' && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon name="clock" size={18} style={{ color: 'var(--admin-gold)' }} />
+                        </div>
+                      )}
+                      {p.status === 'done' && (
+                        <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(34,197,94,0.9)', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon name="check" size={11} style={{ color: '#fff' }} />
+                        </div>
+                      )}
+                      {p.status === 'error' && (
+                        <button type="button" onClick={() => retryPhoto(p.uid)} title={p.errorMsg || 'Error'}
+                          style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,0.55)', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, color: '#fff' }}>
+                          <Icon name="upload" size={16} style={{ color: '#fff' }} />
+                          <span style={{ fontSize: '0.6rem', fontWeight: 700 }}>Reintentar</span>
+                        </button>
+                      )}
+                      {i === 0 && p.status === 'done' && (
+                        <div style={{ position: 'absolute', bottom: 3, left: 3, background: 'var(--admin-gold)', color: '#0a1628', fontSize: '0.58rem', fontWeight: 700, padding: '1px 5px', borderRadius: '3px', letterSpacing: '0.5px' }}>
+                          PORTADA
+                        </div>
+                      )}
+                      <button onClick={() => removePhoto(p.uid)}
+                        style={{ position: 'absolute', top: 3, left: 3, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', padding: 0 }}>
+                        <Icon name="x" size={11} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {neighborhoods && neighborhoods.length > 0 && (
-                <div>
-                  <label style={lbl}>Barrio (opcional)</label>
-                  <select style={sel} value={neighborhoodId}
-                    onChange={e => {
-                      setNeighborhoodId(e.target.value);
-                      setNeighborhoodName(e.target.options[e.target.selectedIndex].dataset.name || '');
-                    }}>
-                    <option value="" style={opt}>— Seleccioná un barrio —</option>
-                    {neighborhoods.map(n => (
-                      <option key={n.id} value={n.id} data-name={n.name} style={opt}>{n.name}</option>
-                    ))}
-                  </select>
+              {/* Estado de subida */}
+              {(photosUploading || photosError.length > 0 || photosDone.length > 0) && (
+                <div style={{ marginTop: '0.9rem', fontSize: '0.78rem' }}>
+                  {photosUploading && <span style={{ color: 'var(--admin-gold)' }}>Subiendo fotos… no cierres esta pantalla.</span>}
+                  {!photosUploading && photosError.length > 0 && (
+                    <span style={{ color: '#f87171' }}>
+                      {photosError.length} foto{photosError.length > 1 ? 's' : ''} con error. Tocá «Reintentar» sobre la foto en rojo.
+                    </span>
+                  )}
+                  {!photosUploading && photosError.length === 0 && photosDone.length > 0 && (
+                    <span style={{ color: '#4ade80' }}>{photosDone.length} foto{photosDone.length > 1 ? 's' : ''} lista{photosDone.length > 1 ? 's' : ''} ✓</span>
+                  )}
                 </div>
               )}
+
+              <CardActions
+                onCancel={() => setLocStep('ubicacion')}
+                onConfirm={() => { setError(null); setStep(3); }}
+                confirmEnabled={!photosUploading}
+              />
             </div>
-          </FormSection>
-
-          <NavBar step={step} canNext={canNext()} saving={saving} onPrev={goPrev} onNext={goNext} />
-        </div>
+          )}
+        </>
       )}
 
       {/* ══════════════════ PASO 3 — Datos del inmueble ══════════════════ */}
@@ -801,76 +967,8 @@ export default function NuevaPublicacion() {
         </div>
       )}
 
-      {/* ══════════════════ PASO 4 — Fotos ══════════════════════════════ */}
+      {/* ══════════════════ PASO 3 (final) — Revisión ════════════════════ */}
       {step === 4 && (
-        <div className={styles.card} style={{ maxWidth: 720 }}>
-          <h3 style={sectionTitle}>Fotos de la propiedad</h3>
-          <p style={{ color: 'var(--gray-500)', fontSize: '0.8rem', marginBottom: '1.25rem', marginTop: '-0.5rem' }}>
-            La primera foto es la portada. Las fotos verticales se convierten a 4:3 automáticamente.
-          </p>
-
-          <div
-            onDragOver={e => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: `2px dashed ${dragging ? 'var(--admin-gold)' : 'rgba(255,255,255,0.12)'}`,
-              borderRadius: '0.75rem', padding: '2.5rem 1.5rem', textAlign: 'center', cursor: 'pointer',
-              background: dragging ? 'rgba(212,175,55,0.05)' : 'rgba(255,255,255,0.02)', transition: 'all 0.15s',
-              marginBottom: '1.25rem',
-            }}
-          >
-            <Icon name="upload-cloud" size={30} style={{ color: 'var(--gray-500)' }} />
-            <p style={{ color: 'var(--gray-400)', fontSize: '0.875rem', margin: '0.75rem 0 0.25rem' }}>
-              Arrastrá fotos acá o hacé click para seleccionar
-            </p>
-            <p style={{ color: 'var(--gray-600)', fontSize: '0.75rem', margin: 0 }}>JPG, PNG · Máximo 24 fotos</p>
-            <input ref={fileInputRef} type="file" multiple accept="image/*" style={{ display: 'none' }}
-              onChange={e => handleFiles(e.target.files)} />
-          </div>
-
-          {photos.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.5rem' }}>
-              {photos.map((p, i) => (
-                <div key={i} style={{ position: 'relative', borderRadius: '0.375rem', overflow: 'hidden', aspectRatio: '4/3', background: 'rgba(255,255,255,0.05)' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  {p.status === 'uploading' && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name="loader" size={18} style={{ color: 'var(--admin-gold)', animation: 'spin 1s linear infinite' }} />
-                    </div>
-                  )}
-                  {p.status === 'done' && (
-                    <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(34,197,94,0.9)', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name="check" size={11} style={{ color: '#fff' }} />
-                    </div>
-                  )}
-                  {p.status === 'error' && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name="x-circle" size={18} style={{ color: '#fff' }} />
-                    </div>
-                  )}
-                  {i === 0 && (
-                    <div style={{ position: 'absolute', bottom: 3, left: 3, background: 'var(--admin-gold)', color: '#0a1628', fontSize: '0.58rem', fontWeight: 700, padding: '1px 5px', borderRadius: '3px', letterSpacing: '0.5px' }}>
-                      PORTADA
-                    </div>
-                  )}
-                  <button onClick={() => removePhoto(i)}
-                    style={{ position: 'absolute', top: 3, left: 3, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', padding: 0 }}>
-                    <Icon name="x" size={11} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <NavBar step={step} canNext={canNext()} saving={saving} onPrev={goPrev} onNext={goNext} />
-        </div>
-      )}
-
-      {/* ══════════════════ PASO 5 — Revisión ════════════════════════════ */}
-      {step === 5 && (
         <div className={styles.card} style={{ maxWidth: 720 }}>
           <h3 style={sectionTitle}>Revisión antes de publicar</h3>
 
@@ -880,9 +978,10 @@ export default function NuevaPublicacion() {
             <ReviewRow label="Título" value={title} />
             <ReviewRow label="Precio" value={`${currency} ${Number(price || 0).toLocaleString('es-AR')}${operacion !== 'venta' ? '/mes' : ''}`} />
             {expensas && <ReviewRow label="Expensas" value={`$ ${Number(expensas).toLocaleString('es-AR')}/mes`} />}
-            {addressLine && <ReviewRow label="Dirección" value={addressLine} />}
+            {addressLine && <ReviewRow label="Dirección" value={hideExact ? rangoDireccion : addressLine} />}
+            {hideExact && <ReviewRow label="Dirección exacta" value="Oculta (se publica rango)" />}
             <ReviewRow label="Ubicación" value={[neighborhoodName, cityName, stateName].filter(Boolean).join(', ')} />
-            {lat != null && lng != null && <ReviewRow label="Coordenadas" value={`${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`} mono />}
+            {!hideExact && lat != null && lng != null && <ReviewRow label="Coordenadas" value={`${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`} mono />}
             {coveredArea && <ReviewRow label="Sup. cubierta" value={`${coveredArea} m²`} />}
             {totalArea && <ReviewRow label="Sup. total" value={`${totalArea} m²`} />}
             {isResidential && rooms && <ReviewRow label="Ambientes" value={rooms} />}
@@ -891,7 +990,12 @@ export default function NuevaPublicacion() {
             {isResidential && parking && <ReviewRow label="Cocheras" value={parking} />}
             {age && <ReviewRow label="Antigüedad" value={`${age} años`} />}
             {condition && <ReviewRow label="Estado" value={condition} />}
-            <ReviewRow label="Fotos" value={`${photos.filter(p => p.status === 'done').length} subidas`} />
+            <ReviewRow label="Fotos"
+              value={`${photosDone.length} lista${photosDone.length === 1 ? '' : 's'}`
+                + (photosUploading ? ' · subiendo…' : '')
+                + (photosError.length ? ` · ${photosError.length} con error` : '')
+                + (photosDone.length === 0 ? '  ⚠ se publicará sin fotos' : '')}
+              gold={photosDone.length === 0} />
             {amenities.size > 0 && (
               <ReviewRow label="Comodidades" value={AMENITIES.filter(a => amenities.has(a.id)).map(a => a.label).join(', ')} />
             )}
@@ -920,6 +1024,26 @@ function FormSection({ title, children }) {
         {title}
       </h4>
       {children}
+    </div>
+  );
+}
+
+function CardActions({ onCancel, cancelLabel = 'Cancelar', onConfirm, confirmLabel = 'Confirmar', confirmEnabled = true }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1.5rem', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <button type="button" onClick={onCancel}
+        style={{ background: 'none', border: 'none', color: 'var(--gray-300)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+        {cancelLabel}
+      </button>
+      <button type="button" onClick={onConfirm} disabled={!confirmEnabled}
+        style={{
+          padding: '0.55rem 1.5rem', border: 'none', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.875rem',
+          background: confirmEnabled ? 'var(--admin-gold)' : 'rgba(212,175,55,0.3)',
+          color: confirmEnabled ? 'var(--navy-900, #0a1628)' : 'rgba(255,255,255,0.4)',
+          cursor: confirmEnabled ? 'pointer' : 'not-allowed',
+        }}>
+        {confirmLabel}
+      </button>
     </div>
   );
 }
