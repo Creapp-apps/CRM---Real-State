@@ -56,15 +56,21 @@ export default function AdminProperties() {
           <h2 className={styles.pageTitle}>Propiedades</h2>
           <p className={styles.pageSubtitle}>Publicaciones en MercadoLibre</p>
         </div>
-        <a
-          href="https://www.mercadolibre.com.ar/anuncios"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.btnSecondary}
-        >
-          <Icon name="external-link" size={16} />
-          Ver en MercadoLibre
-        </a>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Link href="/admin/propiedades/nueva" className={styles.btnPrimary}>
+            <Icon name="plus" size={16} />
+            Nueva publicación
+          </Link>
+          <a
+            href="https://www.mercadolibre.com.ar/anuncios"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.btnSecondary}
+          >
+            <Icon name="external-link" size={16} />
+            Ver en MELI
+          </a>
+        </div>
       </div>
 
       {/* Tabs de estado */}

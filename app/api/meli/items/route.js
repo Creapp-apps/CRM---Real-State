@@ -1,11 +1,12 @@
 // API: publicaciones de MercadoLibre (normalizadas al shape interno de CMPROP).
-// GET /api/meli/items              -> lista (status=active por defecto)
-// GET /api/meli/items?id=MLA123    -> item único con descripción
-// GET /api/meli/items?status=all&limit=50&offset=0
-// PUT /api/meli/items              -> { id, fields: {...}, description? }
+// GET  /api/meli/items              -> lista (status=active por defecto)
+// GET  /api/meli/items?id=MLA123    -> item único con descripción
+// GET  /api/meli/items?status=all&limit=50&offset=0
+// PUT  /api/meli/items              -> { id, fields: {...}, description? }
+// POST /api/meli/items              -> { title, category_id, price, currency_id, listing_type_id, location, attributes, pictures, description? }
 
 import { NextResponse } from 'next/server';
-import { getMeliProperties, getMeliPropertyById, getMeliRawItem, isMeliConnected, updateMeliItem, updateMeliDescription } from '@/lib/mercadolibre';
+import { getMeliProperties, getMeliPropertyById, getMeliRawItem, isMeliConnected, updateMeliItem, updateMeliDescription, createMeliItem } from '@/lib/mercadolibre';
 
 export const runtime = 'nodejs';
 
@@ -77,4 +78,31 @@ export async function PUT(request) {
   }
 
   return NextResponse.json({ success: true, errors, item: updatedItem });
+}
+
+// POST /api/meli/items — crea una publicación nueva
+export async function POST(request) {
+  if (!(await isMeliConnected())) {
+    return NextResponse.json({ error: 'MELI no conectado' }, { status: 409 });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
+  }
+
+  const required = ['title', 'category_id', 'price', 'currency_id', 'listing_type_id', 'location'];
+  const missing = required.filter(k => !body[k]);
+  if (missing.length) {
+    return NextResponse.json({ error: `Faltan campos: ${missing.join(', ')}` }, { status: 400 });
+  }
+
+  try {
+    const item = await createMeliItem(body);
+    return NextResponse.json({ success: true, item }, { status: 201 });
+  } catch (e) {
+    return NextResponse.json({ error: e.message }, { status: 502 });
+  }
 }
