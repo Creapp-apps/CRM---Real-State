@@ -442,10 +442,16 @@ export default function NuevaPublicacion() {
             <input style={inp} value={title}
               onChange={e => { setTitle(e.target.value); setTitleTouched(true); }}
               onBlur={() => !title.trim() && setTitleTouched(false)}
-              placeholder="Ej: Casa en Venta · 3 amb · Palermo, Capital Federal" />
-            <span style={{ fontSize: '0.7rem', color: 'var(--gray-500)', display: 'block', marginTop: '0.3rem' }}>
-              Se genera automáticamente a medida que completás los datos
-            </span>
+              placeholder="Ej: Casa en Venta · 3 amb · Palermo, Capital Federal"
+              maxLength={200} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.3rem' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--gray-500)' }}>
+                Se genera automáticamente a medida que completás los datos
+              </span>
+              <span style={{ fontSize: '0.7rem', color: title.length > 180 ? '#f87171' : 'var(--gray-500)' }}>
+                {title.length}/200
+              </span>
+            </div>
           </FormSection>
 
           {/* ─ Ubicación ─ */}
