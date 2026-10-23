@@ -203,15 +203,15 @@ export default function FichaView({ property }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox, images.length, closeLightbox]);
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const handlePrint = () => window.print();
   const handleWhatsApp = () => {
-    const text = `${headline} — ${formatPrice(property.price, property.currency, property.priceLabel)}\n${shareUrl}`;
+    const url = window.location.href;
+    const text = `${headline} — ${formatPrice(property.price, property.currency, property.priceLabel)}\n${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch { /* sin permiso de clipboard */ }
