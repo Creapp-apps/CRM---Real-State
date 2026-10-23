@@ -1,49 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
+import { fetchMessagesContacto } from '@/lib/admin-fetchers';
 
 export default function AdminContacto() {
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: messages = [], isLoading: loading, mutate } = useSWR('messages-contacto', fetchMessagesContacto);
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
 
-  // Fetch messages on mount
-  useEffect(() => {
-    async function fetchMessages() {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('message_type', 'contacto')
-        .order('created_at', { ascending: false });
-      
-      if (!error && data) {
-        setMessages(data);
-      }
-      setLoading(false);
-    }
-    fetchMessages();
-  }, []);
-
-  // Mark as read when selected
   const handleSelectMessage = async (msg) => {
     setSelected(msg);
     if (!msg.is_read) {
-      // Optimistic update
-      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_read: true } : m));
-      // Supabase update
+      mutate(prev => prev.map(m => m.id === msg.id ? { ...m, is_read: true } : m), false);
       await supabase.from('messages').update({ is_read: true }).eq('id', msg.id);
     }
   };
 
   const archiveMessage = async (id) => {
-    // Optimistic remove
-    setMessages(prev => prev.filter(m => m.id !== id));
+    mutate(prev => prev.filter(m => m.id !== id), false);
     setSelected(null);
-    // Supabase update
     await supabase.from('messages').update({ is_archived: true }).eq('id', id);
   };
 

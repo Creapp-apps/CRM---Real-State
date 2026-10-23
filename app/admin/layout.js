@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminTopbar from '@/components/admin/AdminTopbar';
+import SWRProvider from '@/components/admin/SWRProvider';
 import styles from '@/components/admin/admin.module.css';
 
 export default function AdminLayout({ children }) {
@@ -16,20 +17,22 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className={styles.adminLayout}>
-      <AdminSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-      <div className={styles.adminMain}>
-        <AdminTopbar
-          pathname={pathname}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+    <SWRProvider>
+      <div className={styles.adminLayout}>
+        <AdminSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
-        <div className={styles.adminContent}>
-          {children}
+        <div className={styles.adminMain}>
+          <AdminTopbar
+            pathname={pathname}
+            onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          />
+          <div className={styles.adminContent}>
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </SWRProvider>
   );
 }

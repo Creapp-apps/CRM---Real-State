@@ -1,58 +1,39 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 import ClienteModal from '@/components/admin/administraciones/ClienteModal';
+import { fetchClientes } from '@/lib/admin-fetchers';
 
 const TIPO_LABELS = { locador: 'Locador', locatario: 'Locatario', ambos: 'Ambos' };
 
 export default function ClientesPage() {
-  const [clientes, setClientes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: clientes = [], isLoading: loading, mutate } = useSWR('clientes', fetchClientes);
   const [search, setSearch] = useState('');
   const [filterTipo, setFilterTipo] = useState('todos');
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [fichaCliente, setFichaCliente] = useState(null);
 
-  const fetchClientes = useCallback(async () => {
-    setLoading(true);
-    let query = supabase.from('clientes').select('*').order('created_at', { ascending: false });
-    if (filterTipo !== 'todos') {
-      query = filterTipo === 'locador'
-        ? query.in('tipo', ['locador', 'ambos'])
-        : query.in('tipo', ['locatario', 'ambos']);
-    }
-    const { data, error } = await query;
-    if (!error && data) setClientes(data);
-    setLoading(false);
-  }, [filterTipo]);
+  const filtered = clientes
+    .filter(c => filterTipo === 'todos' || c.tipo === filterTipo || (filterTipo !== 'ambos' && c.tipo === 'ambos'))
+    .filter(c =>
+      c.nombre?.toLowerCase().includes(search.toLowerCase()) ||
+      c.dni_cuit?.toLowerCase().includes(search.toLowerCase()) ||
+      c.telefono?.includes(search)
+    );
 
-  useEffect(() => { fetchClientes(); }, [fetchClientes]);
-
-  const filtered = clientes.filter(c =>
-    c.nombre?.toLowerCase().includes(search.toLowerCase()) ||
-    c.dni_cuit?.toLowerCase().includes(search.toLowerCase()) ||
-    c.telefono?.includes(search)
-  );
-
-  const handleEdit = (cliente) => {
-    setEditData(cliente);
-    setModalOpen(true);
-  };
-
-  const handleNew = () => {
-    setEditData(null);
-    setModalOpen(true);
-  };
+  const handleEdit = (cliente) => { setEditData(cliente); setModalOpen(true); };
+  const handleNew  = ()        => { setEditData(null);    setModalOpen(true); };
 
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar este cliente?')) return;
     const { error } = await supabase.from('clientes').delete().eq('id', id);
     if (error) return alert('Error: ' + error.message);
-    fetchClientes();
+    mutate(prev => prev.filter(c => c.id !== id), false);
   };
 
   return (
@@ -149,7 +130,7 @@ export default function ClientesPage() {
       <ClienteModal
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setEditData(null); }}
-        onSaved={fetchClientes}
+        onSaved={() => mutate()}
         editData={editData}
       />
 

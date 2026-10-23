@@ -1,66 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
-import { supabase } from '@/lib/supabase';
+import { fetchAdminStats } from '@/lib/admin-fetchers';
 
 export default function AdministracionesDashboard() {
-  const [stats, setStats] = useState({ contratos: 0, clientes: 0, inmuebles: 0, vencimientos: 0, pendientes: 0 });
-  const [proximosVencimientos, setProximosVencimientos] = useState([]);
-  const [pagosMora, setPagosMora] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useSWR('admin-stats', fetchAdminStats);
 
-  useEffect(() => {
-    async function fetchData() {
-      const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-      const [
-        { count: contratosCount },
-        { count: clientesCount },
-        { count: inmueblesCount },
-        { count: vencimientosCount },
-        { data: proximos },
-        { count: pendientesCount },
-        { data: mora }
-      ] = await Promise.all([
-        supabase.from('contratos').select('*', { count: 'exact', head: true }).eq('estado', 'activo'),
-        supabase.from('clientes').select('*', { count: 'exact', head: true }),
-        supabase.from('inmuebles_administrados').select('*', { count: 'exact', head: true }),
-        supabase.from('contratos').select('*', { count: 'exact', head: true })
-          .lte('fecha_fin', in30Days.toISOString().split('T')[0])
-          .gte('fecha_fin', today),
-        supabase.from('contratos')
-          .select('id, monto_inicial, moneda, fecha_inicio, fecha_fin, estado, locador:clientes!contratos_locador_id_fkey(nombre), locatario:clientes!contratos_locatario_id_fkey(nombre), inmueble:inmuebles_administrados!contratos_inmueble_id_fkey(direccion)')
-          .lte('fecha_fin', in30Days.toISOString().split('T')[0])
-          .gte('fecha_fin', today)
-          .order('fecha_fin', { ascending: true })
-          .limit(10),
-        supabase.from('pagos_alquiler').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
-        supabase.from('pagos_alquiler')
-          .select('*, contrato:contratos(inmueble:inmuebles_administrados(direccion), locatario:clientes!contratos_locatario_id_fkey(nombre))')
-          .eq('estado', 'pendiente')
-          .lt('fecha_vencimiento', today)
-          .order('fecha_vencimiento', { ascending: true })
-          .limit(10),
-      ]);
-
-      setStats({
-        contratos: contratosCount || 0,
-        clientes: clientesCount || 0,
-        inmuebles: inmueblesCount || 0,
-        vencimientos: vencimientosCount || 0,
-        pendientes: pendientesCount || 0,
-      });
-      setProximosVencimientos(proximos || []);
-      setPagosMora(mora || []);
-      setLoading(false);
-    }
-    fetchData();
-  }, []);
+  const stats               = data?.stats               ?? { contratos: 0, clientes: 0, inmuebles: 0, vencimientos: 0, pendientes: 0 };
+  const proximosVencimientos = data?.proximosVencimientos ?? [];
+  const pagosMora            = data?.pagosMora            ?? [];
 
   const formatDate = (d) => {
     if (!d) return '-';

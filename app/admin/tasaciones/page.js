@@ -1,31 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
+import { fetchMessagesTasacion } from '@/lib/admin-fetchers';
 
 export default function AdminTasaciones() {
-  const [tasaciones, setTasaciones] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: tasaciones = [], isLoading: loading, mutate } = useSWR('messages-tasacion', fetchMessagesTasacion);
   const [selected, setSelected] = useState(null);
-
-  // Fetch tasaciones on mount
-  useEffect(() => {
-    async function fetchTasaciones() {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('message_type', 'tasacion')
-        .order('created_at', { ascending: false });
-      
-      if (!error && data) {
-        setTasaciones(data);
-      }
-      setLoading(false);
-    }
-    fetchTasaciones();
-  }, []);
 
   const getStatus = (t) => {
     if (t.is_archived) return 'completed';
@@ -34,22 +18,13 @@ export default function AdminTasaciones() {
   };
 
   const handleStatusChange = async (id, newStatus) => {
-    let updates = {};
-    if (newStatus === 'pending') {
-      updates = { is_read: false, is_archived: false };
-    } else if (newStatus === 'in-progress') {
-      updates = { is_read: true, is_archived: false };
-    } else if (newStatus === 'completed') {
-      updates = { is_read: true, is_archived: true };
-    }
+    const updates =
+      newStatus === 'pending'     ? { is_read: false, is_archived: false } :
+      newStatus === 'in-progress' ? { is_read: true,  is_archived: false } :
+                                    { is_read: true,  is_archived: true  };
 
-    // Optimistic UI update
-    setTasaciones(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-    if (selected?.id === id) {
-      setSelected(prev => ({ ...prev, ...updates }));
-    }
-
-    // Database update
+    mutate(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t), false);
+    if (selected?.id === id) setSelected(prev => ({ ...prev, ...updates }));
     await supabase.from('messages').update(updates).eq('id', id);
   };
 

@@ -1,35 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 import Image from 'next/image';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
+import { fetchMeliItems } from '@/lib/admin-fetchers';
 
 export default function AdminProperties() {
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data, isLoading: loading, error: swrError } = useSWR('meli-items', fetchMeliItems);
+  const properties = data?.properties || [];
+  const error = swrError?.message || null;
   const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    async function fetchProperties() {
-      try {
-        const res = await fetch('/api/meli/items?status=active&limit=50');
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Error al cargar publicaciones');
-        } else {
-          setProperties(data.properties || []);
-        }
-      } catch (e) {
-        setError('No se pudo conectar con la API');
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProperties();
-  }, []);
 
   const filtered = properties.filter(p =>
     p.title?.toLowerCase().includes(search.toLowerCase()) ||

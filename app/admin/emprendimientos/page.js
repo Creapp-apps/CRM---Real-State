@@ -1,33 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
+import { fetchDevelopments } from '@/lib/admin-fetchers';
 
 export default function AdminEmprendimientos() {
-  const [developments, setDevelopments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: developments = [], isLoading: loading, mutate } = useSWR('developments', fetchDevelopments);
   const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    fetchDevelopments();
-  }, []);
-
-  async function fetchDevelopments() {
-    const { data, error } = await supabase
-      .from('developments')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) setDevelopments(data);
-    setLoading(false);
-  }
 
   async function handleDelete(id) {
     if (!confirm('¿Eliminar este emprendimiento?')) return;
+    mutate(prev => prev.filter(d => d.id !== id), false);
     await supabase.from('developments').delete().eq('id', id);
-    setDevelopments(prev => prev.filter(d => d.id !== id));
   }
 
   const filtered = developments.filter(d =>

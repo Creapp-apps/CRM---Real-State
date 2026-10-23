@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import { supabase } from '@/lib/supabase';
 import ContratoModal from '@/components/admin/administraciones/ContratoModal';
+import { fetchContratos } from '@/lib/admin-fetchers';
 
 const ESTADO_BADGE = {
   activo: styles.badgeGreen,
@@ -22,29 +24,15 @@ const ESTADO_LABEL = {
 };
 
 export default function ContratosPage() {
-  const [contratos, setContratos] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filterEstado, setFilterEstado] = useState('todos');
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
 
-  const fetchContratos = useCallback(async () => {
-    setLoading(true);
-    let query = supabase
-      .from('contratos')
-      .select('*, locador:clientes!contratos_locador_id_fkey(nombre), locatario:clientes!contratos_locatario_id_fkey(nombre), inmueble:inmuebles_administrados!contratos_inmueble_id_fkey(direccion)')
-      .order('created_at', { ascending: false });
-
-    if (filterEstado !== 'todos') {
-      query = query.eq('estado', filterEstado);
-    }
-
-    const { data, error } = await query;
-    if (!error && data) setContratos(data);
-    setLoading(false);
-  }, [filterEstado]);
-
-  useEffect(() => { fetchContratos(); }, [fetchContratos]);
+  const swrKey = ['contratos', filterEstado];
+  const { data: contratos = [], isLoading: loading, mutate } = useSWR(
+    swrKey,
+    ([_, estado]) => fetchContratos(estado)
+  );
 
   const formatDate = (d) => {
     if (!d) return '-';
@@ -57,7 +45,7 @@ export default function ContratosPage() {
     if (!confirm('¿Eliminar este contrato?')) return;
     const { error } = await supabase.from('contratos').delete().eq('id', id);
     if (error) return alert('Error: ' + error.message);
-    fetchContratos();
+    mutate(prev => prev.filter(c => c.id !== id), false);
   };
 
   return (
@@ -157,7 +145,7 @@ export default function ContratosPage() {
       <ContratoModal
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setEditData(null); }}
-        onSaved={fetchContratos}
+        onSaved={() => mutate()}
         editData={editData}
       />
     </>
