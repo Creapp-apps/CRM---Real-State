@@ -15,6 +15,40 @@ const EMPTY = {
   totalArea: '', coveredArea: '', videoUrl: '',
 };
 
+// MELI exige fotos horizontales (mínimo 4:3).
+// Si la foto es vertical, la centramos sobre fondo blanco para que quede 4:3.
+function normalizeImageForMeli(file) {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const { naturalWidth: w, naturalHeight: h } = img;
+
+      // Ya es landscape o cuadrada → sube tal cual
+      if (w >= h) { resolve(file); return; }
+
+      // Vertical → canvas 4:3 con la imagen centrada y fondo blanco
+      const canvasW = Math.ceil(h * (4 / 3));
+      const canvasH = h;
+      const canvas = document.createElement('canvas');
+      canvas.width  = canvasW;
+      canvas.height = canvasH;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvasW, canvasH);
+      ctx.drawImage(img, Math.floor((canvasW - w) / 2), 0, w, h);
+
+      canvas.toBlob(
+        (blob) => resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' })),
+        'image/jpeg', 0.92
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
+}
+
 function extractYouTubeId(url) {
   if (!url) return '';
   const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
@@ -82,8 +116,10 @@ export default function AdminPropertyEdit() {
     for (let i = 0; i < fileArr.length; i++) {
       const f = fileArr[i];
       try {
+        // Convierte fotos verticales a 4:3 landscape (requisito MELI)
+        const processed = await normalizeImageForMeli(f);
         const fd = new FormData();
-        fd.append('file', f);
+        fd.append('file', processed);
         const res = await fetch('/api/meli/pictures', { method: 'POST', body: fd });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error');
@@ -334,7 +370,7 @@ export default function AdminPropertyEdit() {
               <div style={{ fontSize: '0.85rem' }}>
                 {uploading ? 'Subiendo a MercadoLibre...' : 'Arrastrá fotos aquí o hacé click para seleccionar'}
               </div>
-              <div style={{ fontSize: '0.7rem', marginTop: '0.25rem' }}>JPG, PNG, WEBP · Múltiples archivos aceptados</div>
+              <div style={{ fontSize: '0.7rem', marginTop: '0.25rem' }}>JPG, PNG, WEBP · Las fotos verticales se convierten a 4:3 automáticamente</div>
             </div>
             <input
               ref={fileInputRef}
