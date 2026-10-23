@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import Image from 'next/image';
 import Link from 'next/link';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
+import { fetchMeliVisits } from '@/lib/admin-fetchers';
 
 const EMPTY = {
   title: '', price: '', currency: 'USD', status: 'active',
@@ -60,6 +62,13 @@ export default function AdminPropertyEdit() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  const [visitPeriod, setVisitPeriod] = useState(7);
+  const { data: visitData } = useSWR(
+    id ? ['meli-visits', id, visitPeriod] : null,
+    ([, itemId, days]) => fetchMeliVisits(itemId, days),
+    { revalidateOnFocus: false }
+  );
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
 
@@ -420,6 +429,64 @@ export default function AdminPropertyEdit() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Estadísticas de visitas */}
+          <div className={styles.card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ color: 'var(--white)', fontFamily: 'var(--font-heading)', fontSize: '0.875rem' }}>Visitas</h3>
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                {[7, 30, 60].map(d => (
+                  <button
+                    key={d}
+                    onClick={() => setVisitPeriod(d)}
+                    style={{
+                      background: visitPeriod === d ? 'rgba(184,141,77,0.15)' : 'none',
+                      border: '1px solid',
+                      borderColor: visitPeriod === d ? 'var(--admin-gold)' : 'rgba(255,255,255,0.1)',
+                      borderRadius: '0.25rem',
+                      color: visitPeriod === d ? 'var(--admin-gold)' : 'var(--gray-500)',
+                      fontSize: '0.7rem',
+                      padding: '0.2rem 0.5rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {d}d
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--admin-gold)', fontFamily: 'var(--font-heading)', lineHeight: 1 }}>
+                {visitData?.total ?? '—'}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>visitas en {visitPeriod} días</span>
+            </div>
+            {/* Mini sparkline */}
+            {visitData?.days?.length > 0 && (() => {
+              const maxVal = Math.max(...visitData.days.map(d => d.total), 1);
+              return (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: 36 }}>
+                  {visitData.days.map((d, i) => (
+                    <div
+                      key={i}
+                      title={`${new Date(d.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}: ${d.total} visitas`}
+                      style={{
+                        flex: 1,
+                        height: `${Math.max((d.total / maxVal) * 100, 4)}%`,
+                        background: 'var(--admin-gold)',
+                        opacity: 0.6,
+                        borderRadius: '2px 2px 0 0',
+                        minHeight: 2,
+                      }}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
+            {!visitData && (
+              <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>Cargando estadísticas...</div>
+            )}
           </div>
 
           <div className={styles.card}>
