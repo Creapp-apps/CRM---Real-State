@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 
 export default function ExpensasPanel({ contratoId, inmuebleId }) {
@@ -99,10 +100,14 @@ export default function ExpensasPanel({ contratoId, inmuebleId }) {
             <div className={styles.formGrid}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tipo</label>
-                <select className={styles.formSelect} value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })}>
-                  <option value="ordinaria">Ordinaria</option>
-                  <option value="extraordinaria">Extraordinaria</option>
-                </select>
+                <AdminSelect
+                  value={form.tipo}
+                  onChange={(val) => setForm({ ...form, tipo: val })}
+                  options={[
+                    { value: 'ordinaria', label: 'Ordinaria' },
+                    { value: 'extraordinaria', label: 'Extraordinaria' },
+                  ]}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Período</label>

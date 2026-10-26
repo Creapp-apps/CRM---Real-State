@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import Image from 'next/image';
 import Link from 'next/link';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import styles from '@/components/admin/admin.module.css';
 import { fetchMeliVisits } from '@/lib/admin-fetchers';
 import { normalizeImageForMeli } from '@/lib/imageForMeli';
@@ -402,18 +403,26 @@ export default function AdminPropertyEdit() {
             <h3 style={{ color: 'var(--white)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>Publicación</h3>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Estado</label>
-              <select className={styles.formSelect} value={form.status} onChange={e => set('status', e.target.value)}>
-                <option value="active">Activa</option>
-                <option value="paused">Pausada</option>
-                <option value="closed">Cerrada</option>
-              </select>
+              <AdminSelect
+                value={form.status}
+                onChange={(val) => set('status', val)}
+                options={[
+                  { value: 'active', label: 'Activa' },
+                  { value: 'paused', label: 'Pausada' },
+                  { value: 'closed', label: 'Cerrada' },
+                ]}
+              />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Moneda</label>
-              <select className={styles.formSelect} value={form.currency} onChange={e => set('currency', e.target.value)}>
-                <option value="USD">USD</option>
-                <option value="ARS">ARS ($)</option>
-              </select>
+              <AdminSelect
+                value={form.currency}
+                onChange={(val) => set('currency', val)}
+                options={[
+                  { value: 'USD', label: 'USD' },
+                  { value: 'ARS', label: 'ARS ($)' },
+                ]}
+              />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Precio</label>

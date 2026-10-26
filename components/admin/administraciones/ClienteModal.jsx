@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 
 const EMPTY_FORM = {
@@ -67,11 +68,15 @@ export default function ClienteModal({ isOpen, onClose, onSaved, editData }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tipo *</label>
-                <select className={styles.formSelect} name="tipo" value={form.tipo} onChange={handleChange}>
-                  <option value="locador">Locador</option>
-                  <option value="locatario">Locatario</option>
-                  <option value="ambos">Ambos</option>
-                </select>
+                <AdminSelect
+                  value={form.tipo}
+                  onChange={(val) => setForm({ ...form, tipo: val })}
+                  options={[
+                    { value: 'locador', label: 'Locador' },
+                    { value: 'locatario', label: 'Locatario' },
+                    { value: 'ambos', label: 'Ambos' },
+                  ]}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Teléfono</label>

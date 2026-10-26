@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import styles from '@/components/admin/admin.module.css';
 
 export default function AdminEmprendimientoEdit() {
   const params = useParams();
   const router = useRouter();
+  const [status, setStatus] = useState('active');
 
   return (
     <>
@@ -70,10 +73,14 @@ export default function AdminEmprendimientoEdit() {
             <h3 style={{ color: 'var(--white)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>Publicación</h3>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Estado</label>
-              <select className={styles.formSelect} defaultValue="active">
-                <option value="draft">Borrador</option>
-                <option value="active">Activo</option>
-              </select>
+              <AdminSelect
+                value={status}
+                onChange={(val) => setStatus(val)}
+                options={[
+                  { value: 'draft', label: 'Borrador' },
+                  { value: 'active', label: 'Activo' },
+                ]}
+              />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Fecha de entrega estimada</label>

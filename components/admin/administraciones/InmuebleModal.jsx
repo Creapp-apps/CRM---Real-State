@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 
 const TIPOS = [
@@ -156,17 +157,23 @@ export default function InmuebleModal({ isOpen, onClose, onSaved, editData }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tipo</label>
-                <select className={styles.formSelect} name="tipo" value={form.tipo} onChange={handleChange}>
-                  {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
+                <AdminSelect
+                  value={form.tipo}
+                  onChange={(val) => setForm({ ...form, tipo: val })}
+                  options={TIPOS.map(t => ({ value: t.value, label: t.label }))}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Estado</label>
-                <select className={styles.formSelect} name="estado" value={form.estado} onChange={handleChange}>
-                  <option value="disponible">Disponible</option>
-                  <option value="alquilado">Alquilado</option>
-                  <option value="en_mantenimiento">En Mantenimiento</option>
-                </select>
+                <AdminSelect
+                  value={form.estado}
+                  onChange={(val) => setForm({ ...form, estado: val })}
+                  options={[
+                    { value: 'disponible', label: 'Disponible' },
+                    { value: 'alquilado', label: 'Alquilado' },
+                    { value: 'en_mantenimiento', label: 'En Mantenimiento' },
+                  ]}
+                />
               </div>
 
               {/* Superficies */}

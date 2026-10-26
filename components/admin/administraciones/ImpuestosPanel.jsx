@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 
 export default function ImpuestosPanel({ inmuebleId }) {
@@ -106,14 +107,18 @@ export default function ImpuestosPanel({ inmuebleId }) {
             <div className={styles.formGrid}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Impuesto</label>
-                <select className={styles.formSelect} value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })}>
-                  <option value="">— Seleccionar —</option>
-                  <option value="Municipal">Municipal</option>
-                  <option value="ABL">ABL</option>
-                  <option value="Tasa de servicios">Tasa de Servicios</option>
-                  <option value="Contribuciones">Contribuciones</option>
-                  <option value="Otro">Otro</option>
-                </select>
+                <AdminSelect
+                  value={form.nombre}
+                  onChange={(val) => setForm({ ...form, nombre: val })}
+                  options={[
+                    { value: 'Municipal', label: 'Municipal' },
+                    { value: 'ABL', label: 'ABL' },
+                    { value: 'Tasa de servicios', label: 'Tasa de Servicios' },
+                    { value: 'Contribuciones', label: 'Contribuciones' },
+                    { value: 'Otro', label: 'Otro' },
+                  ]}
+                  placeholder="— Seleccionar —"
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Período</label>

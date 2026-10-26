@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 
 const ETAPAS = [
@@ -95,16 +96,17 @@ export default function PipelinePage() {
           <p className={styles.pageSubtitle}>Seguimiento de consultas, visitas y cierres</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <select
-            className={styles.formSelect}
-            value={filterTipo}
-            onChange={e => setFilterTipo(e.target.value)}
-            style={{ width: 'auto', minWidth: 120 }}
-          >
-            <option value="todos">Todos</option>
-            <option value="venta">Ventas</option>
-            <option value="alquiler">Alquileres</option>
-          </select>
+          <div style={{ minWidth: 120, flexShrink: 0 }}>
+            <AdminSelect
+              value={filterTipo}
+              onChange={(val) => setFilterTipo(val)}
+              options={[
+                { value: 'todos', label: 'Todos' },
+                { value: 'venta', label: 'Ventas' },
+                { value: 'alquiler', label: 'Alquileres' },
+              ]}
+            />
+          </div>
           <button className={styles.btnPrimary} onClick={() => { setEditData(null); setShowModal(true); }}>
             <Icon name="plus" size={14} />
             Nueva Oportunidad
@@ -293,30 +295,40 @@ function OportunidadModal({ editData, clientes, inmuebles, onClose, onSaved, onD
             <div className={styles.formGrid}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tipo *</label>
-                <select className={styles.formSelect} name="tipo" value={form.tipo} onChange={handleChange}>
-                  <option value="venta">Venta</option>
-                  <option value="alquiler">Alquiler</option>
-                </select>
+                <AdminSelect
+                  value={form.tipo}
+                  onChange={(val) => setForm(prev => ({ ...prev, tipo: val }))}
+                  options={[
+                    { value: 'venta', label: 'Venta' },
+                    { value: 'alquiler', label: 'Alquiler' },
+                  ]}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Etapa</label>
-                <select className={styles.formSelect} name="etapa" value={form.etapa} onChange={handleChange}>
-                  {ETAPAS.map(e => <option key={e.key} value={e.key}>{e.icon} {e.label}</option>)}
-                </select>
+                <AdminSelect
+                  value={form.etapa}
+                  onChange={(val) => setForm(prev => ({ ...prev, etapa: val }))}
+                  options={ETAPAS.map(e => ({ value: e.key, label: `${e.icon} ${e.label}` }))}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Inmueble</label>
-                <select className={styles.formSelect} name="inmueble_id" value={form.inmueble_id} onChange={handleChange}>
-                  <option value="">— Seleccionar —</option>
-                  {inmuebles.map(i => <option key={i.id} value={i.id}>{i.direccion}</option>)}
-                </select>
+                <AdminSelect
+                  value={form.inmueble_id}
+                  onChange={(val) => setForm(prev => ({ ...prev, inmueble_id: val }))}
+                  options={inmuebles.map(i => ({ value: i.id, label: i.direccion }))}
+                  placeholder="— Seleccionar —"
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Cliente</label>
-                <select className={styles.formSelect} name="cliente_id" value={form.cliente_id} onChange={handleChange}>
-                  <option value="">— Seleccionar —</option>
-                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
+                <AdminSelect
+                  value={form.cliente_id}
+                  onChange={(val) => setForm(prev => ({ ...prev, cliente_id: val }))}
+                  options={clientes.map(c => ({ value: c.id, label: c.nombre }))}
+                  placeholder="— Seleccionar —"
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Monto Estimado ($)</label>

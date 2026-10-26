@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 
 const EMPTY_FORM = {
@@ -229,33 +230,43 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               {/* Partes */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Inmueble</label>
-                <select className={styles.formSelect} name="inmueble_id" value={form.inmueble_id} onChange={handleChange}>
-                  <option value="">— Seleccionar inmueble —</option>
-                  {inmuebles.map(i => <option key={i.id} value={i.id}>{i.direccion}</option>)}
-                </select>
+                <AdminSelect
+                  value={form.inmueble_id}
+                  onChange={(val) => setForm({ ...form, inmueble_id: val })}
+                  options={inmuebles.map(i => ({ value: i.id, label: i.direccion }))}
+                  placeholder="— Seleccionar inmueble —"
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Estado</label>
-                <select className={styles.formSelect} name="estado" value={form.estado} onChange={handleChange}>
-                  <option value="activo">Activo</option>
-                  <option value="proximo_a_vencer">Próximo a vencer</option>
-                  <option value="vencido">Vencido</option>
-                  <option value="rescindido">Rescindido</option>
-                </select>
+                <AdminSelect
+                  value={form.estado}
+                  onChange={(val) => setForm({ ...form, estado: val })}
+                  options={[
+                    { value: 'activo', label: 'Activo' },
+                    { value: 'proximo_a_vencer', label: 'Próximo a vencer' },
+                    { value: 'vencido', label: 'Vencido' },
+                    { value: 'rescindido', label: 'Rescindido' },
+                  ]}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Locador (Propietario)</label>
-                <select className={styles.formSelect} name="locador_id" value={form.locador_id} onChange={handleChange}>
-                  <option value="">— Seleccionar locador —</option>
-                  {locadores.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
+                <AdminSelect
+                  value={form.locador_id}
+                  onChange={(val) => setForm({ ...form, locador_id: val })}
+                  options={locadores.map(c => ({ value: c.id, label: c.nombre }))}
+                  placeholder="— Seleccionar locador —"
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Locatario (Inquilino)</label>
-                <select className={styles.formSelect} name="locatario_id" value={form.locatario_id} onChange={handleChange}>
-                  <option value="">— Seleccionar locatario —</option>
-                  {locatarios.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
+                <AdminSelect
+                  value={form.locatario_id}
+                  onChange={(val) => setForm({ ...form, locatario_id: val })}
+                  options={locatarios.map(c => ({ value: c.id, label: c.nombre }))}
+                  placeholder="— Seleccionar locatario —"
+                />
               </div>
 
               {/* Fechas y Monto */}
@@ -273,32 +284,44 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Moneda</label>
-                <select className={styles.formSelect} name="moneda" value={form.moneda} onChange={handleChange}>
-                  <option value="ARS">ARS (Pesos)</option>
-                  <option value="USD">USD (Dólares)</option>
-                </select>
+                <AdminSelect
+                  value={form.moneda}
+                  onChange={(val) => setForm({ ...form, moneda: val })}
+                  options={[
+                    { value: 'ARS', label: 'ARS (Pesos)' },
+                    { value: 'USD', label: 'USD (Dólares)' },
+                  ]}
+                />
               </div>
 
               {/* Ajuste */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Índice de Ajuste</label>
-                <select className={styles.formSelect} name="indice_ajuste" value={form.indice_ajuste} onChange={handleChange}>
-                  <option value="IPC">IPC (INDEC)</option>
-                  <option value="ICL">ICL (Banco Central)</option>
-                  <option value="UVA">UVA</option>
-                  <option value="personalizado">Personalizado</option>
-                </select>
+                <AdminSelect
+                  value={form.indice_ajuste}
+                  onChange={(val) => setForm({ ...form, indice_ajuste: val })}
+                  options={[
+                    { value: 'IPC', label: 'IPC (INDEC)' },
+                    { value: 'ICL', label: 'ICL (Banco Central)' },
+                    { value: 'UVA', label: 'UVA' },
+                    { value: 'personalizado', label: 'Personalizado' },
+                  ]}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Periodicidad de Ajuste</label>
-                <select className={styles.formSelect} name="periodicidad_ajuste" value={form.periodicidad_ajuste} onChange={handleChange}>
-                  <option value="mensual">Mensual</option>
-                  <option value="bimestral">Bimestral</option>
-                  <option value="trimestral">Trimestral</option>
-                  <option value="cuatrimestral">Cuatrimestral</option>
-                  <option value="semestral">Semestral</option>
-                  <option value="anual">Anual</option>
-                </select>
+                <AdminSelect
+                  value={form.periodicidad_ajuste}
+                  onChange={(val) => setForm({ ...form, periodicidad_ajuste: val })}
+                  options={[
+                    { value: 'mensual', label: 'Mensual' },
+                    { value: 'bimestral', label: 'Bimestral' },
+                    { value: 'trimestral', label: 'Trimestral' },
+                    { value: 'cuatrimestral', label: 'Cuatrimestral' },
+                    { value: 'semestral', label: 'Semestral' },
+                    { value: 'anual', label: 'Anual' },
+                  ]}
+                />
               </div>
 
               {/* Honorarios */}

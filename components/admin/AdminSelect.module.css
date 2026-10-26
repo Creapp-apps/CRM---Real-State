@@ -1,0 +1,161 @@
+/* Dropdown estándar del admin: navy + dorado, animación congruente con la
+   plataforma (misma curva/duración que el wizard). Reemplaza <select> nativos
+   para poder animar el despliegue (el popup nativo lo dibuja el SO y no se
+   puede animar). */
+
+.container {
+  position: relative;
+  width: 100%;
+}
+
+/* Botón cerrado: calca el look del <select> nativo del admin (sel) */
+.button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: #0d1f3c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: var(--white);
+  font-size: 0.875rem;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--admin-gold-40);
+}
+
+.button:focus-visible {
+  outline: none;
+  border-color: var(--admin-gold);
+  box-shadow: 0 0 0 3px var(--admin-gold-15);
+}
+
+.buttonOpen,
+.buttonOpen:hover {
+  border-color: var(--admin-gold);
+  background: #0f2443;
+  box-shadow: 0 0 0 3px var(--admin-gold-10);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: var(--gray-500);
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--gray-400);
+  transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), color 0.18s ease;
+}
+.iconOpen {
+  transform: rotate(180deg);
+  color: var(--admin-gold);
+}
+
+/* Panel desplegado (en portal, posición fija por JS) */
+.dropdown {
+  position: absolute;
+  z-index: 9999;
+  background: #0d1f3c;
+  border: 1px solid var(--admin-gold-25);
+  border-radius: 0.5rem;
+  box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  max-height: 280px;
+  padding: 0.25rem;
+  transform-origin: top center;
+  animation: dropIn 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.dropdownUp {
+  transform-origin: bottom center;
+  animation-name: dropInUp;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px) scaleY(0.96); }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+@keyframes dropInUp {
+  from { opacity: 0; transform: translateY(6px) scaleY(0.96); }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+.option {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--gray-200);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+}
+
+/* Barra dorada al hover/activo (igual que las filas de categoría del wizard) */
+.option::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 0;
+  background: var(--admin-gold);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  transition: height 0.15s ease;
+}
+
+.option:hover,
+.optionActive {
+  background: var(--admin-gold-10);
+  color: var(--white);
+  padding-left: 0.9rem;
+}
+.option:hover::before,
+.optionActive::before {
+  height: 55%;
+}
+
+.optionSelected {
+  color: var(--admin-gold);
+  font-weight: 600;
+}
+
+.check {
+  flex-shrink: 0;
+  color: var(--admin-gold);
+}
+.checkSpace {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropdown, .dropdownUp { animation: none; }
+  .icon, .option, .option::before, .button { transition: none; }
+}

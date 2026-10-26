@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 
 const TIPOS = ['Departamento', 'Casa', 'PH', 'Local Comercial', 'Oficina', 'Galpón', 'Terreno', 'Cochera'];
@@ -156,15 +157,19 @@ export default function TasadorPage() {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Tipo de Propiedad *</label>
-              <select className={styles.formSelect} name="tipo_propiedad" value={form.tipo_propiedad} onChange={handleChange}>
-                {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <AdminSelect
+                value={form.tipo_propiedad}
+                onChange={(val) => setForm(prev => ({ ...prev, tipo_propiedad: val }))}
+                options={TIPOS.map(t => ({ value: t, label: t }))}
+              />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Zona *</label>
-              <select className={styles.formSelect} name="zona" value={form.zona} onChange={handleChange}>
-                {Object.keys(PRECIOS_ZONA).map(z => <option key={z} value={z}>{z}</option>)}
-              </select>
+              <AdminSelect
+                value={form.zona}
+                onChange={(val) => setForm(prev => ({ ...prev, zona: val }))}
+                options={Object.keys(PRECIOS_ZONA).map(z => ({ value: z, label: z }))}
+              />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Superficie Cubierta (m²) *</label>
@@ -188,9 +193,11 @@ export default function TasadorPage() {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Estado de Conservación</label>
-              <select className={styles.formSelect} name="estado_conservacion" value={form.estado_conservacion} onChange={handleChange}>
-                {ESTADOS_CONSERVACION.map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
+              <AdminSelect
+                value={form.estado_conservacion}
+                onChange={(val) => setForm(prev => ({ ...prev, estado_conservacion: val }))}
+                options={ESTADOS_CONSERVACION.map(e => ({ value: e, label: e }))}
+              />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>¿Tiene cochera?</label>

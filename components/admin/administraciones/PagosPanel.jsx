@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 
 const ESTADO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', mora: 'En Mora', parcial: 'Parcial' };
@@ -281,11 +282,15 @@ function PagoModal({ contrato, editData, onClose, onSaved }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Estado</label>
-                <select className={styles.formSelect} name="estado" value={form.estado} onChange={handleChange}>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="pagado">Pagado</option>
-                  <option value="parcial">Parcial</option>
-                </select>
+                <AdminSelect
+                  value={form.estado}
+                  onChange={(val) => setForm(prev => ({ ...prev, estado: val }))}
+                  options={[
+                    { value: 'pendiente', label: 'Pendiente' },
+                    { value: 'pagado', label: 'Pagado' },
+                    { value: 'parcial', label: 'Parcial' },
+                  ]}
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Monto Alquiler ($)</label>

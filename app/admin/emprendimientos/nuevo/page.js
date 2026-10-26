@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/admin/Icon';
+import AdminSelect from '@/components/admin/AdminSelect';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
 
@@ -110,11 +111,15 @@ export default function AdminEmprendimientoForm() {
             <h3 style={{ color: 'var(--white)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>Publicación</h3>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Estado</label>
-              <select className={styles.formSelect} value={form.status} onChange={e => set('status', e.target.value)}>
-                <option value="draft">Borrador</option>
-                <option value="active">Activo</option>
-                <option value="sold_out">Vendido</option>
-              </select>
+              <AdminSelect
+                value={form.status}
+                onChange={(val) => set('status', val)}
+                options={[
+                  { value: 'draft', label: 'Borrador' },
+                  { value: 'active', label: 'Activo' },
+                  { value: 'sold_out', label: 'Vendido' },
+                ]}
+              />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Fecha de entrega estimada</label>

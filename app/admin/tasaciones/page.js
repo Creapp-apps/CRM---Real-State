@@ -4,6 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
+import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
 import { fetchMessagesTasacion } from '@/lib/admin-fetchers';
 
@@ -116,15 +117,15 @@ export default function AdminTasaciones() {
             </div>
             <div className={styles.formGroup} style={{ marginTop: 'auto' }}>
               <label className={styles.formLabel}>Cambiar Estado</label>
-              <select 
-                className={styles.formSelect} 
+              <AdminSelect
                 value={getStatus(selected)}
-                onChange={(e) => handleStatusChange(selected.id, e.target.value)}
-              >
-                <option value="pending">Pendiente</option>
-                <option value="in-progress">En proceso</option>
-                <option value="completed">Completada</option>
-              </select>
+                onChange={(val) => handleStatusChange(selected.id, val)}
+                options={[
+                  { value: 'pending', label: 'Pendiente' },
+                  { value: 'in-progress', label: 'En proceso' },
+                  { value: 'completed', label: 'Completada' },
+                ]}
+              />
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
               <a href={`mailto:${selected.email}?subject=Tasación Cardoso Propiedades — ${selected.property_address || selected.property_neighborhood}`} className={styles.btnPrimary}>

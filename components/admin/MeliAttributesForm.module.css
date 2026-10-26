@@ -1,0 +1,86 @@
+/* Secciones colapsables de características (Ficha técnica, Ambientes, etc.).
+   Hover en el encabezado + expand/collapse fluido vía grid-template-rows
+   (anima la altura sin conocerla de antemano, sin saltos). */
+
+.group {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.group:hover {
+  border-color: var(--admin-gold-25);
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: none;
+  cursor: pointer;
+  color: var(--white);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  transition: background 0.18s ease, padding-left 0.18s ease;
+}
+.header:hover {
+  background: var(--admin-gold-08);
+  padding-left: 1.15rem;
+}
+.headerOpen {
+  background: var(--admin-gold-06);
+}
+
+.req {
+  color: var(--admin-gold);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--gray-400);
+  transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1), color 0.2s ease;
+}
+.chevronOpen {
+  transform: rotate(180deg);
+  color: var(--admin-gold);
+}
+
+/* Colapso animado: grid 0fr → 1fr anima la altura de forma fluida. */
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.collapseOpen {
+  grid-template-rows: 1fr;
+}
+.collapseInner {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 0.26s ease 0.04s;
+}
+.collapseOpen .collapseInner {
+  opacity: 1;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+
+@media (max-width: 560px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collapse, .collapseInner, .chevron, .header, .group { transition: none; }
+}

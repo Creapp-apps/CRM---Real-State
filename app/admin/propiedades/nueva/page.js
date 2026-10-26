@@ -7,6 +7,7 @@ import Icon from '@/components/admin/Icon';
 import GooglePlacePicker from '@/components/admin/GooglePlacePicker';
 import styles from '@/components/admin/admin.module.css';
 import anim from './nueva.module.css';
+import AdminSelect from '@/components/admin/AdminSelect';
 import AlertModal from '@/components/admin/AlertModal';
 import MeliAttributesForm, { buildMeliAttributes, missingRequired } from '@/components/admin/MeliAttributesForm';
 import { normalizeImageForMeli, UNSUPPORTED_FORMAT } from '@/lib/imageForMeli';
@@ -585,26 +586,18 @@ export default function NuevaPublicacion() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div>
                       <label style={lbl}>Provincia *</label>
-                      <select style={sel} value={stateId}
-                        onChange={e => onStateChange(e.target.value, e.target.options[e.target.selectedIndex].dataset.name || '')}>
-                        <option value="" style={opt}>— Seleccioná una provincia —</option>
-                        {(states || []).map(s => (
-                          <option key={s.id} value={s.id} data-name={s.name} style={opt}>{s.name}</option>
-                        ))}
-                      </select>
+                      <AdminSelect value={stateId} placeholder="— Seleccioná una provincia —"
+                        options={(states || []).map(s => ({ value: s.id, label: s.name }))}
+                        onChange={(val, opt) => onStateChange(val, opt?.label || '')} />
                       {loadingLoc && !stateId && <span style={hint}>Cargando provincias...</span>}
                     </div>
 
                     {cities && (
                       <div>
                         <label style={lbl}>Ciudad / Municipio *</label>
-                        <select style={sel} value={cityId}
-                          onChange={e => onCityChange(e.target.value, e.target.options[e.target.selectedIndex].dataset.name || '')}>
-                          <option value="" style={opt}>— Seleccioná una ciudad —</option>
-                          {cities.map(c => (
-                            <option key={c.id} value={c.id} data-name={c.name} style={opt}>{c.name}</option>
-                          ))}
-                        </select>
+                        <AdminSelect value={cityId} placeholder="— Seleccioná una ciudad —"
+                          options={cities.map(c => ({ value: c.id, label: c.name }))}
+                          onChange={(val, opt) => onCityChange(val, opt?.label || '')} />
                         {loadingLoc && cityId === '' && <span style={hint}>Cargando ciudades...</span>}
                       </div>
                     )}
@@ -612,16 +605,9 @@ export default function NuevaPublicacion() {
                     {neighborhoods && neighborhoods.length > 0 && (
                       <div>
                         <label style={lbl}>Barrio (opcional)</label>
-                        <select style={sel} value={neighborhoodId}
-                          onChange={e => {
-                            setNeighborhoodId(e.target.value);
-                            setNeighborhoodName(e.target.options[e.target.selectedIndex].dataset.name || '');
-                          }}>
-                          <option value="" style={opt}>— Seleccioná un barrio —</option>
-                          {neighborhoods.map(n => (
-                            <option key={n.id} value={n.id} data-name={n.name} style={opt}>{n.name}</option>
-                          ))}
-                        </select>
+                        <AdminSelect value={neighborhoodId} placeholder="— Seleccioná un barrio —"
+                          options={neighborhoods.map(n => ({ value: n.id, label: n.name }))}
+                          onChange={(val, opt) => { setNeighborhoodId(val); setNeighborhoodName(opt?.label || ''); }} />
                       </div>
                     )}
                   </div>
@@ -762,10 +748,8 @@ export default function NuevaPublicacion() {
               </div>
               <div>
                 <label style={lbl}>Moneda</label>
-                <select style={sel} value={currency} onChange={e => setCurrency(e.target.value)}>
-                  <option value="USD" style={opt}>USD (dólares)</option>
-                  <option value="ARS" style={opt}>$ (pesos)</option>
-                </select>
+                <AdminSelect value={currency} onChange={(val) => setCurrency(val)}
+                  options={[{ value: 'USD', label: 'USD (dólares)' }, { value: 'ARS', label: '$ (pesos)' }]} />
               </div>
             </div>
           </FormSection>
@@ -960,14 +944,5 @@ const inp = {
   fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box',
 };
 
-const sel = {
-  ...inp,
-  background: '#0d1f3c',
-  cursor: 'pointer', appearance: 'none',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', paddingRight: '2.25rem',
-};
-
-const opt = { background: '#0d1f3c', color: '#e5e7eb' };
 
 const hint = { fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.25rem', display: 'block' };
