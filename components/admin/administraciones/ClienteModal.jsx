@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
@@ -12,8 +12,15 @@ const EMPTY_FORM = {
 };
 
 export default function ClienteModal({ isOpen, onClose, onSaved, editData }) {
-  const [form, setForm] = useState(editData || EMPTY_FORM);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+
+  // Sincroniza el form al abrir / cambiar de cliente (si no, editar mostraba
+  // campos vacíos: el modal queda montado y useState solo inicializa una vez).
+  useEffect(() => {
+    if (!isOpen) return;
+    setForm(editData ? { ...EMPTY_FORM, ...editData } : EMPTY_FORM);
+  }, [isOpen, editData]);
 
   if (!isOpen) return null;
 
