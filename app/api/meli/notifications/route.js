@@ -11,7 +11,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getValidToken } from '@/lib/mercadolibre';
+import { getValidToken, getMeliQuestion, getMeliItemBrief, getMeliUserNickname } from '@/lib/mercadolibre';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +42,41 @@ export async function POST(request) {
     }
   } catch (e) {
     console.error('[meli notifications] fetch item:', e.message);
+  }
+
+  // Si es una pregunta (interesado), la traemos y la volcamos a meli_questions
+  // para que aparezca en la bandeja de Interesados en tiempo real.
+  try {
+    const isQuestion = (topic && topic.includes('question')) || (resource && resource.includes('/questions/'));
+    if (isQuestion && resource) {
+      const qId = resource.split('/questions/')[1]?.split('/')[0] || resource.split('/').pop();
+      if (qId) {
+        const q = await getMeliQuestion(qId);
+        const [brief, nick] = await Promise.all([
+          q.item_id ? getMeliItemBrief(q.item_id) : Promise.resolve({}),
+          q.from?.id ? getMeliUserNickname(q.from.id) : Promise.resolve(null),
+        ]);
+        // No tocamos crm_status ni opportunity_id (se preservan en el upsert).
+        await admin.from('meli_questions').upsert({
+          id: q.id,
+          item_id: q.item_id || null,
+          item_title: brief?.title || null,
+          item_permalink: brief?.permalink || null,
+          item_operation: brief?.operation || null,
+          buyer_id: q.from?.id || null,
+          buyer_nickname: nick || null,
+          text: q.text || null,
+          status: q.status || null,
+          answer_text: q.answer?.text || null,
+          answer_date: q.answer?.date_created || null,
+          date_created: q.date_created || null,
+          raw: q,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+      }
+    }
+  } catch (e) {
+    console.error('[meli notifications] question upsert:', e.message);
   }
 
   try {

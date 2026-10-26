@@ -191,10 +191,13 @@ export default function PipelinePage() {
                       onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
                     >
                       <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--white)', marginBottom: '0.25rem' }}>
-                        {op.inmueble?.direccion || op.notas?.slice(0, 30) || 'Sin dirección'}
+                        {op.inmueble?.direccion || op.titulo_propiedad || op.notas?.slice(0, 30) || 'Sin dirección'}
                       </div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--gray-400)', marginBottom: '0.375rem' }}>
-                        {op.cliente?.nombre || 'Sin cliente'}
+                      <div style={{ fontSize: '0.7rem', color: 'var(--gray-400)', marginBottom: '0.375rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {op.cliente?.nombre || op.contacto_nombre || 'Sin cliente'}
+                        {op.origen === 'mercadolibre' && (
+                          <span style={{ fontSize: '0.55rem', fontWeight: 700, color: '#fbbf24', background: 'rgba(251,191,36,0.12)', padding: '1px 5px', borderRadius: 3, letterSpacing: '0.3px' }}>MELI</span>
+                        )}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: etapa.color }}>

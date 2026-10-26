@@ -6,11 +6,13 @@ import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
 import { fetchMessagesContacto } from '@/lib/admin-fetchers';
+import MeliInteresados from '@/components/admin/MeliInteresados';
 
 export default function AdminContacto() {
   const { data: messages = [], isLoading: loading, mutate } = useSWR('messages-contacto', fetchMessagesContacto);
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
+  const [tab, setTab] = useState('web');
 
   const handleSelectMessage = async (msg) => {
     setSelected(msg);
@@ -55,6 +57,28 @@ export default function AdminContacto() {
         </div>
       </div>
 
+      {/* Tabs: consultas de la web vs interesados de MercadoLibre */}
+      <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '1.5rem' }}>
+        {[
+          { key: 'web', label: 'Consultas web' },
+          { key: 'meli', label: 'MercadoLibre' },
+        ].map(t => (
+          <button key={t.key} type="button" onClick={() => setTab(t.key)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0.25rem',
+              fontSize: '0.9rem', fontWeight: tab === t.key ? 700 : 500,
+              color: tab === t.key ? 'var(--white)' : 'var(--gray-500)',
+              borderBottom: `2px solid ${tab === t.key ? 'var(--admin-gold)' : 'transparent'}`,
+              marginBottom: -1, transition: 'color 0.18s ease',
+            }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'meli' && <MeliInteresados />}
+
+      {tab === 'web' && (
       <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 1fr' : '1fr', gap: '1.5rem' }}>
         <div className={styles.tableWrapper}>
           <div className={styles.tableHeader}>
@@ -133,6 +157,7 @@ export default function AdminContacto() {
           </div>
         )}
       </div>
+      )}
     </>
   );
 }
