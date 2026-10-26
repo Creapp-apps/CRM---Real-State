@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Icon from '@/components/admin/Icon';
 import GooglePlacePicker from '@/components/admin/GooglePlacePicker';
 import styles from '@/components/admin/admin.module.css';
+import anim from './nueva.module.css';
 import AlertModal from '@/components/admin/AlertModal';
 import MeliAttributesForm, { buildMeliAttributes, missingRequired } from '@/components/admin/MeliAttributesForm';
 import { normalizeImageForMeli, UNSUPPORTED_FORMAT } from '@/lib/imageForMeli';
@@ -88,6 +89,9 @@ export default function NuevaPublicacion() {
   const [operacion, setOperacion] = useState('');
   const [catStep, setCatStep] = useState('cat');
   const [showAllCats, setShowAllCats] = useState(false);
+  /* Dirección de la animación de deslizado: 'fwd' avanza (entra por derecha),
+     'back' retrocede (entra por izquierda). */
+  const [navDir, setNavDir] = useState('fwd');
 
   /* — Paso 2: precio — */
   const [price, setPrice] = useState('');
@@ -279,9 +283,10 @@ export default function NuevaPublicacion() {
   function goNext() {
     if (step === LAST_STEP) { publish(); return; }
     setError(null);
+    setNavDir('fwd');
     setStep(s => s + 1);
   }
-  function goPrev() { setError(null); setStep(s => s - 1); }
+  function goPrev() { setError(null); setNavDir('back'); setStep(s => s - 1); }
 
   /* ── Upload fotos ── (cada foto tiene uid estable: se actualiza por uid, no por índice) */
   const handleFiles = useCallback(async (fileList) => {
@@ -410,6 +415,7 @@ export default function NuevaPublicacion() {
   }
 
   /* ─── Render ──────────────────────────────────────────────────────────── */
+  const slide = navDir === 'fwd' ? anim.slideFwd : anim.slideBack;
   return (
     <>
       <div className={styles.pageHeader}>
@@ -453,24 +459,36 @@ export default function NuevaPublicacion() {
       {/* ══════════════════ PASO 1 — Empezá describiendo el inmueble ══════ */}
       {step === 1 && (
         <div className={styles.card} style={{ maxWidth: 680, margin: '0 auto' }}>
+          {/* key={catStep}: remonta en cada sub-paso → dispara el slide lateral */}
+          <div key={catStep} className={slide}>
 
           {/* ─ 1A · Categoría ─ */}
           {catStep === 'cat' && (
             <>
               <h3 style={sectionTitle}>¿A qué categoría pertenece?</h3>
               <div style={listWrap}>
-                {(showAllCats ? TIPOS : TIPOS.filter(t => FEATURED_TIPOS.includes(t.key))).map(t => (
-                  <button key={t.key} type="button"
-                    onClick={() => { setTipo(t.key); setOperacion(''); setCatStep('op'); }}
-                    style={listRow(tipo === t.key)}>
-                    <span style={{ paddingLeft: '0.25rem' }}>{t.label}</span>
-                    <Icon name="chevron-right" size={18} style={{ color: 'var(--gray-500)', flexShrink: 0 }} />
-                  </button>
-                ))}
+                {(() => {
+                  const list = showAllCats ? TIPOS : TIPOS.filter(t => FEATURED_TIPOS.includes(t.key));
+                  let newIdx = 0; // orden entre las filas recién reveladas → stagger de la cascada
+                  return list.map(t => {
+                    const isNew = showAllCats && !FEATURED_TIPOS.includes(t.key);
+                    const delay = isNew ? newIdx++ * 45 : 0;
+                    return (
+                      <button key={t.key} type="button"
+                        onClick={() => { setNavDir('fwd'); setTipo(t.key); setOperacion(''); setCatStep('op'); }}
+                        className={`${anim.catRow}${tipo === t.key ? ' ' + anim.catRowSelected : ''}${isNew ? ' ' + anim.cascadeItem : ''}`}
+                        style={isNew ? { animationDelay: `${delay}ms` } : undefined}>
+                        <span style={{ paddingLeft: '0.25rem' }}>{t.label}</span>
+                        <Icon name="chevron-right" size={18} className={anim.catChevron} />
+                      </button>
+                    );
+                  });
+                })()}
                 <button type="button" onClick={() => setShowAllCats(v => !v)}
-                  style={{ ...listRow(false), color: 'var(--admin-gold)', fontWeight: 600 }}>
+                  className={anim.catRow} style={{ color: 'var(--admin-gold)', fontWeight: 600 }}>
                   <span style={{ paddingLeft: '0.25rem' }}>{showAllCats ? 'Ver menos' : 'Ver todas las categorías'}</span>
-                  <Icon name="chevron-down" size={18} style={{ color: 'var(--admin-gold)', flexShrink: 0, transform: showAllCats ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                  <Icon name="chevron-down" size={18}
+                    className={`${anim.chevToggle}${showAllCats ? ' ' + anim.chevToggleOpen : ''}`} />
                 </button>
               </div>
             </>
@@ -483,14 +501,14 @@ export default function NuevaPublicacion() {
               <div style={listWrap}>
                 {OPS.filter(o => CATEGORY_MAP[tipo]?.[o.key]).map(o => (
                   <button key={o.key} type="button"
-                    onClick={() => { setOperacion(o.key); setCatStep('confirm'); }}
-                    style={listRow(operacion === o.key)}>
+                    onClick={() => { setNavDir('fwd'); setOperacion(o.key); setCatStep('confirm'); }}
+                    className={`${anim.catRow}${operacion === o.key ? ' ' + anim.catRowSelected : ''}`}>
                     <span style={{ paddingLeft: '0.25rem' }}>{o.label}</span>
-                    <Icon name="chevron-right" size={18} style={{ color: 'var(--gray-500)', flexShrink: 0 }} />
+                    <Icon name="chevron-right" size={18} className={anim.catChevron} />
                   </button>
                 ))}
               </div>
-              <button type="button" onClick={() => setCatStep('cat')} style={backLink}>← Anterior</button>
+              <button type="button" onClick={() => { setNavDir('back'); setCatStep('cat'); }} style={backLink}>← Anterior</button>
             </>
           )}
 
@@ -511,23 +529,24 @@ export default function NuevaPublicacion() {
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1.5rem', marginTop: '1.5rem' }}>
-                <button type="button" onClick={() => setCatStep('cat')}
+                <button type="button" onClick={() => { setNavDir('back'); setCatStep('cat'); }}
                   style={{ background: 'none', border: 'none', color: 'var(--admin-gold)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}>
                   Cambiar categoría
                 </button>
-                <button type="button" onClick={() => setStep(2)}
+                <button type="button" onClick={() => { setNavDir('fwd'); setStep(2); }}
                   style={{ padding: '0.55rem 1.5rem', background: 'var(--admin-gold)', color: 'var(--navy-900, #0a1628)', border: 'none', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
                   Confirmar
                 </button>
               </div>
             </>
           )}
+          </div>
         </div>
       )}
 
       {/* ══════════════════ PASO 2 — Ubicación → Fotos (cards reveladas) ══ */}
       {step === 2 && (
-        <>
+        <div className={slide}>
           {/* ─ Card Ubicación ─ */}
           <div className={styles.card} style={{ maxWidth: 720, margin: '0 auto 1.25rem' }}>
             {locStep === 'ubicacion' ? (
@@ -638,7 +657,7 @@ export default function NuevaPublicacion() {
 
           {/* ─ Card Fotos (se despliega al confirmar la ubicación) ─ */}
           {locStep === 'fotos' && (
-            <div className={styles.card} style={{ maxWidth: 720, margin: '0 auto' }}>
+            <div className={`${styles.card} ${anim.cardReveal}`} style={{ maxWidth: 720, margin: '0 auto' }}>
               <h3 style={sectionTitle}>Fotos de la propiedad</h3>
               <p style={{ color: 'var(--gray-500)', fontSize: '0.8rem', marginBottom: '1.25rem', marginTop: '-0.5rem' }}>
                 Agregá hasta 24 fotos. La primera es la portada. Las verticales se convierten a 4:3 automáticamente.
@@ -726,12 +745,12 @@ export default function NuevaPublicacion() {
               />
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* ══════════════════ PASO 3 — Datos del inmueble ══════════════════ */}
       {step === 3 && (
-        <div className={styles.card} style={{ maxWidth: 720, margin: '0 auto' }}>
+        <div className={`${styles.card} ${slide}`} style={{ maxWidth: 720, margin: '0 auto' }}>
 
           {/* ─ Precio ─ */}
           <FormSection title="Precio">
@@ -791,7 +810,7 @@ export default function NuevaPublicacion() {
 
       {/* ══════════════════ PASO 3 (final) — Revisión ════════════════════ */}
       {step === 4 && (
-        <div className={styles.card} style={{ maxWidth: 720, margin: '0 auto' }}>
+        <div className={`${styles.card} ${slide}`} style={{ maxWidth: 720, margin: '0 auto' }}>
           <h3 style={sectionTitle}>Revisión antes de publicar</h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
@@ -922,14 +941,6 @@ const sectionTitle = {
 const listWrap = {
   display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.06)',
 };
-const listRow = (selected) => ({
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-  width: '100%', padding: '0.9rem 0.25rem', cursor: 'pointer', textAlign: 'left',
-  background: selected ? 'var(--admin-gold-15)' : 'transparent',
-  border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)',
-  color: selected ? 'var(--admin-gold)' : 'var(--gray-200)',
-  fontWeight: selected ? 600 : 400, fontSize: '0.95rem', transition: 'background 0.12s',
-});
 const backLink = {
   marginTop: '1.25rem', background: 'none', border: 'none',
   color: 'var(--gray-300)', fontSize: '0.8rem', cursor: 'pointer', padding: 0,

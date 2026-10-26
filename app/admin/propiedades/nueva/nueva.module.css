@@ -1,0 +1,106 @@
+/* Microinteracciones del wizard de "Nueva publicación".
+   Hover/keyframes necesitan clases reales: los estilos inline no soportan :hover
+   ni animaciones, y además ganan por especificidad. Por eso las filas de
+   categoría viven acá como clases. */
+
+/* ── Filas de categoría / operación (lista estilo MELI) ───────────────── */
+.catRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.9rem 0.25rem;
+  cursor: pointer;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--gray-200);
+  font-weight: 400;
+  font-size: 0.95rem;
+  position: relative;
+  transition: background 0.22s ease, color 0.22s ease, padding-left 0.22s ease;
+}
+
+/* Barra dorada que crece desde el centro al pasar el cursor. */
+.catRow::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 0;
+  background: var(--admin-gold);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  transition: height 0.22s ease;
+}
+
+.catRow:hover {
+  background: var(--admin-gold-15);
+  color: var(--white);
+  padding-left: 0.95rem;
+}
+
+.catRow:hover::before {
+  height: 60%;
+}
+
+.catRow:hover .catChevron {
+  transform: translateX(4px);
+  color: var(--admin-gold);
+}
+
+.catRowSelected {
+  background: var(--admin-gold-15);
+  color: var(--admin-gold);
+  font-weight: 600;
+}
+
+.catChevron {
+  flex-shrink: 0;
+  transition: transform 0.22s ease, color 0.22s ease;
+}
+
+/* Chevron de "Ver todas las categorías" (rota al expandir). */
+.chevToggle {
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+.chevToggleOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Slide lateral entre pasos y sub-pasos ────────────────────────────── */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.slideFwd  { animation: slideInRight 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.slideBack { animation: slideInLeft  0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
+/* Revelado suave de una sección que aparece (ej: card de Fotos). */
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cardReveal { animation: cardReveal 0.38s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
+/* ── Cascada al revelar todas las categorías ──────────────────────────── */
+@keyframes cascadeIn {
+  from { opacity: 0; transform: translateY(-9px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cascadeItem {
+  animation: cascadeIn 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slideFwd, .slideBack, .cardReveal, .cascadeItem { animation: none; }
+  .catRow, .catRow::before, .catChevron, .chevToggle { transition: none; }
+}
