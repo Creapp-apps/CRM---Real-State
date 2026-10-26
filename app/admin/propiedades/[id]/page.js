@@ -8,46 +8,13 @@ import Link from 'next/link';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { fetchMeliVisits } from '@/lib/admin-fetchers';
+import { normalizeImageForMeli } from '@/lib/imageForMeli';
 
 const EMPTY = {
   title: '', price: '', currency: 'USD', status: 'active',
   description: '', bedrooms: '', bathrooms: '', garages: '',
   totalArea: '', coveredArea: '', videoUrl: '',
 };
-
-// MELI exige fotos horizontales (mínimo 4:3).
-// Si la foto es vertical, la centramos sobre fondo blanco para que quede 4:3.
-function normalizeImageForMeli(file) {
-  return new Promise((resolve) => {
-    const img = new window.Image();
-    const objectUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      const { naturalWidth: w, naturalHeight: h } = img;
-
-      // Ya es landscape o cuadrada → sube tal cual
-      if (w >= h) { resolve(file); return; }
-
-      // Vertical → canvas 4:3 con la imagen centrada y fondo blanco
-      const canvasW = Math.ceil(h * (4 / 3));
-      const canvasH = h;
-      const canvas = document.createElement('canvas');
-      canvas.width  = canvasW;
-      canvas.height = canvasH;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvasW, canvasH);
-      ctx.drawImage(img, Math.floor((canvasW - w) / 2), 0, w, h);
-
-      canvas.toBlob(
-        (blob) => resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' })),
-        'image/jpeg', 0.92
-      );
-    };
-    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
-    img.src = objectUrl;
-  });
-}
 
 function extractYouTubeId(url) {
   if (!url) return '';
@@ -107,7 +74,9 @@ export default function AdminPropertyEdit() {
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
 
   async function handleUploadFiles(files) {
-    const fileArr = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const fileArr = Array.from(files).filter(
+      f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name || '')
+    );
     if (!fileArr.length) return;
     setUploading(true);
     setUploadQueue(fileArr.map(f => ({ name: f.name, status: 'uploading' })));

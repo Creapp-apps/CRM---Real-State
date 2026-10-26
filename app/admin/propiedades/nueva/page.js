@@ -6,6 +6,9 @@ import Link from 'next/link';
 import Icon from '@/components/admin/Icon';
 import GooglePlacePicker from '@/components/admin/GooglePlacePicker';
 import styles from '@/components/admin/admin.module.css';
+import AlertModal from '@/components/admin/AlertModal';
+import MeliAttributesForm, { buildMeliAttributes, missingRequired } from '@/components/admin/MeliAttributesForm';
+import { normalizeImageForMeli, UNSUPPORTED_FORMAT } from '@/lib/imageForMeli';
 
 /* ─── Categorías MELI ─────────────────────────────────────────────────── */
 /* Leafs verificados contra api.mercadolibre.com/categories/MLA1459 (árbol Inmuebles) */
@@ -48,6 +51,9 @@ const TIPOS = [
   { key: 'tiempo_compartido', label: 'Tiempo Compartido',      singular: 'Tiempo Compartido' },
 ];
 
+/* Categorías destacadas: se muestran por defecto; el resto se despliega con "Ver todas". */
+const FEATURED_TIPOS = ['departamento', 'casa', 'campo', 'oficina', 'otro'];
+
 /* Orden y nombres idénticos a MELI (hijos de cada categoría) */
 const OPS = [
   { key: 'alquiler',   label: 'Alquiler' },
@@ -55,57 +61,8 @@ const OPS = [
   { key: 'venta',      label: 'Venta' },
 ];
 
-/* Tipos residenciales (muestran campos de ambientes/dorms/baños) */
-const RESIDENTIAL = new Set(['casa', 'departamento', 'ph', 'quinta']);
-
-/* Comodidades — atributos booleanos MELI (IDs verificados contra /categories/{id}/attributes) */
-const AMENITIES = [
-  { id: 'HAS_SWIMMING_POOL',     label: 'Pileta' },
-  { id: 'HAS_GRILL',             label: 'Parrilla' },
-  { id: 'HAS_GARDEN',            label: 'Jardín / Parque' },
-  { id: 'HAS_BALCONY',           label: 'Balcón' },
-  { id: 'HAS_TERRACE',           label: 'Terraza' },
-  { id: 'HAS_PATIO',             label: 'Patio' },
-  { id: 'HAS_LAUNDRY',           label: 'Lavadero' },
-  { id: 'HAS_SECURITY',          label: 'Seguridad' },
-  { id: 'HAS_GYM',               label: 'Gimnasio' },
-  { id: 'IS_SUITABLE_FOR_PETS',  label: 'Admite mascotas' },
-  { id: 'PROFESSIONAL_USE_ALLOWED', label: 'Apto profesional' },
-  { id: 'FURNISHED',             label: 'Amoblado' },
-  { id: 'HAS_AIR_CONDITIONING',  label: 'Aire acondicionado' },
-  { id: 'HAS_HEATING',           label: 'Calefacción' },
-  { id: 'HAS_CLOSETS',           label: 'Placards' },
-  { id: 'IN_GATED_COMMUNITY',    label: 'Barrio cerrado' },
-  { id: 'HAS_NATURAL_GAS',       label: 'Gas natural' },
-  { id: 'HAS_HALF_BATH',         label: 'Toilette' },
-  { id: 'HAS_INTERNET_ACCESS',   label: 'Internet' },
-  { id: 'HAS_JACUZZI',           label: 'Jacuzzi' },
-];
-
-const CONDITIONS = [
-  { value: '',               label: '— No especificado —' },
-  { value: 'Nuevo',          label: 'Nuevo / A estrenar' },
-  { value: 'Renovado',       label: 'Renovado' },
-  { value: 'Buen estado',    label: 'Buen estado' },
-  { value: 'En construcción',label: 'En construcción' },
-  { value: 'Usado',          label: 'Usado' },
-];
-
-const DISPOSITIONS = [
-  { value: '',              label: '— No especificada —' },
-  { value: 'Frente',        label: 'Frente' },
-  { value: 'Contrafrente',  label: 'Contrafrente' },
-  { value: 'Lateral',       label: 'Lateral' },
-  { value: 'Interno',       label: 'Interno' },
-];
-
-const FACINGS = [
-  { value: '',      label: '— No especificada —' },
-  { value: 'Norte', label: 'Norte' },
-  { value: 'Sur',   label: 'Sur' },
-  { value: 'Este',  label: 'Este' },
-  { value: 'Oeste', label: 'Oeste' },
-];
+/* Las comodidades, condición, disposición y orientación ahora salen del form
+   dinámico de MELI (/api/meli/attributes) según la categoría. */
 
 /* Pasos macro visibles (3, como MELI). El flujo interno `step` es más granular:
    macro 1 = step 1 · macro 2 = step 2 · macro 3 = steps 3-5. */
@@ -116,32 +73,6 @@ const STEPS = [
 ];
 const macroOf = (step) => (step <= 1 ? 1 : step === 2 ? 2 : 3);
 const LAST_STEP = 4;
-
-/* ─── Normalización 4:3 ────────────────────────────────────────────────── */
-function normalizeImageForMeli(file) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      if (img.height <= img.width) { resolve(file); return; }
-      const W = Math.max(img.width, img.height * 4 / 3);
-      const H = W * 3 / 4;
-      const canvas = document.createElement('canvas');
-      canvas.width = W; canvas.height = H;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, W, H);
-      ctx.drawImage(img, (W - img.width) / 2, (H - img.height) / 2, img.width, img.height);
-      canvas.toBlob(
-        blob => resolve(new File([blob], file.name, { type: 'image/jpeg' })),
-        'image/jpeg', 0.92
-      );
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-    img.src = url;
-  });
-}
 
 /* ─── Componente principal ──────────────────────────────────────────────── */
 export default function NuevaPublicacion() {
@@ -156,11 +87,11 @@ export default function NuevaPublicacion() {
   const [tipo, setTipo] = useState('');
   const [operacion, setOperacion] = useState('');
   const [catStep, setCatStep] = useState('cat');
+  const [showAllCats, setShowAllCats] = useState(false);
 
   /* — Paso 2: precio — */
   const [price, setPrice] = useState('');
   const [currency, setCurrency] = useState('USD');
-  const [expensas, setExpensas] = useState('');
 
   /* — Paso 2: título — */
   const [title, setTitle] = useState('');
@@ -190,26 +121,28 @@ export default function NuevaPublicacion() {
   /* Paso 2: cards reveladas MELI → 'ubicacion' confirma y despliega 'fotos' */
   const [locStep, setLocStep] = useState('ubicacion');
 
-  /* — Paso 2: superficies y características — */
-  const [coveredArea, setCoveredArea] = useState('');
-  const [totalArea, setTotalArea]     = useState('');
-  const [rooms, setRooms]             = useState('');
-  const [bedrooms, setBedrooms]       = useState('');
-  const [bathrooms, setBathrooms]     = useState('');
-  const [parking, setParking]         = useState('');
-  const [age, setAge]               = useState('');
-  const [condition, setCondition]   = useState('');
-  const [disposition, setDisposition] = useState('');
-  const [facing, setFacing]         = useState('');
-  const [warehouses, setWarehouses] = useState('');
-  const [unitFloor, setUnitFloor]   = useState('');
-
-  /* — Paso 2: descripción y comodidades — */
+  /* — Paso 3: descripción (las superficies/características/comodidades ahora
+     las maneja el form dinámico de MELI según la categoría) — */
   const [description, setDescription] = useState('');
-  const [amenities, setAmenities]     = useState(new Set());
+
+  // Atributos dinámicos de MELI (el form los trae según la categoría/operación).
+  const [attrValues, setAttrValues] = useState({});
+  const [attrSchema, setAttrSchema] = useState({ leafId: null, byId: {} });
+  const categoryId = (tipo && operacion) ? (CATEGORY_MAP[tipo]?.[operacion] || null) : null;
+
+  // Texto legible de un atributo dinámico (para la revisión).
+  const attrText = (id) => {
+    const a = attrSchema.byId[id];
+    const v = attrValues[id];
+    if (!a || v == null || v === '') return null;
+    if (a.valueType === 'number_unit') return v.num ? `${v.num} ${v.unit || a.defaultUnit || ''}`.trim() : null;
+    if (a.valueType === 'list') return a.values.find(o => o.id === v)?.name || null;
+    return String(v);
+  };
 
   /* — Paso 3: fotos — */
   const [photos, setPhotos] = useState([]);
+  const [formatAlert, setFormatAlert] = useState(false); // modal "Formato no admitido"
   const [dragging, setDragging] = useState(false);
 
   /* ── Auto-título (se regenera mientras no fue editado manualmente) ── */
@@ -217,10 +150,12 @@ export default function NuevaPublicacion() {
     const tipoLabel = TIPOS.find(t => t.key === tipo)?.singular || '';
     const opLabel = operacion === 'venta' ? 'en Venta'
       : operacion === 'temporario' ? 'en Alquiler Temporario' : 'en Alquiler';
+    const rooms = attrValues.ROOMS;
+    const coveredArea = attrValues.COVERED_AREA?.num;
     const parts = [rooms && `${rooms} amb.`, coveredArea && `${coveredArea} m²`].filter(Boolean);
     const loc = [neighborhoodName, cityName].filter(Boolean).join(', ');
     return [tipoLabel, opLabel, parts.join(' · '), loc].filter(Boolean).join(' · ');
-  }, [tipo, operacion, rooms, coveredArea, neighborhoodName, cityName]);
+  }, [tipo, operacion, attrValues.ROOMS, attrValues.COVERED_AREA, neighborhoodName, cityName]);
 
   useEffect(() => {
     if (!titleTouched) setTitle(autoTitle);
@@ -335,7 +270,8 @@ export default function NuevaPublicacion() {
 
   /* ── Validación por step (flujo interno 1-5) ── */
   function canNext() {
-    if (step === 3) return !!price && title.trim().length >= 10;
+    if (step === 3) return !!price && title.trim().length >= 10
+      && missingRequired(attrValues, attrSchema.byId).length === 0;
     if (step === 4) return true;
     return !!tipo && !!operacion;
   }
@@ -347,24 +283,25 @@ export default function NuevaPublicacion() {
   }
   function goPrev() { setError(null); setStep(s => s - 1); }
 
-  /* ── Toggle comodidades ── */
-  function toggleAmenity(id) {
-    setAmenities(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
-
   /* ── Upload fotos ── (cada foto tiene uid estable: se actualiza por uid, no por índice) */
   const handleFiles = useCallback(async (fileList) => {
-    const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-    if (!files.length) return;
+    const all = Array.from(fileList);
+    // Aceptamos por type o por extensión: en algunos browsers el HEIC viene con type vacío.
+    const files = all.filter(
+      f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name || '')
+    );
+    // Archivos que ni siquiera son imágenes (pdf, etc.) → aviso de formato.
+    let rejected = all.length - files.length;
+    if (!files.length) {
+      if (rejected) setFormatAlert(true);
+      return;
+    }
 
     const items = files.map(file => ({
       uid: (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
       file,
-      preview: URL.createObjectURL(file),
+      // El HEIC no se dibuja en el browser → sin preview hasta convertirlo (se setea abajo).
+      preview: /\.(heic|heif)$/i.test(file.name || '') ? null : URL.createObjectURL(file),
       status: 'pending',
       pictureId: null,
       errorMsg: null,
@@ -375,6 +312,14 @@ export default function NuevaPublicacion() {
       setPhotos(prev => prev.map(p => p.uid === it.uid ? { ...p, status: 'uploading' } : p));
       try {
         const normalized = await normalizeImageForMeli(it.file);
+        // El preview inicial apunta al archivo original; si era HEIC el browser no lo dibuja.
+        // Lo cambiamos por la versión convertida/encuadrada (JPEG) para que la miniatura se vea.
+        const nextPreview = URL.createObjectURL(normalized);
+        setPhotos(prev => prev.map(p => {
+          if (p.uid !== it.uid) return p;
+          if (p.preview) URL.revokeObjectURL(p.preview);
+          return { ...p, preview: nextPreview };
+        }));
         const fd = new FormData();
         fd.append('file', normalized, normalized.name || 'foto.jpg');
         const res = await fetch('/api/meli/pictures', { method: 'POST', body: fd });
@@ -383,9 +328,17 @@ export default function NuevaPublicacion() {
         if (!res.ok || !data.id) throw new Error(data.error || `HTTP ${res.status} (sin id de MELI)`);
         setPhotos(prev => prev.map(p => p.uid === it.uid ? { ...p, status: 'done', pictureId: data.id } : p));
       } catch (e) {
-        setPhotos(prev => prev.map(p => p.uid === it.uid ? { ...p, status: 'error', errorMsg: e.message } : p));
+        // Formato que no pudimos convertir → sacamos la card muda y avisamos con el modal.
+        if (e.code === UNSUPPORTED_FORMAT) {
+          rejected += 1;
+          removePhoto(it.uid);
+        } else {
+          setPhotos(prev => prev.map(p => p.uid === it.uid ? { ...p, status: 'error', errorMsg: e.message } : p));
+        }
       }
     }
+
+    if (rejected) setFormatAlert(true);
   }, []);
 
   function removePhoto(uid) {
@@ -412,28 +365,12 @@ export default function NuevaPublicacion() {
     if (photosUploading) { setError('Esperá a que terminen de subir las fotos.'); return; }
     setSaving(true);
     try {
-      const categoryId = CATEGORY_MAP[tipo]?.[operacion];
-      if (!categoryId) throw new Error('Categoría no encontrada.');
+      // Leaf resuelto por el form (venta baja a "Propiedades Individuales"); fallback al mapa.
+      const publishCategoryId = attrSchema.leafId || CATEGORY_MAP[tipo]?.[operacion];
+      if (!publishCategoryId) throw new Error('Categoría no encontrada.');
 
-      const attrs = [];
-      if (rooms)       attrs.push({ id: 'ROOMS',              value_name: String(rooms) });
-      if (bedrooms)    attrs.push({ id: 'BEDROOMS',           value_name: String(bedrooms) });
-      if (bathrooms)   attrs.push({ id: 'FULL_BATHROOMS',     value_name: String(bathrooms) });
-      if (parking !== '') attrs.push({ id: 'PARKING_LOTS',   value_name: String(parking || 0) });
-      // number_unit: MELI espera "valor unidad" (ej: "120 m²")
-      if (coveredArea) attrs.push({ id: 'COVERED_AREA',    value_name: `${coveredArea} m²` });
-      if (totalArea)   attrs.push({ id: 'TOTAL_AREA',      value_name: `${totalArea} m²` });
-      if (age)         attrs.push({ id: 'PROPERTY_AGE',    value_name: `${age} años` });
-      if (expensas)    attrs.push({ id: 'MAINTENANCE_FEE', value_name: `${expensas} ARS` });
-      // list attributes
-      if (condition)   attrs.push({ id: 'PROPERTY_CONDITION', value_name: condition });
-      if (disposition) attrs.push({ id: 'DISPOSITION',        value_name: disposition });
-      if (facing)      attrs.push({ id: 'FACING',             value_name: facing });
-      // number attributes adicionales
-      if (warehouses)  attrs.push({ id: 'WAREHOUSES',   value_name: String(warehouses) });
-      if (unitFloor)   attrs.push({ id: 'UNIT_FLOOR',   value_name: String(unitFloor) });
-      // booleanos — MELI value "Sí" (con tilde)
-      amenities.forEach(id => attrs.push({ id, value_name: 'Sí' }));
+      // Atributos dinámicos cargados en el form de MELI.
+      const attrs = buildMeliAttributes(attrValues, attrSchema.byId);
 
       const pictures = photos
         .filter(p => p.status === 'done' && p.pictureId)
@@ -441,7 +378,7 @@ export default function NuevaPublicacion() {
 
       const payload = {
         title: title.trim(),
-        category_id: categoryId,
+        category_id: publishCategoryId,
         price: Number(price),
         currency_id: currency,
         listing_type_id: 'silver',
@@ -473,8 +410,6 @@ export default function NuevaPublicacion() {
   }
 
   /* ─── Render ──────────────────────────────────────────────────────────── */
-  const isResidential = RESIDENTIAL.has(tipo);
-
   return (
     <>
       <div className={styles.pageHeader}>
@@ -517,14 +452,14 @@ export default function NuevaPublicacion() {
 
       {/* ══════════════════ PASO 1 — Empezá describiendo el inmueble ══════ */}
       {step === 1 && (
-        <div className={styles.card} style={{ maxWidth: 680 }}>
+        <div className={styles.card} style={{ maxWidth: 680, margin: '0 auto' }}>
 
           {/* ─ 1A · Categoría ─ */}
           {catStep === 'cat' && (
             <>
               <h3 style={sectionTitle}>¿A qué categoría pertenece?</h3>
               <div style={listWrap}>
-                {TIPOS.map(t => (
+                {(showAllCats ? TIPOS : TIPOS.filter(t => FEATURED_TIPOS.includes(t.key))).map(t => (
                   <button key={t.key} type="button"
                     onClick={() => { setTipo(t.key); setOperacion(''); setCatStep('op'); }}
                     style={listRow(tipo === t.key)}>
@@ -532,6 +467,11 @@ export default function NuevaPublicacion() {
                     <Icon name="chevron-right" size={18} style={{ color: 'var(--gray-500)', flexShrink: 0 }} />
                   </button>
                 ))}
+                <button type="button" onClick={() => setShowAllCats(v => !v)}
+                  style={{ ...listRow(false), color: 'var(--admin-gold)', fontWeight: 600 }}>
+                  <span style={{ paddingLeft: '0.25rem' }}>{showAllCats ? 'Ver menos' : 'Ver todas las categorías'}</span>
+                  <Icon name="chevron-down" size={18} style={{ color: 'var(--admin-gold)', flexShrink: 0, transform: showAllCats ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                </button>
               </div>
             </>
           )}
@@ -589,7 +529,7 @@ export default function NuevaPublicacion() {
       {step === 2 && (
         <>
           {/* ─ Card Ubicación ─ */}
-          <div className={styles.card} style={{ maxWidth: 720, marginBottom: '1.25rem' }}>
+          <div className={styles.card} style={{ maxWidth: 720, margin: '0 auto 1.25rem' }}>
             {locStep === 'ubicacion' ? (
               <>
                 <FormSection title="Ubicación">
@@ -698,7 +638,7 @@ export default function NuevaPublicacion() {
 
           {/* ─ Card Fotos (se despliega al confirmar la ubicación) ─ */}
           {locStep === 'fotos' && (
-            <div className={styles.card} style={{ maxWidth: 720 }}>
+            <div className={styles.card} style={{ maxWidth: 720, margin: '0 auto' }}>
               <h3 style={sectionTitle}>Fotos de la propiedad</h3>
               <p style={{ color: 'var(--gray-500)', fontSize: '0.8rem', marginBottom: '1.25rem', marginTop: '-0.5rem' }}>
                 Agregá hasta 24 fotos. La primera es la portada. Las verticales se convierten a 4:3 automáticamente.
@@ -729,8 +669,10 @@ export default function NuevaPublicacion() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.5rem' }}>
                   {photos.map((p, i) => (
                     <div key={p.uid} style={{ position: 'relative', borderRadius: '0.375rem', overflow: 'hidden', aspectRatio: '4/3', background: 'rgba(255,255,255,0.05)' }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      {p.preview && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      )}
                       {p.status === 'uploading' && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Icon name="clock" size={18} style={{ color: 'var(--admin-gold)' }} />
@@ -789,7 +731,7 @@ export default function NuevaPublicacion() {
 
       {/* ══════════════════ PASO 3 — Datos del inmueble ══════════════════ */}
       {step === 3 && (
-        <div className={styles.card} style={{ maxWidth: 720 }}>
+        <div className={styles.card} style={{ maxWidth: 720, margin: '0 auto' }}>
 
           {/* ─ Precio ─ */}
           <FormSection title="Precio">
@@ -807,13 +749,6 @@ export default function NuevaPublicacion() {
                 </select>
               </div>
             </div>
-            {(operacion === 'alquiler' || operacion === 'temporario') && (
-              <div style={{ marginTop: '0.75rem' }}>
-                <label style={lbl}>Expensas mensuales (ARS, opcional)</label>
-                <input type="number" min="0" style={inp}
-                  value={expensas} onChange={e => setExpensas(e.target.value)} placeholder="Ej: 50000" />
-              </div>
-            )}
           </FormSection>
 
           {/* ─ Título ─ */}
@@ -833,99 +768,14 @@ export default function NuevaPublicacion() {
             </div>
           </FormSection>
 
-          {/* ─ Superficies ─ */}
-          <FormSection title="Superficies">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div>
-                <label style={lbl}>Superficie cubierta (m²)</label>
-                <input type="number" min="1" style={inp}
-                  value={coveredArea} onChange={e => setCoveredArea(e.target.value)} placeholder="Ej: 85" />
-              </div>
-              <div>
-                <label style={lbl}>Superficie total (m²)</label>
-                <input type="number" min="1" style={inp}
-                  value={totalArea} onChange={e => setTotalArea(e.target.value)} placeholder="Ej: 100" />
-              </div>
-            </div>
-          </FormSection>
-
-          {/* ─ Características (solo residencial) ─ */}
-          {isResidential && (
-            <FormSection title="Características">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem' }}>
-                <div>
-                  <label style={lbl}>Ambientes</label>
-                  <input type="number" min="1" max="20" style={inp}
-                    value={rooms} onChange={e => setRooms(e.target.value)} placeholder="Ej: 3" />
-                </div>
-                <div>
-                  <label style={lbl}>Dormitorios</label>
-                  <input type="number" min="0" max="20" style={inp}
-                    value={bedrooms} onChange={e => setBedrooms(e.target.value)} placeholder="Ej: 2" />
-                </div>
-                <div>
-                  <label style={lbl}>Baños</label>
-                  <input type="number" min="0" max="10" style={inp}
-                    value={bathrooms} onChange={e => setBathrooms(e.target.value)} placeholder="Ej: 1" />
-                </div>
-                <div>
-                  <label style={lbl}>Cocheras</label>
-                  <input type="number" min="0" max="10" style={inp}
-                    value={parking} onChange={e => setParking(e.target.value)} placeholder="Ej: 1" />
-                </div>
-              </div>
-            </FormSection>
-          )}
-
-          {/* ─ Detalles adicionales ─ */}
-          <FormSection title="Detalles adicionales">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <div>
-                <label style={lbl}>Antigüedad (años)</label>
-                <input type="number" min="0" style={inp}
-                  value={age} onChange={e => setAge(e.target.value)} placeholder="0 = a estrenar" />
-              </div>
-              <div>
-                <label style={lbl}>Estado del inmueble</label>
-                <select style={sel} value={condition} onChange={e => setCondition(e.target.value)}>
-                  {CONDITIONS.map(c => (
-                    <option key={c.value} value={c.value} style={opt}>{c.label}</option>
-                  ))}
-                </select>
-              </div>
-              {(isResidential || tipo === 'oficina') && (
-                <>
-                  <div>
-                    <label style={lbl}>Disposición</label>
-                    <select style={sel} value={disposition} onChange={e => setDisposition(e.target.value)}>
-                      {DISPOSITIONS.map(d => (
-                        <option key={d.value} value={d.value} style={opt}>{d.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={lbl}>Orientación</label>
-                    <select style={sel} value={facing} onChange={e => setFacing(e.target.value)}>
-                      {FACINGS.map(f => (
-                        <option key={f.value} value={f.value} style={opt}>{f.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-              <div>
-                <label style={lbl}>Bauleras</label>
-                <input type="number" min="0" max="10" style={inp}
-                  value={warehouses} onChange={e => setWarehouses(e.target.value)} placeholder="0" />
-              </div>
-              {(tipo === 'departamento' || tipo === 'ph' || tipo === 'oficina') && (
-                <div>
-                  <label style={lbl}>Piso de la unidad</label>
-                  <input type="number" min="1" max="99" style={inp}
-                    value={unitFloor} onChange={e => setUnitFloor(e.target.value)} placeholder="Ej: 3" />
-                </div>
-              )}
-            </div>
+          {/* ─ Características de MercadoLibre (dinámicas por categoría/operación) ─ */}
+          <FormSection title="Características">
+            <MeliAttributesForm
+              categoryId={categoryId}
+              values={attrValues}
+              onChange={setAttrValues}
+              onSchemaLoaded={setAttrSchema}
+            />
           </FormSection>
 
           {/* ─ Descripción ─ */}
@@ -935,70 +785,40 @@ export default function NuevaPublicacion() {
               placeholder="Describí la propiedad: distribución, estado, entorno, servicios cercanos..." />
           </FormSection>
 
-          {/* ─ Comodidades ─ */}
-          <FormSection title="Comodidades">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.5rem' }}>
-              {AMENITIES.map(a => (
-                <button key={a.id} type="button"
-                  onClick={() => toggleAmenity(a.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.5rem 0.75rem', borderRadius: '0.375rem', cursor: 'pointer',
-                    background: amenities.has(a.id) ? 'var(--admin-gold-15)' : 'rgba(255,255,255,0.04)',
-                    border: amenities.has(a.id) ? '1px solid var(--admin-gold-40)' : '1px solid rgba(255,255,255,0.08)',
-                    color: amenities.has(a.id) ? 'var(--admin-gold)' : 'var(--gray-400)',
-                    fontSize: '0.8rem', fontWeight: amenities.has(a.id) ? 600 : 400,
-                    transition: 'all 0.15s', textAlign: 'left',
-                  }}>
-                  <div style={{
-                    width: 16, height: 16, borderRadius: '3px', flexShrink: 0,
-                    background: amenities.has(a.id) ? 'var(--admin-gold)' : 'rgba(255,255,255,0.1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {amenities.has(a.id) && <Icon name="check" size={10} style={{ color: '#0a1628' }} />}
-                  </div>
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          </FormSection>
-
           <NavBar step={step} canNext={canNext()} saving={saving} onPrev={goPrev} onNext={goNext} />
         </div>
       )}
 
       {/* ══════════════════ PASO 3 (final) — Revisión ════════════════════ */}
       {step === 4 && (
-        <div className={styles.card} style={{ maxWidth: 720 }}>
+        <div className={styles.card} style={{ maxWidth: 720, margin: '0 auto' }}>
           <h3 style={sectionTitle}>Revisión antes de publicar</h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
             <ReviewRow label="Tipo" value={`${TIPOS.find(t => t.key === tipo)?.label} · ${OPS.find(o => o.key === operacion)?.label}`} />
-            <ReviewRow label="Categoría MELI" value={CATEGORY_MAP[tipo]?.[operacion]} mono />
+            <ReviewRow label="Categoría MELI" value={attrSchema.leafId || CATEGORY_MAP[tipo]?.[operacion]} mono />
             <ReviewRow label="Título" value={title} />
             <ReviewRow label="Precio" value={`${currency} ${Number(price || 0).toLocaleString('es-AR')}${operacion !== 'venta' ? '/mes' : ''}`} />
-            {expensas && <ReviewRow label="Expensas" value={`$ ${Number(expensas).toLocaleString('es-AR')}/mes`} />}
+            {attrText('MAINTENANCE_FEE') && <ReviewRow label="Expensas" value={attrText('MAINTENANCE_FEE')} />}
             {addressLine && <ReviewRow label="Dirección" value={hideExact ? rangoDireccion : addressLine} />}
             {hideExact && <ReviewRow label="Dirección exacta" value="Oculta (se publica rango)" />}
             <ReviewRow label="Ubicación" value={[neighborhoodName, cityName, stateName].filter(Boolean).join(', ')} />
             {!hideExact && lat != null && lng != null && <ReviewRow label="Coordenadas" value={`${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`} mono />}
-            {coveredArea && <ReviewRow label="Sup. cubierta" value={`${coveredArea} m²`} />}
-            {totalArea && <ReviewRow label="Sup. total" value={`${totalArea} m²`} />}
-            {isResidential && rooms && <ReviewRow label="Ambientes" value={rooms} />}
-            {isResidential && bedrooms && <ReviewRow label="Dormitorios" value={bedrooms} />}
-            {isResidential && bathrooms && <ReviewRow label="Baños" value={bathrooms} />}
-            {isResidential && parking && <ReviewRow label="Cocheras" value={parking} />}
-            {age && <ReviewRow label="Antigüedad" value={`${age} años`} />}
-            {condition && <ReviewRow label="Estado" value={condition} />}
+            {attrText('COVERED_AREA') && <ReviewRow label="Sup. cubierta" value={attrText('COVERED_AREA')} />}
+            {attrText('TOTAL_AREA') && <ReviewRow label="Sup. total" value={attrText('TOTAL_AREA')} />}
+            {attrText('GUESTS') && <ReviewRow label="Huéspedes" value={attrText('GUESTS')} />}
+            {attrText('ROOMS') && <ReviewRow label="Ambientes" value={attrText('ROOMS')} />}
+            {attrText('BEDROOMS') && <ReviewRow label="Dormitorios" value={attrText('BEDROOMS')} />}
+            {attrText('FULL_BATHROOMS') && <ReviewRow label="Baños" value={attrText('FULL_BATHROOMS')} />}
+            {attrText('PARKING_LOTS') && <ReviewRow label="Cocheras" value={attrText('PARKING_LOTS')} />}
             <ReviewRow label="Fotos"
               value={`${photosDone.length} lista${photosDone.length === 1 ? '' : 's'}`
                 + (photosUploading ? ' · subiendo…' : '')
                 + (photosError.length ? ` · ${photosError.length} con error` : '')
                 + (photosDone.length === 0 ? '  ⚠ se publicará sin fotos' : '')}
               gold={photosDone.length === 0} />
-            {amenities.size > 0 && (
-              <ReviewRow label="Comodidades" value={AMENITIES.filter(a => amenities.has(a.id)).map(a => a.label).join(', ')} />
-            )}
+            {(() => { const n = buildMeliAttributes(attrValues, attrSchema.byId).length;
+              return n > 0 ? <ReviewRow label="Características MELI" value={`${n} cargada${n === 1 ? '' : 's'}`} /> : null; })()}
             <ReviewRow label="Plan" value="Silver / Plata" gold />
           </div>
 
@@ -1011,6 +831,14 @@ export default function NuevaPublicacion() {
           <NavBar step={step} canNext={canNext()} saving={saving} onPrev={goPrev} onNext={goNext} publishLabel="Publicar en MercadoLibre" />
         </div>
       )}
+
+      <AlertModal open={formatAlert} title="Formato no admitido" onClose={() => setFormatAlert(false)}>
+        MercadoLibre solo acepta <strong style={{ color: 'var(--gray-200)' }}>JPG, PNG o WEBP</strong>.
+        Algunos archivos no tienen un formato compatible (por ejemplo HEIC de iPhone que no se pudo convertir).
+        <br /><br />
+        Exportalas o convertilas a <strong style={{ color: 'var(--gray-200)' }}>JPG</strong> y volvé a subirlas.
+        En iPhone: Ajustes → Cámara → Formatos → <strong style={{ color: 'var(--gray-200)' }}>Más compatible</strong>.
+      </AlertModal>
     </>
   );
 }
