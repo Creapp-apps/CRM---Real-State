@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
@@ -8,7 +8,40 @@ import { supabase } from '@/lib/supabase';
 import ClienteModal from '@/components/admin/administraciones/ClienteModal';
 import { fetchClientes } from '@/lib/admin-fetchers';
 
-const TIPO_LABELS = { locador: 'Locador', locatario: 'Locatario', ambos: 'Ambos' };
+// Tipo de cliente → etiqueta + color de badge.
+const TIPO_META = {
+  locador:    { label: 'Locador',    badge: 'badgeBlue' },
+  locatario:  { label: 'Locatario',  badge: 'badgeGreen' },
+  ambos:      { label: 'Ambos',      badge: 'badgeYellow' },
+  comprador:  { label: 'Comprador',  badge: 'badgeGold' },
+  vendedor:   { label: 'Vendedor',   badge: 'badgeRed' },
+  prospecto:  { label: 'Prospecto',  badge: 'badgeGray' },
+};
+const tipoMeta = (t) => TIPO_META[t] || { label: t || '—', badge: 'badgeGray' };
+
+// Filtros (pestañas). 'ambos' cuenta como locador y locatario.
+const FILTER_TABS = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'locador', label: 'Locadores' },
+  { key: 'locatario', label: 'Locatarios' },
+  { key: 'comprador', label: 'Compradores' },
+  { key: 'vendedor', label: 'Vendedores' },
+  { key: 'prospecto', label: 'Prospectos' },
+];
+
+// Helpers de contacto.
+const onlyDigits = (s) => (s || '').replace(/\D/g, '');
+const waLink = (phone) => {
+  const d = onlyDigits(phone);
+  if (!d) return null;
+  const intl = d.startsWith('54') ? d : '549' + d; // Argentina (best-effort)
+  return `https://wa.me/${intl}`;
+};
+const telLink = (phone) => { const d = onlyDigits(phone); return d ? `tel:${d}` : null; };
+
+const ETAPA_LABELS = { consulta: 'Consulta', visita: 'Visita', oferta: 'Oferta', reserva: 'Reserva', firma: 'Firma', cerrado: 'Cerrado', perdido: 'Perdido' };
+const ESTADO_CONTRATO = { activo: 'badgeGreen', vencido: 'badgeRed', rescindido: 'badgeGray', proximo_a_vencer: 'badgeYellow' };
+const fmtFecha = (s) => s ? new Date(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
 
 export default function ClientesPage() {
   const { data: clientes = [], isLoading: loading, mutate } = useSWR('clientes', fetchClientes);
@@ -17,14 +50,42 @@ export default function ClientesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [fichaCliente, setFichaCliente] = useState(null);
+  const [fichaRels, setFichaRels] = useState({ contratos: [], oportunidades: [], loading: false });
 
-  const filtered = clientes
-    .filter(c => filterTipo === 'todos' || c.tipo === filterTipo || (filterTipo !== 'ambos' && c.tipo === 'ambos'))
-    .filter(c =>
-      c.nombre?.toLowerCase().includes(search.toLowerCase()) ||
-      c.dni_cuit?.toLowerCase().includes(search.toLowerCase()) ||
-      c.telefono?.includes(search)
-    );
+  // Al abrir la ficha, trae contratos y oportunidades del cliente.
+  useEffect(() => {
+    if (!fichaCliente) return;
+    let cancel = false;
+    setFichaRels({ contratos: [], oportunidades: [], loading: true });
+    (async () => {
+      const [ct, op] = await Promise.all([
+        supabase.from('contratos')
+          .select('id, estado, fecha_inicio, fecha_fin, monto_inicial, moneda, inmueble:inmuebles_administrados(direccion)')
+          .or(`locador_id.eq.${fichaCliente.id},locatario_id.eq.${fichaCliente.id}`)
+          .order('fecha_inicio', { ascending: false }),
+        supabase.from('oportunidades')
+          .select('id, etapa, tipo, titulo_propiedad, inmueble:inmuebles_administrados(direccion)')
+          .eq('cliente_id', fichaCliente.id)
+          .order('updated_at', { ascending: false }),
+      ]);
+      if (!cancel) setFichaRels({ contratos: ct.data || [], oportunidades: op.data || [], loading: false });
+    })();
+    return () => { cancel = true; };
+  }, [fichaCliente]);
+
+  const q = search.toLowerCase();
+  const qDigits = onlyDigits(search);
+  const matchTipo = (c) =>
+    filterTipo === 'todos' ||
+    c.tipo === filterTipo ||
+    (c.tipo === 'ambos' && (filterTipo === 'locador' || filterTipo === 'locatario'));
+  const filtered = clientes.filter(c => matchTipo(c) && (
+    !search ||
+    c.nombre?.toLowerCase().includes(q) ||
+    c.dni_cuit?.toLowerCase().includes(q) ||
+    c.email?.toLowerCase().includes(q) ||
+    (qDigits && onlyDigits(c.telefono).includes(qDigits))
+  ));
 
   const handleEdit = (cliente) => { setEditData(cliente); setModalOpen(true); };
   const handleNew  = ()        => { setEditData(null);    setModalOpen(true); };
@@ -51,13 +112,13 @@ export default function ClientesPage() {
 
       {/* Filter Tabs */}
       <div className={styles.filterTabs}>
-        {['todos', 'locador', 'locatario'].map(t => (
+        {FILTER_TABS.map(t => (
           <button
-            key={t}
-            className={`${styles.filterTab} ${filterTipo === t ? styles.filterTabActive : ''}`}
-            onClick={() => setFilterTipo(t)}
+            key={t.key}
+            className={`${styles.filterTab} ${filterTipo === t.key ? styles.filterTabActive : ''}`}
+            onClick={() => setFilterTipo(t.key)}
           >
-            {t === 'todos' ? 'Todos' : t === 'locador' ? 'Locadores' : 'Locatarios'}
+            {t.label}
           </button>
         ))}
       </div>
@@ -100,8 +161,8 @@ export default function ClientesPage() {
                 <tr key={c.id}>
                   <td style={{ color: 'var(--white)', fontWeight: 500 }}>{c.nombre}</td>
                   <td>
-                    <span className={`${styles.badge} ${c.tipo === 'locador' ? styles.badgeBlue : c.tipo === 'locatario' ? styles.badgeGreen : styles.badgeYellow}`}>
-                      {TIPO_LABELS[c.tipo]}
+                    <span className={`${styles.badge} ${styles[tipoMeta(c.tipo).badge]}`}>
+                      {tipoMeta(c.tipo).label}
                     </span>
                   </td>
                   <td>{c.dni_cuit || '-'}</td>
@@ -109,6 +170,11 @@ export default function ClientesPage() {
                   <td>{c.email || '-'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.375rem' }}>
+                      {c.telefono && (
+                        <a className={styles.btnIcon} href={waLink(c.telefono)} target="_blank" rel="noreferrer" title="WhatsApp" style={{ color: '#25D366' }}>
+                          <Icon name="whatsapp" size={14} />
+                        </a>
+                      )}
                       <button className={styles.btnIcon} onClick={() => setFichaCliente(c)} title="Ver ficha" style={{ color: 'var(--admin-gold)' }}>
                         <Icon name="eye" size={14} />
                       </button>
@@ -151,10 +217,31 @@ export default function ClientesPage() {
                   {fichaCliente.nombre?.charAt(0)?.toUpperCase()}
                 </div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--white)' }}>{fichaCliente.nombre}</div>
-                <span className={`${styles.badge} ${fichaCliente.tipo === 'locador' ? styles.badgeBlue : fichaCliente.tipo === 'locatario' ? styles.badgeGreen : styles.badgeYellow}`} style={{ marginTop: '0.375rem' }}>
-                  {TIPO_LABELS[fichaCliente.tipo]}
+                <span className={`${styles.badge} ${styles[tipoMeta(fichaCliente.tipo).badge]}`} style={{ marginTop: '0.375rem' }}>
+                  {tipoMeta(fichaCliente.tipo).label}
                 </span>
               </div>
+
+              {/* Acciones rápidas de contacto */}
+              {(fichaCliente.telefono || fichaCliente.email) && (
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+                  {fichaCliente.telefono && (
+                    <a href={waLink(fichaCliente.telefono)} target="_blank" rel="noreferrer" className={styles.btnSecondary} style={{ color: '#25D366' }}>
+                      <Icon name="whatsapp" size={14} /> WhatsApp
+                    </a>
+                  )}
+                  {fichaCliente.telefono && (
+                    <a href={telLink(fichaCliente.telefono)} className={styles.btnSecondary}>
+                      <Icon name="phone" size={14} /> Llamar
+                    </a>
+                  )}
+                  {fichaCliente.email && (
+                    <a href={`mailto:${fichaCliente.email}`} className={styles.btnSecondary}>
+                      <Icon name="mail" size={14} /> Email
+                    </a>
+                  )}
+                </div>
+              )}
 
               {/* Datos Personales */}
               <div style={{ marginBottom: '1rem' }}>
@@ -191,6 +278,51 @@ export default function ClientesPage() {
                   </div>
                 </div>
               )}
+
+              {/* Relaciones: contratos y oportunidades del cliente */}
+              <div style={{ marginTop: '1rem' }}>
+                <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#888', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  Contratos {fichaRels.loading ? '' : `(${fichaRels.contratos.length})`}
+                </div>
+                {fichaRels.loading ? (
+                  <div style={{ fontSize: '0.8rem', color: '#666' }}>Cargando…</div>
+                ) : fichaRels.contratos.length === 0 ? (
+                  <div style={{ fontSize: '0.8rem', color: '#555' }}>Sin contratos</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {fichaRels.contratos.map(ct => (
+                      <div key={ct.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.4rem', padding: '0.5rem 0.65rem', fontSize: '0.8rem' }}>
+                        <span style={{ color: 'var(--gray-300)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {ct.inmueble?.direccion || 'Inmueble'} · {fmtFecha(ct.fecha_inicio)}–{fmtFecha(ct.fecha_fin)}
+                        </span>
+                        <span className={`${styles.badge} ${styles[ESTADO_CONTRATO[ct.estado] || 'badgeGray']}`} style={{ flexShrink: 0 }}>{ct.estado}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginTop: '1rem' }}>
+                <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#888', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  Oportunidades {fichaRels.loading ? '' : `(${fichaRels.oportunidades.length})`}
+                </div>
+                {fichaRels.loading ? (
+                  <div style={{ fontSize: '0.8rem', color: '#666' }}>Cargando…</div>
+                ) : fichaRels.oportunidades.length === 0 ? (
+                  <div style={{ fontSize: '0.8rem', color: '#555' }}>Sin oportunidades</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {fichaRels.oportunidades.map(op => (
+                      <div key={op.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '0.4rem', padding: '0.5rem 0.65rem', fontSize: '0.8rem' }}>
+                        <span style={{ color: 'var(--gray-300)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {op.inmueble?.direccion || op.titulo_propiedad || 'Oportunidad'} · {op.tipo === 'venta' ? 'Venta' : 'Alquiler'}
+                        </span>
+                        <span className={`${styles.badge} ${styles.badgeGray}`} style={{ flexShrink: 0 }}>{ETAPA_LABELS[op.etapa] || op.etapa}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className={styles.modalFooter}>
               <button className={styles.btnSecondary} onClick={() => { setFichaCliente(null); handleEdit(fichaCliente); }}>Editar</button>

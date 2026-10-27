@@ -34,6 +34,22 @@ export default function ClienteModal({ isOpen, onClose, onSaved, editData }) {
     setSaving(true);
 
     try {
+      // Control de duplicados (DNI/CUIT y email) y validación suave de CBU.
+      const otherId = editData?.id || '00000000-0000-0000-0000-000000000000';
+      let dupMsg = null;
+      if (form.dni_cuit?.trim()) {
+        const { data } = await supabase.from('clientes').select('nombre').eq('dni_cuit', form.dni_cuit.trim()).neq('id', otherId).limit(1);
+        if (data?.length) dupMsg = `Ya existe un cliente con ese DNI/CUIT (${data[0].nombre}).`;
+      }
+      if (!dupMsg && form.email?.trim()) {
+        const { data } = await supabase.from('clientes').select('nombre').ilike('email', form.email.trim()).neq('id', otherId).limit(1);
+        if (data?.length) dupMsg = `Ya existe un cliente con ese email (${data[0].nombre}).`;
+      }
+      if (dupMsg && !confirm(dupMsg + '\n¿Guardar igual?')) { setSaving(false); return; }
+
+      const cbuDigits = (form.cbu || '').replace(/\D/g, '');
+      if (cbuDigits && cbuDigits.length !== 22 && !confirm('El CBU no tiene 22 dígitos. ¿Guardar igual?')) { setSaving(false); return; }
+
       if (editData?.id) {
         const { error } = await supabase.from('clientes').update(form).eq('id', editData.id);
         if (error) throw error;
@@ -82,6 +98,9 @@ export default function ClienteModal({ isOpen, onClose, onSaved, editData }) {
                     { value: 'locador', label: 'Locador' },
                     { value: 'locatario', label: 'Locatario' },
                     { value: 'ambos', label: 'Ambos' },
+                    { value: 'comprador', label: 'Comprador' },
+                    { value: 'vendedor', label: 'Vendedor' },
+                    { value: 'prospecto', label: 'Prospecto' },
                   ]}
                 />
               </div>
