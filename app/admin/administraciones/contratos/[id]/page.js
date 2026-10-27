@@ -143,6 +143,10 @@ export default function ContratoDetailPage() {
             ); })()}
           </div>
         </div>
+        <Link href={`/admin/administraciones/contratos/${id}/documento`} target="_blank" className={styles.btnPrimary}>
+          <Icon name="file-text" size={16} />
+          Generar contrato
+        </Link>
       </div>
 
       {/* Tabs */}
