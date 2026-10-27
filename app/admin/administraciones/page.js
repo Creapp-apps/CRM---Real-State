@@ -9,9 +9,10 @@ import { fetchAdminStats } from '@/lib/admin-fetchers';
 export default function AdministracionesDashboard() {
   const { data, isLoading: loading } = useSWR('admin-stats', fetchAdminStats);
 
-  const stats               = data?.stats               ?? { contratos: 0, clientes: 0, inmuebles: 0, vencimientos: 0, pendientes: 0 };
+  const stats               = data?.stats               ?? { contratos: 0, clientes: 0, inmuebles: 0, vencimientos: 0, pendientes: 0, actualizaciones: 0 };
   const proximosVencimientos = data?.proximosVencimientos ?? [];
   const pagosMora            = data?.pagosMora            ?? [];
+  const actualizacionesMes   = data?.actualizacionesMes   ?? [];
 
   const formatDate = (d) => {
     if (!d) return '-';
@@ -36,6 +37,9 @@ export default function AdministracionesDashboard() {
     )},
     { label: 'Próximos Vencimientos', value: stats.vencimientos, color: 'Purple', icon: (
       <Icon name="clock" size={22} />
+    )},
+    { label: 'A Actualizar (mes)', value: stats.actualizaciones, color: 'Gold', icon: (
+      <Icon name="layers" size={22} />
     )},
     { label: 'Cobros Pendientes', value: stats.pendientes, color: 'Red', icon: (
       <Icon name="dollar" size={22} />
@@ -113,6 +117,46 @@ export default function AdministracionesDashboard() {
                     <td>{formatDate(p.fecha_vencimiento)}</td>
                     <td>
                       <span className={`${styles.badge} ${styles.badgeRed}`}>{dias} días</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Alquileres a actualizar este mes */}
+      {actualizacionesMes.length > 0 && (
+        <div className={styles.tableWrapper} style={{ borderColor: 'var(--admin-gold-20)', marginBottom: '1.5rem' }}>
+          <div className={styles.tableHeader}>
+            <h2 className={styles.tableTitle} style={{ color: 'var(--admin-gold)' }}>
+              🔄 Alquileres a Actualizar este Mes ({actualizacionesMes.length})
+            </h2>
+          </div>
+          <table className={styles.table}>
+            <thead>
+              <tr><th>Inmueble</th><th>Inquilino</th><th>Índice</th><th>Monto actual</th><th>Ajuste programado</th><th></th></tr>
+            </thead>
+            <tbody>
+              {actualizacionesMes.map(c => {
+                const fecha = c.proximaActualizacion;
+                const vencida = fecha < new Date(new Date().toDateString());
+                return (
+                  <tr key={c.id} style={vencida ? { background: 'rgba(248,113,113,0.03)' } : undefined}>
+                    <td style={{ color: 'var(--white)', fontWeight: 500 }}>{c.inmueble?.direccion || '-'}</td>
+                    <td>{c.locatario?.nombre || '-'}</td>
+                    <td><span className={`${styles.badge} ${styles.badgeGray}`}>{c.indice_ajuste}</span></td>
+                    <td style={{ fontWeight: 600, color: 'var(--white)' }}>{c.moneda} {Number(c.montoActual).toLocaleString('es-AR')}</td>
+                    <td>
+                      <span style={{ color: vencida ? '#f87171' : 'var(--admin-gold)', fontWeight: 600, fontSize: '0.85rem' }}>
+                        {fecha.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}{vencida ? ' · vencido' : ''}
+                      </span>
+                    </td>
+                    <td>
+                      <Link href={`/admin/administraciones/contratos/${c.id}`} className={styles.btnSecondary} style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem' }}>
+                        Actualizar
+                      </Link>
                     </td>
                   </tr>
                 );

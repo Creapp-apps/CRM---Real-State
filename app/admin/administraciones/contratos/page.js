@@ -23,16 +23,31 @@ const ESTADO_LABEL = {
   rescindido: 'Rescindido',
 };
 
+// Estado vigente por fecha (no depende de que alguien lo marque a mano).
+// 'rescindido' es manual, así que se respeta.
+function estadoVigente(c) {
+  if (c.estado === 'rescindido') return 'rescindido';
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const fin = new Date(c.fecha_fin + 'T12:00:00');
+  const dias = Math.ceil((fin - hoy) / 86400000);
+  if (dias < 0) return 'vencido';
+  if (dias <= 30) return 'proximo_a_vencer';
+  return 'activo';
+}
+
 export default function ContratosPage() {
   const [filterEstado, setFilterEstado] = useState('todos');
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
 
-  const swrKey = ['contratos', filterEstado];
-  const { data: contratos = [], isLoading: loading, mutate } = useSWR(
-    swrKey,
-    ([_, estado]) => fetchContratos(estado)
+  // Traemos todos y filtramos por estado vigente (calculado) en el cliente.
+  const { data: allContratos = [], isLoading: loading, mutate } = useSWR(
+    'contratos-all',
+    () => fetchContratos('todos')
   );
+  const contratos = filterEstado === 'todos'
+    ? allContratos
+    : allContratos.filter(c => estadoVigente(c) === filterEstado);
 
   const formatDate = (d) => {
     if (!d) return '-';
@@ -118,9 +133,11 @@ export default function ContratosPage() {
                     <span style={{ color: 'var(--gray-500)' }}>al {formatDate(c.fecha_fin)}</span>
                   </td>
                   <td>
-                    <span className={`${styles.badge} ${ESTADO_BADGE[c.estado] || styles.badgeGray}`}>
-                      {ESTADO_LABEL[c.estado] || c.estado}
-                    </span>
+                    {(() => { const est = estadoVigente(c); return (
+                      <span className={`${styles.badge} ${ESTADO_BADGE[est] || styles.badgeGray}`}>
+                        {ESTADO_LABEL[est] || est}
+                      </span>
+                    ); })()}
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.375rem' }}>

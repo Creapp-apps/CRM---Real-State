@@ -27,6 +27,18 @@ const ESTADO_LABEL = {
 };
 const PERIODICIDAD_MESES = { mensual: 1, bimestral: 2, trimestral: 3, cuatrimestral: 4, semestral: 6, anual: 12 };
 
+// Estado vigente por fecha ('rescindido' es manual y se respeta).
+function estadoVigente(c) {
+  if (!c) return 'activo';
+  if (c.estado === 'rescindido') return 'rescindido';
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const fin = new Date(c.fecha_fin + 'T12:00:00');
+  const dias = Math.ceil((fin - hoy) / 86400000);
+  if (dias < 0) return 'vencido';
+  if (dias <= 30) return 'proximo_a_vencer';
+  return 'activo';
+}
+
 export default function ContratoDetailPage() {
   const { id } = useParams();
   const [contrato, setContrato] = useState(null);
@@ -124,9 +136,11 @@ export default function ContratoDetailPage() {
               <Icon name="dollar" size={14} />
               {contrato.moneda} {montoActual.toLocaleString('es-AR')} / mes
             </div>
-            <span className={`${styles.badge} ${ESTADO_BADGE[contrato.estado] || styles.badgeGray}`}>
-              {ESTADO_LABEL[contrato.estado] || contrato.estado}
-            </span>
+            {(() => { const est = estadoVigente(contrato); return (
+              <span className={`${styles.badge} ${ESTADO_BADGE[est] || styles.badgeGray}`}>
+                {ESTADO_LABEL[est] || est}
+              </span>
+            ); })()}
           </div>
         </div>
       </div>
