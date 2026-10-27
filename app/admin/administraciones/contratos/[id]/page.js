@@ -25,6 +25,7 @@ const ESTADO_BADGE = {
 const ESTADO_LABEL = {
   activo: 'Activo', proximo_a_vencer: 'Próx. vencer', vencido: 'Vencido', rescindido: 'Rescindido',
 };
+const PERIODICIDAD_MESES = { mensual: 1, bimestral: 2, trimestral: 3, cuatrimestral: 4, semestral: 6, anual: 12 };
 
 export default function ContratoDetailPage() {
   const { id } = useParams();
@@ -78,6 +79,30 @@ export default function ContratoDetailPage() {
   // Get the last updated amount or initial
   const lastUpdate = actualizaciones[0];
   const montoActual = lastUpdate ? Number(lastUpdate.monto_nuevo) : Number(contrato.monto_inicial);
+
+  // Registra una actualización calculada (persiste + refresca el monto vigente).
+  async function registrarActualizacion(data) {
+    const ok = confirm(
+      `Registrar actualización al ${data.fecha}:\n` +
+      `$ ${Number(data.monto_anterior).toLocaleString('es-AR')} → $ ${Number(data.monto_nuevo).toLocaleString('es-AR')} (${data.indice_usado}, +${data.aumento.toFixed(1)}%)\n\n` +
+      `El monto vigente del contrato pasará a ser el nuevo valor.`
+    );
+    if (!ok) return;
+    const { error } = await supabase.from('actualizaciones_contrato').insert({
+      contrato_id: id,
+      fecha: data.fecha,
+      monto_anterior: data.monto_anterior,
+      monto_nuevo: data.monto_nuevo,
+      indice_usado: data.indice_usado,
+      valor_indice_inicio: data.valor_indice_inicio,
+      valor_indice_fin: data.valor_indice_fin,
+    });
+    if (error) return alert('Error al registrar: ' + error.message);
+    const { data: acts } = await supabase.from('actualizaciones_contrato').select('*').eq('contrato_id', id).order('fecha', { ascending: false });
+    setActualizaciones(acts || []);
+    setActiveTab('General');
+    alert('Actualización registrada. El monto vigente se actualizó.');
+  }
 
   return (
     <>
@@ -244,6 +269,9 @@ export default function ContratoDetailPage() {
         <CalculadoraActualizacion
           montoBase={montoActual}
           indice={contrato.indice_ajuste}
+          periodicidadMeses={PERIODICIDAD_MESES[contrato.periodicidad_ajuste] || 3}
+          fechaInicioContrato={contrato.fecha_inicio}
+          onRegistrar={registrarActualizacion}
         />
       )}
 

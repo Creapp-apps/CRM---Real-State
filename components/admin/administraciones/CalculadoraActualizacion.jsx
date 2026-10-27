@@ -4,349 +4,254 @@ import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 
-const MESES_OPCIONES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const MESES_OPCIONES = [1, 2, 3, 4, 6, 12];
 const INDICES = ['ICL', 'IPC', 'UVA'];
 const MESES_NOMBRE = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const INDICE_DESC = {
+  ICL: 'Índice de Contratos de Locación (BCRA · Ley 27.551)',
+  IPC: 'Índice de Precios al Consumidor (INDEC)',
+  UVA: 'Unidad de Valor Adquisitivo (BCRA)',
+};
 
-export default function CalculadoraActualizacion({ montoBase: propMonto, indice: propIndice }) {
+/* ── Helpers de fecha ── */
+const addMonths = (d, n) => { const x = new Date(d); x.setMonth(x.getMonth() + n); return x; };
+const fmtMonth = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+const fmtDay = (d) => `${fmtMonth(d)}-${String(d.getDate()).padStart(2, '0')}`;
+const fmtCorta = (d) => `${MESES_NOMBRE[d.getMonth()]} ${d.getFullYear()}`;
+const fmtISO = (d) => fmtDay(d);
+
+// Valor del índice en una fecha (serie desc). Proyecta si la fecha supera el último dato.
+function indexAt(serie, freq, date) {
+  if (!serie?.length) return null;
+  const key = freq === 'mensual' ? fmtMonth(date) : fmtDay(date);
+  const keyOf = (d) => (freq === 'mensual' ? d.periodo : d.fecha);
+  const latest = serie[0];
+  const earliest = serie[serie.length - 1];
+  if (key < keyOf(earliest)) return null;                 // antes de la serie
+  if (key <= keyOf(latest)) {
+    const found = serie.find(d => keyOf(d) <= key);        // más reciente ≤ fecha
+    return found ? { valor: found.valor, aprox: false } : null;
+  }
+  // Más allá del último dato → proyección por tendencia reciente.
+  if (freq === 'mensual') {
+    const r = serie.length > 1 ? latest.valor / serie[1].valor - 1 : 0;
+    const latestDate = new Date(keyOf(latest) + '-01T12:00:00');
+    const monthsBeyond = (date.getFullYear() - latestDate.getFullYear()) * 12 + (date.getMonth() - latestDate.getMonth());
+    return { valor: latest.valor * Math.pow(1 + r, Math.max(1, monthsBeyond)), aprox: true };
+  } else {
+    const ref = serie[Math.min(30, serie.length - 1)];
+    const r = Math.pow(latest.valor / ref.valor, 1 / 30) - 1;
+    const latestDate = new Date(keyOf(latest) + 'T12:00:00');
+    const daysBeyond = Math.max(1, Math.round((date - latestDate) / 86400000));
+    return { valor: latest.valor * Math.pow(1 + r, daysBeyond), aprox: true };
+  }
+}
+
+export default function CalculadoraActualizacion({ montoBase: propMonto, indice: propIndice, periodicidadMeses, fechaInicioContrato, onRegistrar }) {
   const [monto, setMonto] = useState(propMonto || '');
-  const [fechaInicio, setFechaInicio] = useState('');
-  const [cadaMeses, setCadaMeses] = useState(3);
-  const [indice, setIndice] = useState(propIndice || 'IPC');
-  const [ipcData, setIpcData] = useState([]);
+  const [fechaInicio, setFechaInicio] = useState(fechaInicioContrato || '');
+  const [cadaMeses, setCadaMeses] = useState(periodicidadMeses || 3);
+  const [indice, setIndice] = useState(propIndice || 'ICL');
+  const [serie, setSerie] = useState([]);
+  const [freq, setFreq] = useState('diaria');
+  const [fuente, setFuente] = useState('');
   const [loading, setLoading] = useState(false);
   const [resultados, setResultados] = useState(null);
 
-  // Fetch IPC data
-  const fetchIPC = useCallback(async () => {
+  // Trae la serie del índice elegido (y cada vez que cambia el índice).
+  const fetchSerie = useCallback(async (tipo) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/indices?tipo=IPC&limit=60');
-      if (!res.ok) throw new Error('Error');
+      const res = await fetch(`/api/indices?tipo=${tipo}`);
       const json = await res.json();
-      setIpcData(json.data || []);
-    } catch { /* fallback to manual */ }
+      if (json.error) throw new Error(json.error);
+      setSerie(json.data || []);
+      setFreq(json.frecuencia || 'diaria');
+      setFuente(json.fuente || '');
+    } catch { setSerie([]); setFuente(''); }
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchIPC(); }, [fetchIPC]);
-
-  // Get IPC value for a given YYYY-MM period
-  const getIpcForPeriod = (periodo) => {
-    const found = ipcData.find(d => d.periodo === periodo);
-    return found ? found.valor : null;
-  };
+  useEffect(() => { fetchSerie(indice); }, [indice, fetchSerie]);
 
   const calcular = () => {
     const m = parseFloat(monto);
     if (!m || !fechaInicio) return alert('Ingresá el monto y la fecha de inicio');
+    if (!serie.length) return alert('No hay datos del índice. Probá de nuevo en unos segundos.');
 
-    const startDate = new Date(fechaInicio + 'T12:00:00');
-    const periods = [];
-    let currentMonto = m;
-
-    // First period is always the starting value (0% increase)
-    periods.push({
-      numero: 1,
-      label: `Per. 1`,
-      fecha: fechaInicio,
-      fechaLabel: formatFechaCorta(startDate),
-      aumento: 0,
-      valor: m,
-      ipcInicio: null,
-      ipcFin: null,
-      aproximado: false,
-    });
-
-    // Calculate up to 12 periods forward
-    const maxPeriods = Math.min(Math.ceil(36 / cadaMeses), 12);
+    const start = new Date(fechaInicio + 'T12:00:00');
+    const periods = [{ numero: 1, fecha: fechaInicio, fechaLabel: fmtCorta(start), aumento: 0, valor: m, aprox: false }];
+    let current = m;
+    const maxPeriods = Math.min(Math.ceil(36 / cadaMeses) + 1, 13);
 
     for (let i = 1; i < maxPeriods; i++) {
-      const mesOffset = i * cadaMeses;
-      const periodDate = new Date(startDate);
-      periodDate.setMonth(periodDate.getMonth() + mesOffset);
+      const Di = addMonths(start, i * cadaMeses);
+      const Dprev = addMonths(start, (i - 1) * cadaMeses);
+      const idxI = indexAt(serie, freq, Di);
+      const idxPrev = indexAt(serie, freq, Dprev);
+      if (!idxI || !idxPrev || !idxPrev.valor) break; // sin dato suficiente
 
-      const periodoActual = formatPeriodo(periodDate);
-      const periodoAnterior = formatPeriodo(new Date(startDate.getFullYear(), startDate.getMonth() + (i - 1) * cadaMeses, 1));
-
-      // For IPC: use period start and period end values
-      const periodoInicioContrato = formatPeriodo(startDate);
-      const periodoBuscarInicio = formatPeriodo(new Date(startDate.getFullYear(), startDate.getMonth() + (i - 1) * cadaMeses, 1));
-      const periodoBuscarFin = formatPeriodo(new Date(startDate.getFullYear(), startDate.getMonth() + i * cadaMeses, 1));
-
-      const ipcInicio = getIpcForPeriod(periodoBuscarInicio);
-      const ipcFin = getIpcForPeriod(periodoBuscarFin);
-
-      let aumento = 0;
-      let nuevoMonto = currentMonto;
-      let aproximado = false;
-
-      if (indice === 'IPC' && ipcInicio && ipcFin) {
-        aumento = ((ipcFin / ipcInicio) - 1) * 100;
-        nuevoMonto = currentMonto * (ipcFin / ipcInicio);
-      } else if (indice === 'IPC' && ipcInicio && !ipcFin) {
-        // Estimate based on last known variation
-        const lastKnown = ipcData[0]?.valor;
-        const secondLast = ipcData[1]?.valor;
-        if (lastKnown && secondLast) {
-          const monthlyRate = (lastKnown / secondLast) - 1;
-          const monthsAhead = cadaMeses;
-          aumento = (Math.pow(1 + monthlyRate, monthsAhead) - 1) * 100;
-          nuevoMonto = currentMonto * (1 + aumento / 100);
-          aproximado = true;
-        }
-      }
-
-      if (aumento !== 0) {
-        currentMonto = nuevoMonto;
-      }
-
+      const ratio = idxI.valor / idxPrev.valor;
+      const aumento = (ratio - 1) * 100;
+      const anterior = current;
+      current = current * ratio;
       periods.push({
         numero: i + 1,
-        label: `Per. ${i + 1}`,
-        fecha: formatFechaISO(periodDate),
-        fechaLabel: formatFechaCorta(periodDate),
+        fecha: fmtISO(Di),
+        fechaLabel: fmtCorta(Di),
         aumento,
-        valor: currentMonto,
-        ipcInicio,
-        ipcFin,
-        aproximado,
+        valor: current,
+        montoAnterior: anterior,
+        idxInicio: idxPrev.valor,
+        idxFin: idxI.valor,
+        aprox: idxI.aprox || idxPrev.aprox,
       });
-
-      // Stop if we've gone past available data and can't estimate
-      if (indice === 'IPC' && !ipcInicio) break;
     }
 
-    setResultados({
-      periods,
-      params: {
-        monto: m,
-        fecha: fechaInicio,
-        cadaMeses,
-        indice,
-      }
-    });
+    setResultados({ periods, params: { monto: m, fecha: fechaInicio, cadaMeses, indice } });
   };
 
-  function formatPeriodo(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    return `${y}-${m}`;
-  }
+  const lastConfirmed = resultados?.periods?.filter(p => !p.aprox && p.numero > 1).pop();
+  const nextApprox = resultados?.periods?.find(p => p.aprox);
 
-  function formatFechaISO(date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
-  }
-
-  function formatFechaCorta(date) {
-    return `${MESES_NOMBRE[date.getMonth()]} ${date.getFullYear()}`;
-  }
-
-  // Find the last confirmed and first approximate
-  const lastConfirmed = resultados?.periods?.filter(p => !p.aproximado && p.numero > 1).pop();
-  const nextApprox = resultados?.periods?.find(p => p.aproximado);
+  const registrar = (p) => {
+    if (!onRegistrar) return;
+    onRegistrar({
+      fecha: p.fecha,
+      monto_anterior: Math.round(p.montoAnterior),
+      monto_nuevo: Math.round(p.valor),
+      indice_usado: indice,
+      valor_indice_inicio: p.idxInicio ?? null,
+      valor_indice_fin: p.idxFin ?? null,
+      aumento: p.aumento,
+    });
+  };
 
   return (
     <div className={styles.calcCard}>
       <div className={styles.calcSection}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div className={styles.calcSectionTitle}>
-            <span style={{ color: 'var(--admin-gold)', display: 'inline-flex' }}>
-              <Icon name="layers" size={18} />
-            </span>
+            <span style={{ color: 'var(--admin-gold)', display: 'inline-flex' }}><Icon name="layers" size={18} /></span>
             Calculadora de Actualización
           </div>
-          {!loading && ipcData.length > 0 && (
+          {!loading && serie.length > 0 && (
             <span style={{ fontSize: '0.7rem', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
-              Conectado · INDEC
+              {fuente || 'Conectado'}
             </span>
           )}
+          {loading && <span style={{ fontSize: '0.7rem', color: 'var(--gray-500)' }}>Cargando índice…</span>}
         </div>
 
-        {/* Valor inicial */}
         <div className={styles.formGroup} style={{ marginBottom: '1rem' }}>
           <label className={styles.formLabel}>Valor inicial del alquiler</label>
-          <input
-            className={styles.formInput}
-            type="number"
-            step="0.01"
-            value={monto}
-            onChange={(e) => setMonto(e.target.value)}
-            placeholder="Ej: 475.000"
-          />
+          <input className={styles.formInput} type="number" step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Ej: 475000" />
         </div>
 
-        {/* Fecha inicio */}
         <div className={styles.formGroup} style={{ marginBottom: '1rem' }}>
           <label className={styles.formLabel}>Fecha de inicio de contrato</label>
-          <input
-            className={styles.formInput}
-            type="date"
-            value={fechaInicio}
-            onChange={(e) => setFechaInicio(e.target.value)}
-          />
+          <input className={styles.formInput} type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
         </div>
 
-        {/* Cada cuanto se actualiza */}
         <div className={styles.formGroup} style={{ marginBottom: '1rem' }}>
-          <label className={styles.formLabel}>Cada cuanto se actualiza (meses)</label>
+          <label className={styles.formLabel}>Cada cuánto se actualiza (meses)</label>
           <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', marginTop: '0.375rem' }}>
             {MESES_OPCIONES.map(n => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setCadaMeses(n)}
-                style={{
-                  width: 36, height: 36,
-                  borderRadius: '0.375rem',
+              <button key={n} type="button" onClick={() => setCadaMeses(n)}
+                style={{ minWidth: 40, height: 36, padding: '0 0.5rem', borderRadius: '0.375rem',
                   border: cadaMeses === n ? '2px solid var(--admin-gold)' : '1px solid rgba(255,255,255,0.1)',
                   background: cadaMeses === n ? 'var(--admin-gold-15)' : 'rgba(255,255,255,0.03)',
                   color: cadaMeses === n ? 'var(--admin-gold)' : 'var(--gray-400)',
-                  fontWeight: cadaMeses === n ? 700 : 500,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
+                  fontWeight: cadaMeses === n ? 700 : 500, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s' }}>
                 {n}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Índice */}
         <div className={styles.formGroup} style={{ marginBottom: '1.25rem' }}>
           <label className={styles.formLabel}>Índice de actualización</label>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.375rem' }}>
             {INDICES.map(idx => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setIndice(idx)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
+              <button key={idx} type="button" onClick={() => setIndice(idx)}
+                style={{ padding: '0.5rem 1rem', borderRadius: '0.375rem',
                   border: indice === idx ? '2px solid var(--admin-gold)' : '1px solid rgba(255,255,255,0.1)',
                   background: indice === idx ? 'var(--admin-gold-15)' : 'rgba(255,255,255,0.03)',
                   color: indice === idx ? 'var(--admin-gold)' : 'var(--gray-400)',
-                  fontWeight: indice === idx ? 700 : 500,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
+                  fontWeight: indice === idx ? 700 : 500, fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.15s' }}>
                 {idx}
               </button>
             ))}
           </div>
-          <div style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.375rem' }}>
-            {indice === 'IPC' && 'Índice de Precios al Consumidor (INDEC)'}
-            {indice === 'ICL' && 'Índice de Contratos de Locación (BCRA)'}
-            {indice === 'UVA' && 'Unidad de Valor Adquisitivo'}
-          </div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.375rem' }}>{INDICE_DESC[indice]}</div>
         </div>
 
-        {/* Calcular */}
-        <button className={styles.btnPrimary} type="button" onClick={calcular} style={{ width: '100%', justifyContent: 'center' }}>
+        <button className={styles.btnPrimary} type="button" onClick={calcular} disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
           CALCULAR
         </button>
       </div>
 
-      {/* Results */}
       {resultados && (
         <>
-          {/* Summary Cards */}
           {(lastConfirmed || nextApprox) && (
             <div className={styles.calcSection} style={{ padding: 0 }}>
               <div style={{ display: 'grid', gridTemplateColumns: lastConfirmed && nextApprox ? '1fr 1fr' : '1fr', gap: 0 }}>
                 {lastConfirmed && (
-                  <div style={{
-                    padding: '1.25rem',
-                    textAlign: 'center',
-                    borderRight: nextApprox ? '1px solid var(--admin-gold-10)' : 'none',
-                    background: 'var(--admin-gold-05)',
-                  }}>
-                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--admin-gold)', fontWeight: 700, marginBottom: '0.375rem' }}>
-                      CONFIRMADO
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: '0.25rem' }}>
-                      {lastConfirmed.fechaLabel}
-                    </div>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--white)' }}>
-                      $ {lastConfirmed.valor.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </div>
+                  <div style={{ padding: '1.25rem', textAlign: 'center', borderRight: nextApprox ? '1px solid var(--admin-gold-10)' : 'none', background: 'var(--admin-gold-05)' }}>
+                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--admin-gold)', fontWeight: 700, marginBottom: '0.375rem' }}>CONFIRMADO</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: '0.25rem' }}>{lastConfirmed.fechaLabel}</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--white)' }}>$ {lastConfirmed.valor.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</div>
                   </div>
                 )}
                 {nextApprox && (
-                  <div style={{
-                    padding: '1.25rem',
-                    textAlign: 'center',
-                    background: 'rgba(99,102,241,0.05)',
-                  }}>
-                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '2px', color: '#818cf8', fontWeight: 700, marginBottom: '0.375rem' }}>
-                      PRÓXIMO (Aprox.)
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: '0.25rem' }}>
-                      {nextApprox.fechaLabel}
-                    </div>
-                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--white)' }}>
-                      $ {nextApprox.valor.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
-                      ⚠ Aproximado
-                    </div>
+                  <div style={{ padding: '1.25rem', textAlign: 'center', background: 'rgba(99,102,241,0.05)' }}>
+                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '2px', color: '#818cf8', fontWeight: 700, marginBottom: '0.375rem' }}>PRÓXIMO (Aprox.)</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: '0.25rem' }}>{nextApprox.fechaLabel}</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--white)' }}>$ {nextApprox.valor.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>⚠ Estimado</div>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Parameters summary */}
           <div className={styles.calcSection} style={{ padding: '0.75rem 1rem' }}>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--gray-400)' }}>
               <span>💰 {parseFloat(monto).toLocaleString('es-AR')}</span>
               <span>📅 {fechaInicio}</span>
-              <span>🔄 {cadaMeses} meses</span>
+              <span>🔄 cada {cadaMeses} {cadaMeses === 1 ? 'mes' : 'meses'}</span>
               <span>📊 {indice}</span>
             </div>
           </div>
 
-          {/* Timeline Table */}
           <div className={styles.calcSection} style={{ padding: 0 }}>
             <table className={styles.table}>
               <thead>
-                <tr>
-                  <th></th>
-                  <th>Fecha</th>
-                  <th>Aumento</th>
-                  <th>Valor</th>
-                </tr>
+                <tr><th></th><th>Fecha</th><th>Aumento</th><th>Valor</th>{onRegistrar && <th></th>}</tr>
               </thead>
               <tbody>
-                {resultados.periods.map((p, i) => (
-                  <tr key={p.numero} style={{
-                    background: p.aproximado ? 'rgba(99,102,241,0.05)' : 'transparent',
-                  }}>
-                    <td style={{ color: 'var(--gray-500)', fontSize: '0.75rem', fontWeight: 600 }}>
-                      {p.label}
-                    </td>
+                {resultados.periods.map((p) => (
+                  <tr key={p.numero} style={{ background: p.aprox ? 'rgba(99,102,241,0.05)' : 'transparent' }}>
+                    <td style={{ color: 'var(--gray-500)', fontSize: '0.75rem', fontWeight: 600 }}>Per. {p.numero}</td>
                     <td>{p.fechaLabel}</td>
                     <td>
-                      {p.aumento === 0 ? (
-                        <span style={{ color: 'var(--gray-500)' }}>—</span>
-                      ) : (
-                        <span style={{ color: p.aumento > 0 ? '#4ade80' : '#f87171', fontWeight: 600 }}>
-                          {p.aumento.toFixed(2)} %
-                        </span>
-                      )}
+                      {p.aumento === 0 ? <span style={{ color: 'var(--gray-500)' }}>—</span>
+                        : <span style={{ color: p.aumento > 0 ? '#4ade80' : '#f87171', fontWeight: 600 }}>{p.aumento.toFixed(2)} %</span>}
                     </td>
                     <td style={{ fontWeight: 700, color: 'var(--white)' }}>
-                      $ {p.valor.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      {p.aproximado && (
-                        <span style={{ fontSize: '0.65rem', color: '#818cf8', marginLeft: '0.375rem' }}>≈</span>
-                      )}
+                      $ {p.valor.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
+                      {p.aprox && <span style={{ fontSize: '0.65rem', color: '#818cf8', marginLeft: '0.375rem' }}>≈</span>}
                     </td>
+                    {onRegistrar && (
+                      <td>
+                        {p.numero > 1 && !p.aprox && (
+                          <button type="button" className={styles.btnSecondary} style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem' }} onClick={() => registrar(p)}>
+                            Registrar
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
