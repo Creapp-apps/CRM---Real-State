@@ -1,5 +1,5 @@
 // Estado comercial de las publicaciones (tabla publicacion_estados en Supabase).
-// Concepto propio de CMPROP: Disponible/Reservado/Vendido/Concretado/Inactiva.
+// Concepto propio de CMPROP: Disponible/Reservado/Vendido/Inactiva.
 // La regla 'inactiva' -> pausar en ML se aplica en la Fase 2 (al guardar desde el admin).
 //
 //   GET                  -> { estados: { [meli_item_id]: estado } }  (todas las filas)

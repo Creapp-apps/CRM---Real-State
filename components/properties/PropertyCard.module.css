@@ -87,7 +87,6 @@
 
 .estadoReservado { background: #facc15; color: var(--navy-900); }
 .estadoVendido { background: #ef4444; color: #fff; }
-.estadoConcretado { background: #22c55e; color: var(--navy-900); }
 
 .body {
   padding: var(--space-5);

@@ -17,7 +17,6 @@ import styles from './page.module.css';
 const ESTADO_STYLE = {
   reservado: { background: '#facc15', color: '#0A1628' },
   vendido: { background: '#ef4444', color: '#fff' },
-  concretado: { background: '#22c55e', color: '#0A1628' },
 };
 
 export default function PropertyDetailPage() {

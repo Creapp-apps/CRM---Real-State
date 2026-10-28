@@ -11,7 +11,6 @@ import styles from './ficha.module.css';
 const ESTADO_STYLE = {
   reservado: { background: '#facc15', color: '#0A1628', borderColor: '#facc15' },
   vendido: { background: '#ef4444', color: '#fff', borderColor: '#ef4444' },
-  concretado: { background: '#22c55e', color: '#0A1628', borderColor: '#22c55e' },
 };
 
 const WHATSAPP = '5491166092461';

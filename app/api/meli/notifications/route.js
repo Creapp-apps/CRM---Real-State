@@ -46,7 +46,7 @@ export async function POST(request) {
   }
 
   // Anti-rebote: si ML cambió el status del ítem por fuera (p. ej. pausado desde la app de ML),
-  // reflejamos SOLO el par inactiva <-> disponible. Nunca pisamos reservado/vendido/concretado
+  // reflejamos SOLO el par inactiva <-> disponible. Nunca pisamos reservado/vendido
   // (estados de negocio): un ítem puede estar activo y reservado/vendido a la vez.
   try {
     if (item_id && (item_status === 'active' || item_status === 'paused')) {

@@ -10,7 +10,6 @@ import styles from './PropertyCard.module.css';
 const ESTADO_BADGE = {
   reservado: styles.estadoReservado,
   vendido: styles.estadoVendido,
-  concretado: styles.estadoConcretado,
 };
 
 function EstadoBadge({ estado }) {
