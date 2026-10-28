@@ -10,7 +10,15 @@ import AnimatedSection from '@/components/ui/AnimatedSection';
 import PropertyCard from '@/components/properties/PropertyCard';
 import MortgageCalculator from '@/components/properties/MortgageCalculator';
 import { MOCK_PROPERTIES, formatPrice } from '@/lib/mockData';
+import { ESTADO_META } from '@/lib/estados';
 import styles from './page.module.css';
+
+// Estado comercial -> color del badge (solo los que se muestran al público).
+const ESTADO_STYLE = {
+  reservado: { background: '#facc15', color: '#0A1628' },
+  vendido: { background: '#ef4444', color: '#fff' },
+  concretado: { background: '#22c55e', color: '#0A1628' },
+};
 
 export default function PropertyDetailPage() {
   const params = useParams();
@@ -164,6 +172,11 @@ export default function PropertyDetailPage() {
             <div className={styles.imageBadges}>
               <span className={styles.opBadge}>{property.operation}</span>
               <span className={styles.tpBadge}>{property.type}</span>
+              {ESTADO_STYLE[property.estadoComercial] && (
+                <span className={styles.opBadge} style={ESTADO_STYLE[property.estadoComercial]}>
+                  {ESTADO_META[property.estadoComercial].label}
+                </span>
+              )}
             </div>
           </div>
           <div className={styles.thumbnails}>

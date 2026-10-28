@@ -71,6 +71,24 @@
   z-index: 2;
 }
 
+/* Estado comercial (badge de color, esquina inferior izquierda de la imagen) */
+.estadoBadge {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: var(--radius-sm);
+  z-index: 3;
+}
+
+.estadoReservado { background: #facc15; color: var(--navy-900); }
+.estadoVendido { background: #ef4444; color: #fff; }
+.estadoConcretado { background: #22c55e; color: var(--navy-900); }
+
 .body {
   padding: var(--space-5);
   display: flex;

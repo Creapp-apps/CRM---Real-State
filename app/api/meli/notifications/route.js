@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getValidToken, getMeliQuestion, getMeliItemBrief, getMeliUserNickname } from '@/lib/mercadolibre';
+import { ESTADO_DEFAULT } from '@/lib/estados';
 
 export const runtime = 'nodejs';
 
@@ -42,6 +43,31 @@ export async function POST(request) {
     }
   } catch (e) {
     console.error('[meli notifications] fetch item:', e.message);
+  }
+
+  // Anti-rebote: si ML cambió el status del ítem por fuera (p. ej. pausado desde la app de ML),
+  // reflejamos SOLO el par inactiva <-> disponible. Nunca pisamos reservado/vendido/concretado
+  // (estados de negocio): un ítem puede estar activo y reservado/vendido a la vez.
+  try {
+    if (item_id && (item_status === 'active' || item_status === 'paused')) {
+      const { data: row } = await admin
+        .from('publicacion_estados')
+        .select('estado_comercial')
+        .eq('meli_item_id', item_id)
+        .maybeSingle();
+      const current = row?.estado_comercial || ESTADO_DEFAULT;
+      let next = null;
+      if (item_status === 'paused' && current === ESTADO_DEFAULT) next = 'inactiva';
+      else if (item_status === 'active' && current === 'inactiva') next = ESTADO_DEFAULT;
+      if (next) {
+        await admin.from('publicacion_estados').upsert(
+          { meli_item_id: item_id, estado_comercial: next, updated_at: new Date().toISOString() },
+          { onConflict: 'meli_item_id' },
+        );
+      }
+    }
+  } catch (e) {
+    console.error('[meli notifications] reconcile estado:', e.message);
   }
 
   // Si es una pregunta (interesado), la traemos y la volcamos a meli_questions

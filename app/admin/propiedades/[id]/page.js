@@ -10,12 +10,16 @@ import AdminSelect from '@/components/admin/AdminSelect';
 import styles from '@/components/admin/admin.module.css';
 import { fetchMeliVisits } from '@/lib/admin-fetchers';
 import { normalizeImageForMeli } from '@/lib/imageForMeli';
+import { ESTADOS_COMERCIALES, ESTADO_META, ESTADO_DEFAULT } from '@/lib/estados';
 
 const EMPTY = {
   title: '', price: '', currency: 'USD', status: 'active',
   description: '', bedrooms: '', bathrooms: '', garages: '',
   totalArea: '', coveredArea: '', videoUrl: '',
 };
+
+// Mapeo color semántico (lib/estados.js) -> clase de badge del design system admin.
+const BADGE_CLASS = { gold: 'badgeGold', yellow: 'badgeYellow', red: 'badgeRed', green: 'badgeGreen', gray: 'badgeGray' };
 
 function extractYouTubeId(url) {
   if (!url) return '';
@@ -37,6 +41,16 @@ export default function AdminPropertyEdit() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
   const [success, setSuccess] = useState(false);
+  const [estadoComercial, setEstadoComercial] = useState(ESTADO_DEFAULT);
+  const [estadoComercialOrig, setEstadoComercialOrig] = useState(ESTADO_DEFAULT);
+
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/meli/estados?id=${id}`)
+      .then(r => r.json())
+      .then(d => { if (d.estado) { setEstadoComercial(d.estado); setEstadoComercialOrig(d.estado); } })
+      .catch(() => {});
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -155,32 +169,61 @@ export default function AdminPropertyEdit() {
 
     const descChanged = form.description !== (prop.description === 'Sin descripción disponible.' ? '' : (prop.description || ''));
     const hasChanges = Object.keys(fields).length > 0 || descChanged;
+    const estadoChanged = estadoComercial !== estadoComercialOrig;
 
-    if (!hasChanges) { setSaving(false); setSuccess(true); return; }
+    if (!hasChanges && !estadoChanged) { setSaving(false); setSuccess(true); return; }
 
-    const res = await fetch('/api/meli/items', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id,
-        fields: Object.keys(fields).length > 0 ? fields : undefined,
-        description: descChanged ? form.description : undefined,
-      }),
-    });
+    let resultErrors = [];
 
-    const data = await res.json();
-    setSaving(false);
-
-    if (!res.ok) {
-      setErrors([{ message: data.error || 'Error desconocido' }]);
-    } else {
-      setErrors(data.errors || []);
-      setSuccess(true);
-      const updated = await fetch(`/api/meli/items?id=${id}`).then(r => r.json());
-      if (updated.property) {
-        setProp(updated.property);
-        setPictures(updated.property.pictureIds || []);
+    // 1) Campos de la publicación en ML (si cambiaron).
+    if (hasChanges) {
+      const res = await fetch('/api/meli/items', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          fields: Object.keys(fields).length > 0 ? fields : undefined,
+          description: descChanged ? form.description : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrors([{ message: data.error || 'Error desconocido' }]);
+        setSaving(false);
+        return;
       }
+      resultErrors = data.errors || [];
+    }
+
+    // 2) Estado comercial (si cambió). El route aplica la regla inactiva<->paused en ML.
+    if (estadoChanged) {
+      const er = await fetch('/api/meli/estados', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, estado: estadoComercial }),
+      });
+      const ed = await er.json();
+      if (!er.ok) {
+        setErrors([{ message: ed.error || 'Error guardando el estado comercial' }]);
+        setSaving(false);
+        return;
+      }
+      setEstadoComercialOrig(estadoComercial);
+      if (ed.meliWarning) {
+        resultErrors = [...resultErrors, { message: `Estado guardado, pero ML no se actualizó: ${ed.meliWarning}` }];
+      }
+    }
+
+    setSaving(false);
+    setErrors(resultErrors);
+    setSuccess(true);
+
+    // Refrescar: el status ML pudo cambiar por la regla del estado comercial.
+    const updated = await fetch(`/api/meli/items?id=${id}`).then(r => r.json());
+    if (updated.property) {
+      setProp(updated.property);
+      setPictures(updated.property.pictureIds || []);
+      setForm(f => ({ ...f, status: updated.property.status || f.status }));
     }
   }
 
@@ -402,7 +445,23 @@ export default function AdminPropertyEdit() {
           <div className={styles.card}>
             <h3 style={{ color: 'var(--white)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>Publicación</h3>
             <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Estado</label>
+              <label className={styles.formLabel}>Estado comercial</label>
+              <AdminSelect
+                value={estadoComercial}
+                onChange={setEstadoComercial}
+                options={ESTADOS_COMERCIALES.map(e => ({ value: e, label: ESTADO_META[e].label }))}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                <span className={`${styles.badge} ${styles[BADGE_CLASS[ESTADO_META[estadoComercial].color]]}`}>
+                  {ESTADO_META[estadoComercial].label}
+                </span>
+                {ESTADO_META[estadoComercial].hidePublic && (
+                  <span style={{ fontSize: '0.7rem', color: 'var(--gray-500)' }}>Se oculta de la web y pausa en ML</span>
+                )}
+              </div>
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Estado en MercadoLibre</label>
               <AdminSelect
                 value={form.status}
                 onChange={(val) => set('status', val)}

@@ -3,12 +3,26 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/mockData';
+import { ESTADO_META } from '@/lib/estados';
 import styles from './PropertyCard.module.css';
+
+// Color semántico (lib/estados.js) -> clase de badge de la tarjeta pública.
+const ESTADO_BADGE = {
+  reservado: styles.estadoReservado,
+  vendido: styles.estadoVendido,
+  concretado: styles.estadoConcretado,
+};
+
+function EstadoBadge({ estado }) {
+  const cls = ESTADO_BADGE[estado];
+  if (!cls) return null; // 'disponible'/'inactiva' no muestran badge
+  return <span className={`${styles.estadoBadge} ${cls}`}>{ESTADO_META[estado].label}</span>;
+}
 
 export default function PropertyCard({ property, view = 'grid' }) {
   const {
     id, title, operation, price, currency, priceLabel,
-    location, bedrooms, bathrooms, totalArea, garages, images, type
+    location, bedrooms, bathrooms, totalArea, garages, images, type, estadoComercial
   } = property;
 
   if (view === 'list') {
@@ -24,6 +38,7 @@ export default function PropertyCard({ property, view = 'grid' }) {
           />
           <span className={styles.badge}>{operation}</span>
           <span className={styles.typeBadge}>{type}</span>
+          <EstadoBadge estado={estadoComercial} />
         </div>
         <div className={styles.listBody}>
           <div className={styles.listTop}>
@@ -57,6 +72,7 @@ export default function PropertyCard({ property, view = 'grid' }) {
         />
         <span className={styles.badge}>{operation}</span>
         <span className={styles.typeBadge}>{type}</span>
+        <EstadoBadge estado={estadoComercial} />
         <div className={styles.imageOverlay} />
       </div>
       <div className={styles.body}>

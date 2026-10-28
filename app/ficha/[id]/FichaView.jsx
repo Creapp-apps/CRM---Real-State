@@ -4,7 +4,15 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/mockData';
 import { parseDescription, extractHighlights } from '@/lib/parseDescription';
+import { ESTADO_META } from '@/lib/estados';
 import styles from './ficha.module.css';
+
+// Estado comercial -> color del pill (solo los que se muestran al público).
+const ESTADO_STYLE = {
+  reservado: { background: '#facc15', color: '#0A1628', borderColor: '#facc15' },
+  vendido: { background: '#ef4444', color: '#fff', borderColor: '#ef4444' },
+  concretado: { background: '#22c55e', color: '#0A1628', borderColor: '#22c55e' },
+};
 
 const WHATSAPP = '5491166092461';
 const WEB = 'www.cardosopropiedades.com.ar';
@@ -248,6 +256,11 @@ export default function FichaView({ property }) {
             <div className={styles.pillrow}>
               <span className={`${styles.pill} ${styles.pillSolid}`}>{property.operation}</span>
               <span className={styles.pill}>{property.type}</span>
+              {ESTADO_STYLE[property.estadoComercial] && (
+                <span className={styles.pill} style={ESTADO_STYLE[property.estadoComercial]}>
+                  {ESTADO_META[property.estadoComercial].label}
+                </span>
+              )}
               {property.referenceCode && <span className={styles.ref}>Ref. {property.referenceCode}</span>}
             </div>
             <h1 className={styles.title}>{titleTop}{titleBot && <b>{titleBot}</b>}</h1>
