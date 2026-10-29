@@ -11,6 +11,7 @@ import AdminSelect from '@/components/admin/AdminSelect';
 import AlertModal from '@/components/admin/AlertModal';
 import MeliAttributesForm, { buildMeliAttributes, missingRequired } from '@/components/admin/MeliAttributesForm';
 import { normalizeImageForMeli, UNSUPPORTED_FORMAT } from '@/lib/imageForMeli';
+import SortablePhotos from '@/components/admin/SortablePhotos';
 
 /* ─── Categorías MELI ─────────────────────────────────────────────────── */
 /* Leafs verificados contra api.mercadolibre.com/categories/MLA1459 (árbol Inmuebles) */
@@ -567,7 +568,16 @@ export default function NuevaPublicacion() {
                   {addressLine && (
                     <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.9rem', cursor: 'pointer' }}>
                       <input type="checkbox" checked={hideExact} onChange={e => setHideExact(e.target.checked)}
-                        style={{ marginTop: 2, width: 16, height: 16, accentColor: 'var(--admin-gold)', cursor: 'pointer', flexShrink: 0 }} />
+                        style={{ position: 'absolute', opacity: 0, width: 0, height: 0, margin: 0 }} />
+                      <span aria-hidden="true" style={{
+                        marginTop: 1, flexShrink: 0, width: 18, height: 18, borderRadius: 5,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: hideExact ? 'var(--admin-gold)' : 'rgba(255,255,255,0.04)',
+                        border: `1.5px solid ${hideExact ? 'var(--admin-gold)' : 'var(--admin-gold-40)'}`,
+                        transition: 'background 0.15s, border-color 0.15s',
+                      }}>
+                        {hideExact && <Icon name="check" size={12} style={{ color: '#0a1628' }} />}
+                      </span>
                       <span>
                         <span style={{ fontSize: '0.85rem', color: 'var(--gray-200)' }}>Ocultar dirección exacta</span>
                         <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: 2 }}>
@@ -671,42 +681,58 @@ export default function NuevaPublicacion() {
               </div>
 
               {photos.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.5rem' }}>
-                  {photos.map((p, i) => (
-                    <div key={p.uid} style={{ position: 'relative', borderRadius: '0.375rem', overflow: 'hidden', aspectRatio: '4/3', background: 'rgba(255,255,255,0.05)' }}>
-                      {p.preview && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      )}
-                      {p.status === 'uploading' && (
-                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Icon name="clock" size={18} style={{ color: 'var(--admin-gold)' }} />
-                        </div>
-                      )}
-                      {p.status === 'done' && (
-                        <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(34,197,94,0.9)', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Icon name="check" size={11} style={{ color: '#fff' }} />
-                        </div>
-                      )}
-                      {p.status === 'error' && (
-                        <button type="button" onClick={() => retryPhoto(p.uid)} title={p.errorMsg || 'Error'}
-                          style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,0.55)', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, color: '#fff' }}>
-                          <Icon name="upload" size={16} style={{ color: '#fff' }} />
-                          <span style={{ fontSize: '0.6rem', fontWeight: 700 }}>Reintentar</span>
+                <>
+                  {photos.length > 1 && (
+                    <p style={{ color: 'var(--gray-500)', fontSize: '0.72rem', margin: '0 0 0.5rem' }}>
+                      Arrastrá las fotos para ordenarlas. La primera es la portada.
+                    </p>
+                  )}
+                  <SortablePhotos
+                    items={photos}
+                    getId={(p) => p.uid}
+                    onReorder={setPhotos}
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '0.5rem' }}
+                    renderItem={(p, i, drag) => (
+                      <div
+                        ref={drag.setNodeRef}
+                        {...drag.attributes}
+                        {...drag.listeners}
+                        style={{ ...drag.dragStyle, position: 'relative', borderRadius: '0.375rem', overflow: 'hidden', aspectRatio: '4/3', background: 'rgba(255,255,255,0.05)' }}
+                      >
+                        {p.preview && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.preview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
+                        )}
+                        {p.status === 'uploading' && (
+                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Icon name="clock" size={18} style={{ color: 'var(--admin-gold)' }} />
+                          </div>
+                        )}
+                        {p.status === 'done' && (
+                          <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(34,197,94,0.9)', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Icon name="check" size={11} style={{ color: '#fff' }} />
+                          </div>
+                        )}
+                        {p.status === 'error' && (
+                          <button type="button" onClick={() => retryPhoto(p.uid)} title={p.errorMsg || 'Error'}
+                            style={{ position: 'absolute', inset: 0, background: 'rgba(239,68,68,0.55)', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, color: '#fff' }}>
+                            <Icon name="upload" size={16} style={{ color: '#fff' }} />
+                            <span style={{ fontSize: '0.6rem', fontWeight: 700 }}>Reintentar</span>
+                          </button>
+                        )}
+                        {i === 0 && p.status === 'done' && (
+                          <div style={{ position: 'absolute', bottom: 3, left: 3, background: 'var(--admin-gold)', color: '#0a1628', fontSize: '0.58rem', fontWeight: 700, padding: '1px 5px', borderRadius: '3px', letterSpacing: '0.5px' }}>
+                            PORTADA
+                          </div>
+                        )}
+                        <button onClick={() => removePhoto(p.uid)}
+                          style={{ position: 'absolute', top: 3, left: 3, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', padding: 0 }}>
+                          <Icon name="x" size={11} />
                         </button>
-                      )}
-                      {i === 0 && p.status === 'done' && (
-                        <div style={{ position: 'absolute', bottom: 3, left: 3, background: 'var(--admin-gold)', color: '#0a1628', fontSize: '0.58rem', fontWeight: 700, padding: '1px 5px', borderRadius: '3px', letterSpacing: '0.5px' }}>
-                          PORTADA
-                        </div>
-                      )}
-                      <button onClick={() => removePhoto(p.uid)}
-                        style={{ position: 'absolute', top: 3, left: 3, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', padding: 0 }}>
-                        <Icon name="x" size={11} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    )}
+                  />
+                </>
               )}
 
               {/* Estado de subida */}

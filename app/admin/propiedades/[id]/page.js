@@ -11,6 +11,7 @@ import styles from '@/components/admin/admin.module.css';
 import { fetchMeliVisits } from '@/lib/admin-fetchers';
 import { normalizeImageForMeli } from '@/lib/imageForMeli';
 import { ESTADOS_COMERCIALES, ESTADO_META, ESTADO_DEFAULT } from '@/lib/estados';
+import SortablePhotos from '@/components/admin/SortablePhotos';
 
 const EMPTY = {
   title: '', price: '', currency: 'USD', status: 'active',
@@ -336,33 +337,49 @@ export default function AdminPropertyEdit() {
 
             {/* Fotos actuales */}
             {pictures.length > 0 && (
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                {pictures.map((pic, i) => (
-                  <div key={pic.id || i} style={{ position: 'relative', width: 96, height: 72, borderRadius: '0.375rem', overflow: 'hidden', flexShrink: 0 }}>
-                    {pic.url && (
-                      <Image src={pic.url} alt={`foto ${i + 1}`} fill style={{ objectFit: 'cover' }} unoptimized />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removePicture(pic.id)}
-                      style={{
-                        position: 'absolute', top: 3, right: 3,
-                        background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%',
-                        width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', color: '#fff', padding: 0,
-                      }}
-                      title="Quitar foto"
+              <>
+                {pictures.length > 1 && (
+                  <p style={{ color: 'var(--gray-500)', fontSize: '0.72rem', margin: '0 0 0.5rem' }}>
+                    Arrastrá las fotos para ordenarlas. La primera es la portada. El nuevo orden se guarda al tocar «Guardar».
+                  </p>
+                )}
+                <SortablePhotos
+                  items={pictures}
+                  getId={(pic, i) => pic.id ?? i}
+                  onReorder={setPictures}
+                  style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}
+                  renderItem={(pic, i, drag) => (
+                    <div
+                      ref={drag.setNodeRef}
+                      {...drag.attributes}
+                      {...drag.listeners}
+                      style={{ ...drag.dragStyle, position: 'relative', width: 96, height: 72, borderRadius: '0.375rem', overflow: 'hidden', flexShrink: 0 }}
                     >
-                      <Icon name="x" size={10} />
-                    </button>
-                    {i === 0 && (
-                      <div style={{ position: 'absolute', bottom: 2, left: 4, fontSize: '0.6rem', color: '#fff', background: 'rgba(0,0,0,0.6)', borderRadius: 2, padding: '1px 4px' }}>
-                        Portada
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      {pic.url && (
+                        <Image src={pic.url} alt={`foto ${i + 1}`} fill style={{ objectFit: 'cover', pointerEvents: 'none' }} unoptimized />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removePicture(pic.id)}
+                        style={{
+                          position: 'absolute', top: 3, right: 3,
+                          background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%',
+                          width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', color: '#fff', padding: 0,
+                        }}
+                        title="Quitar foto"
+                      >
+                        <Icon name="x" size={10} />
+                      </button>
+                      {i === 0 && (
+                        <div style={{ position: 'absolute', bottom: 2, left: 4, fontSize: '0.6rem', color: '#fff', background: 'rgba(0,0,0,0.6)', borderRadius: 2, padding: '1px 4px' }}>
+                          Portada
+                        </div>
+                      )}
+                    </div>
+                  )}
+                />
+              </>
             )}
 
             {/* Zona de upload */}
