@@ -14,7 +14,6 @@ const _RAW_NAV = [
   { section: 'Cartera', items: [{ href: '/admin/propiedades' }, { href: '/admin/emprendimientos' }] },
   { section: 'Clientes', items: [{ href: '/admin/contacto' }, { href: '/admin/tasaciones' }, { href: '/admin/administraciones/clientes' }] },
   { section: 'Operaciones', items: [{ href: '/admin/pipeline' }, { href: '/admin/administraciones/contratos' }, { href: '/admin/administraciones' }] },
-  { section: 'Herramientas', items: [{ href: '/admin/tasador' }] },
   { section: 'Contenido', items: [{ href: '/admin/contenido' }, { href: '/admin/media' }] },
 ];
 _RAW_NAV.forEach(s => s.items.forEach(i => ALL_HREFS_FLAT.push(i.href)));
@@ -50,12 +49,6 @@ const NAV_ITEMS = [
       { label: 'Pipeline', href: '/admin/pipeline', icon: 'activity' },
       { label: 'Contratos', href: '/admin/administraciones/contratos', icon: 'file-text' },
       { label: 'Administración', href: '/admin/administraciones', icon: 'home' },
-    ],
-  },
-  {
-    section: 'Herramientas',
-    items: [
-      { label: 'Tasador', href: '/admin/tasador', icon: 'dollar' },
     ],
   },
   {

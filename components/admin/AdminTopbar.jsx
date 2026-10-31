@@ -14,7 +14,6 @@ const PAGE_TITLES = {
   '/admin/administraciones/inmuebles': 'Inmuebles',
   '/admin/administraciones': 'Administraciones',
   '/admin/pipeline': 'Pipeline de Operaciones',
-  '/admin/tasador': 'Tasador Online',
   '/admin/contacto': 'Mensajes de Contacto',
   '/admin/tasaciones': 'Solicitudes de Tasación',
 };
