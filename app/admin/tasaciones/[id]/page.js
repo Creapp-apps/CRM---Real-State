@@ -17,7 +17,7 @@ import {
   ESTADO_TASACION, formatUSD,
 } from '@/lib/tasacion-engine';
 
-const EMPTY_COMP = { direccion: '', tipo: '', m2: '', ambientes: '', precio: '', foto: '', fuente: '' };
+const EMPTY_COMP = { direccion: '', tipo: '', m2: '', ambientes: '', precio: '', foto: '', fuente: '', link: '' };
 const DESC_MAX = 600;
 
 export default function TasacionDetalle() {
@@ -30,11 +30,14 @@ export default function TasacionDetalle() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
 
-  // Comparables: alta manual + sugerencias del portfolio
+  // Comparables: alta manual + sugerencias del portfolio + link de ML
   const [newComp, setNewComp] = useState(EMPTY_COMP);
   const [suggests, setSuggests] = useState(null); // null = no cargado, [] = sin resultados
   const [loadingSug, setLoadingSug] = useState(false);
   const [sugError, setSugError] = useState('');
+  const [meliUrl, setMeliUrl] = useState('');
+  const [meliLoading, setMeliLoading] = useState(false);
+  const [meliMsg, setMeliMsg] = useState(null); // { type: 'error'|'warn', text }
 
   useEffect(() => {
     if (!data || form) return;
@@ -80,11 +83,31 @@ export default function TasacionDetalle() {
       direccion: comp.direccion || '', tipo: comp.tipo || '',
       m2: comp.m2 ? Number(comp.m2) : null, ambientes: comp.ambientes ? Number(comp.ambientes) : null,
       precio: comp.precio ? Number(comp.precio) : null, foto: comp.foto || '',
-      fuente: comp.fuente || '',
+      fuente: comp.fuente || '', link: comp.link || '',
     };
     setForm(prev => ({ ...prev, comparables: [...prev.comparables, c] }));
   };
   const removeComp = (i) => setForm(prev => ({ ...prev, comparables: prev.comparables.filter((_, idx) => idx !== i) }));
+
+  const addFromMeliLink = async () => {
+    const link = meliUrl.trim();
+    if (!link) return;
+    setMeliLoading(true); setMeliMsg(null);
+    try {
+      const res = await fetch(`/api/meli/comparable?url=${encodeURIComponent(link)}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'No se pudo traer la publicación');
+      addComp(json.comparable);
+      setMeliUrl('');
+      if (!json.priceLoaded) {
+        setMeliMsg({ type: 'warn', text: 'Cargada, pero la publicación está en pesos: completá el precio en USD a mano.' });
+      }
+    } catch (e) {
+      setMeliMsg({ type: 'error', text: e.message || 'Error al traer la publicación' });
+    } finally {
+      setMeliLoading(false);
+    }
+  };
 
   const suggestFromPortfolio = async () => {
     setLoadingSug(true); setSugError(''); setSuggests(null);
@@ -286,6 +309,33 @@ export default function TasacionDetalle() {
             </div>
             <div style={{ fontSize: '0.72rem', color: form.comparables.length >= 3 ? 'var(--admin-gold)' : 'var(--gray-500)', marginBottom: '0.9rem' }}>
               {form.comparables.length} cargado{form.comparables.length === 1 ? '' : 's'}{form.comparables.length >= 3 ? ' · suficiente para la ficha' : ` · recomendado: 3`}
+            </div>
+
+            {/* Pegar link de cualquier publicación de MercadoLibre */}
+            <div style={{ background: 'var(--admin-gold-03)', border: '1px solid var(--admin-gold-20)', borderRadius: 8, padding: '0.75rem', marginBottom: '1rem' }}>
+              <label className={styles.formLabel} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Icon name="external-link" size={13} /> Traer desde un link de MercadoLibre
+              </label>
+              <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', margin: '0.2rem 0 0.5rem' }}>
+                Pegá el link del aviso de cualquier vendedor; se carga solo con foto, precio y datos.
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  className={styles.formInput}
+                  value={meliUrl}
+                  onChange={e => { setMeliUrl(e.target.value); setMeliMsg(null); }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFromMeliLink(); } }}
+                  placeholder="https://articulo.mercadolibre.com.ar/MLA-…"
+                />
+                <button className={styles.btnSecondary} onClick={addFromMeliLink} disabled={meliLoading || !meliUrl.trim()} style={{ flexShrink: 0 }}>
+                  {meliLoading ? 'Trayendo…' : <><Icon name="plus" size={14} /> Traer</>}
+                </button>
+              </div>
+              {meliMsg && (
+                <div style={{ fontSize: '0.72rem', marginTop: '0.5rem', color: meliMsg.type === 'error' ? '#f87171' : 'var(--admin-gold)' }}>
+                  {meliMsg.text}
+                </div>
+              )}
             </div>
 
             {form.comparables.length > 0 && (
