@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import AnimatedSection from '@/components/ui/AnimatedSection';
+import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
 
 const PROPERTY_TYPES = ['Departamento', 'Casa', 'PH', 'Terreno', 'Local', 'Oficina', 'Otro'];
@@ -16,11 +17,37 @@ export default function TasarPage() {
     name: '', email: '', phone: '',
   });
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const updateField = (key, value) => setFormData(prev => ({ ...prev, [key]: value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    setError('');
+    const { error: insErr } = await supabase.from('tasaciones').insert({
+      origen: 'web',
+      estado: 'solicitada',
+      full_name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      direccion: formData.address || null,
+      barrio: formData.neighborhood || null,
+      tipo_propiedad: formData.type || null,
+      superficie_cubierta: parseFloat(formData.area) || null,
+      ambientes: parseInt(formData.bedrooms, 10) || null,
+      banos: parseInt(formData.bathrooms, 10) || null,
+      antiguedad: parseInt(formData.age, 10) || null,
+      cochera: parseInt(formData.garages, 10) > 0,
+      extras: formData.extras || null,
+    });
+    setSubmitting(false);
+    if (insErr) {
+      setError('No pudimos enviar tu solicitud. Probá de nuevo en un momento.');
+      return;
+    }
     setSent(true);
   };
 
@@ -160,9 +187,12 @@ export default function TasarPage() {
                         <input type="tel" required className={styles.input} value={formData.phone} onChange={e => updateField('phone', e.target.value)} placeholder="+54 9 11..." />
                       </div>
                     </div>
+                    {error && <p style={{ color: 'var(--error, #e5484d)', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{error}</p>}
                     <div className={styles.formButtons}>
-                      <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}>← Atrás</button>
-                      <button type="submit" className="btn btn-primary btn-lg" style={{ flex: 1, justifyContent: 'center' }}>Solicitar tasación</button>
+                      <button type="button" className="btn btn-secondary" onClick={() => setStep(1)} disabled={submitting}>← Atrás</button>
+                      <button type="submit" className="btn btn-primary btn-lg" style={{ flex: 1, justifyContent: 'center' }} disabled={submitting}>
+                        {submitting ? 'Enviando…' : 'Solicitar tasación'}
+                      </button>
                     </div>
                   </>
                 )}

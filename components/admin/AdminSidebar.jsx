@@ -76,8 +76,8 @@ export default function AdminSidebar({ isOpen, onClose }) {
       const [{ count: c1 }, { count: c2 }] = await Promise.all([
         supabase.from('messages').select('id', { count: 'exact', head: true })
           .eq('message_type', 'contacto').eq('is_read', false).eq('is_archived', false),
-        supabase.from('messages').select('id', { count: 'exact', head: true })
-          .eq('message_type', 'tasacion').eq('is_read', false).eq('is_archived', false),
+        supabase.from('tasaciones').select('id', { count: 'exact', head: true })
+          .eq('estado', 'solicitada'),
       ]);
       setBadges({ consultas: c1 || 0, tasaciones: c2 || 0 });
     }

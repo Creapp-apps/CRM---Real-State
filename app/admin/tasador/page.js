@@ -5,56 +5,7 @@ import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
-
-const TIPOS = ['Departamento', 'Casa', 'PH', 'Local Comercial', 'Oficina', 'Galpón', 'Terreno', 'Cochera'];
-const ESTADOS_CONSERVACION = ['Excelente', 'Muy Bueno', 'Bueno', 'Regular', 'A Refaccionar', 'En Construcción'];
-
-// Precios de referencia por m² en USD según zona (estimativos Argentina 2024-2025)
-const PRECIOS_ZONA = {
-  'CABA - Palermo': { min: 2800, max: 3800 },
-  'CABA - Recoleta': { min: 2500, max: 3500 },
-  'CABA - Belgrano': { min: 2400, max: 3200 },
-  'CABA - Caballito': { min: 2000, max: 2800 },
-  'CABA - Villa Urquiza': { min: 2000, max: 2600 },
-  'CABA - Otros': { min: 1600, max: 2400 },
-  'GBA Norte': { min: 1400, max: 2200 },
-  'GBA Oeste': { min: 1000, max: 1800 },
-  'GBA Sur': { min: 900, max: 1500 },
-  'Córdoba Capital': { min: 1000, max: 1800 },
-  'Rosario': { min: 900, max: 1600 },
-  'Mar del Plata': { min: 1100, max: 2000 },
-  'Mendoza': { min: 900, max: 1500 },
-  'Interior': { min: 600, max: 1200 },
-};
-
-const AJUSTES = {
-  tipo: {
-    'Departamento': 1.0,
-    'Casa': 1.05,
-    'PH': 0.90,
-    'Local Comercial': 1.15,
-    'Oficina': 1.10,
-    'Galpón': 0.50,
-    'Terreno': 0.40,
-    'Cochera': 0.25,
-  },
-  conservacion: {
-    'Excelente': 1.15,
-    'Muy Bueno': 1.08,
-    'Bueno': 1.0,
-    'Regular': 0.85,
-    'A Refaccionar': 0.65,
-    'En Construcción': 0.50,
-  },
-  antiguedad: (anos) => {
-    if (anos <= 2) return 1.10;
-    if (anos <= 5) return 1.05;
-    if (anos <= 10) return 1.0;
-    if (anos <= 20) return 0.92;
-    if (anos <= 40) return 0.82;
-    return 0.70;
-  },
-};
+import { calcularTasacion, PRECIOS_ZONA, TIPOS, ESTADOS_CONSERVACION } from '@/lib/tasacion-engine';
 
 function formatCurrency(n) {
   return Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 });
@@ -82,32 +33,9 @@ export default function TasadorPage() {
   };
 
   const calcular = () => {
-    const sup = parseFloat(form.superficie_cubierta);
-    if (!sup || sup <= 0) return alert('Ingresá la superficie cubierta');
-
-    const zona = PRECIOS_ZONA[form.zona] || PRECIOS_ZONA['Interior'];
-    const precioBaseM2 = (zona.min + zona.max) / 2;
-
-    let precioM2 = precioBaseM2;
-    precioM2 *= AJUSTES.tipo[form.tipo_propiedad] || 1;
-    precioM2 *= AJUSTES.conservacion[form.estado_conservacion] || 1;
-    precioM2 *= AJUSTES.antiguedad(parseInt(form.antiguedad) || 10);
-
-    // Bonuses
-    if (form.cochera) precioM2 *= 1.05;
-    const banos = parseInt(form.banos) || 1;
-    if (banos >= 3) precioM2 *= 1.03;
-
-    const valorUSD = sup * precioM2;
-    const valorMin = sup * zona.min * (AJUSTES.tipo[form.tipo_propiedad] || 1) * (AJUSTES.conservacion[form.estado_conservacion] || 1);
-    const valorMax = sup * zona.max * (AJUSTES.tipo[form.tipo_propiedad] || 1) * (AJUSTES.conservacion[form.estado_conservacion] || 1);
-
-    setResultado({
-      precioM2: Math.round(precioM2),
-      valorUSD: Math.round(valorUSD),
-      valorMin: Math.round(valorMin),
-      valorMax: Math.round(valorMax),
-    });
+    const r = calcularTasacion(form);
+    if (!r) return alert('Ingresá la superficie cubierta');
+    setResultado(r);
   };
 
   const guardar = async () => {
