@@ -1,16 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
+import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
+import { supabase } from '@/lib/supabase';
 import { fetchTasaciones } from '@/lib/admin-fetchers';
 import { ESTADO_TASACION, formatUSD } from '@/lib/tasacion-engine';
 
 export default function AdminTasaciones() {
   const router = useRouter();
   const { data: tasaciones = [], isLoading: loading } = useSWR('tasaciones', fetchTasaciones);
+  const [creando, setCreando] = useState(false);
 
   const pendientes = tasaciones.filter(t => (t.estado || 'solicitada') === 'solicitada').length;
+
+  const crearTasacion = async () => {
+    setCreando(true);
+    const { data, error } = await supabase
+      .from('tasaciones')
+      .insert({ origen: 'admin', estado: 'en_proceso', tipo_propiedad: 'Departamento', zona: 'CABA - Otros' })
+      .select('id')
+      .single();
+    setCreando(false);
+    if (error) { alert('Error al crear la tasación: ' + error.message); return; }
+    router.push(`/admin/tasaciones/${data.id}`);
+  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';
@@ -19,13 +35,16 @@ export default function AdminTasaciones() {
 
   return (
     <>
-      <div className={styles.pageHeader}>
+      <div className={styles.pageHeader} style={{ alignItems: 'center' }}>
         <div>
           <h2 className={styles.pageTitle}>Solicitudes de Tasación</h2>
           <p className={styles.pageSubtitle}>
             {loading ? 'Cargando…' : `${pendientes} pendiente${pendientes === 1 ? '' : 's'} · ${tasaciones.length} en total`}
           </p>
         </div>
+        <button className={styles.btnPrimary} onClick={crearTasacion} disabled={creando}>
+          <Icon name="plus" size={16} /> {creando ? 'Creando…' : 'Crear nueva tasación'}
+        </button>
       </div>
 
       <div className={styles.tableWrapper}>
