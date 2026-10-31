@@ -97,6 +97,8 @@ export default function FichaTasacionPublica() {
         .tf-comp .cm{font-size:.72rem;color:var(--muted);margin-bottom:8px}
         .tf-comp .cp{font-weight:700;font-size:.92rem}
         .tf-comp .cmm{font-size:.7rem;color:var(--gold-ink);font-weight:600}
+        .tf-comp .csrc{font-size:.64rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+        .tf-desc{font-size:.9rem;line-height:1.7;color:var(--ink);white-space:pre-wrap;margin:0 0 28px}
         .tf-note{font-size:.72rem;color:var(--muted);line-height:1.6;background:#f7f8fa;border-left:3px solid var(--gold);padding:12px 16px;border-radius:0 8px 8px 0;margin:22px 0 4px}
         .tf-foot{background:var(--navy);color:#fff;margin-top:26px;padding:22px 44px;display:flex;justify-content:space-between;align-items:center;font-size:.76rem}
         .tf-foot .who b{display:block;font-family:Fraunces,Georgia,serif;font-size:.95rem;font-weight:600}
@@ -160,6 +162,13 @@ export default function FichaTasacionPublica() {
               )}
             </div>
 
+            {t.observaciones && (
+              <>
+                <div className="tf-label">Fundamento de la tasación</div>
+                <p className="tf-desc">{t.observaciones}</p>
+              </>
+            )}
+
             {comparables.length > 0 && (
               <>
                 <div className="tf-label">Comparables de mercado</div>
@@ -172,6 +181,7 @@ export default function FichaTasacionPublica() {
                         <div className="cm">{[c.tipo, c.m2 ? `${num(c.m2)} m²` : null, c.ambientes ? `${c.ambientes} amb.` : null].filter(Boolean).join(' · ')}</div>
                         {c.precio ? <div className="cp">{formatUSD(c.precio)}</div> : null}
                         {c.m2 && c.precio ? <div className="cmm">{num(Math.round(c.precio / c.m2))} / m²</div> : null}
+                        {c.fuente ? <div className="csrc">{c.fuente}</div> : null}
                       </div>
                     </div>
                   ))}
@@ -182,8 +192,8 @@ export default function FichaTasacionPublica() {
             <div className="tf-note">
               <b>Metodología.</b> Esta tasación surge del análisis profesional de la propiedad —su ubicación, estado, antigüedad,
               superficie{amenities.length ? ` y amenities (${amenities.join(', ')})` : ''}— y de comparables del mercado y del portfolio
-              de Cardoso Propiedades, con el criterio del tasador responsable.{t.observaciones ? ` ${t.observaciones}` : ''} Es una
-              estimación orientativa sujeta a inspección y a las condiciones del mercado al momento de la operación.
+              de Cardoso Propiedades, con el criterio del tasador responsable. Es una estimación orientativa sujeta a
+              inspección y a las condiciones del mercado al momento de la operación.
             </div>
           </div>
 

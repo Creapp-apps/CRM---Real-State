@@ -17,7 +17,8 @@ import {
   ESTADO_TASACION, formatUSD,
 } from '@/lib/tasacion-engine';
 
-const EMPTY_COMP = { direccion: '', tipo: '', m2: '', ambientes: '', precio: '', foto: '' };
+const EMPTY_COMP = { direccion: '', tipo: '', m2: '', ambientes: '', precio: '', foto: '', fuente: '' };
+const DESC_MAX = 600;
 
 export default function TasacionDetalle() {
   const { id } = useParams();
@@ -79,6 +80,7 @@ export default function TasacionDetalle() {
       direccion: comp.direccion || '', tipo: comp.tipo || '',
       m2: comp.m2 ? Number(comp.m2) : null, ambientes: comp.ambientes ? Number(comp.ambientes) : null,
       precio: comp.precio ? Number(comp.precio) : null, foto: comp.foto || '',
+      fuente: comp.fuente || '',
     };
     setForm(prev => ({ ...prev, comparables: [...prev.comparables, c] }));
   };
@@ -98,6 +100,7 @@ export default function TasacionDetalle() {
         direccion: p.address || p.title, tipo: p.type || '',
         m2: p.coveredArea || p.totalArea || null, ambientes: p.bedrooms || null,
         precio: p.price || null, foto: Array.isArray(p.images) ? p.images[0] : '',
+        fuente: 'Portfolio Cardoso',
       }));
       setSuggests(list);
     } catch (e) {
@@ -270,22 +273,34 @@ export default function TasacionDetalle() {
 
           {/* Comparables */}
           <div className={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ color: 'var(--white)', fontSize: '1rem', margin: 0 }}>Comparables de mercado</h3>
-              <button className={styles.btnSecondary} onClick={suggestFromPortfolio} disabled={loadingSug}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem', gap: '1rem' }}>
+              <div>
+                <h3 style={{ color: 'var(--white)', fontSize: '1rem', margin: 0 }}>Comparables de mercado</h3>
+                <p style={{ fontSize: '0.72rem', color: 'var(--gray-500)', margin: '0.25rem 0 0' }}>
+                  Sugerí del portfolio propio o cargá a mano propiedades de la competencia / colegas. En la ficha se muestran las 3 primeras.
+                </p>
+              </div>
+              <button className={styles.btnSecondary} onClick={suggestFromPortfolio} disabled={loadingSug} style={{ flexShrink: 0 }}>
                 <Icon name="building" size={14} /> {loadingSug ? 'Buscando…' : 'Sugerir del portfolio'}
               </button>
+            </div>
+            <div style={{ fontSize: '0.72rem', color: form.comparables.length >= 3 ? 'var(--admin-gold)' : 'var(--gray-500)', marginBottom: '0.9rem' }}>
+              {form.comparables.length} cargado{form.comparables.length === 1 ? '' : 's'}{form.comparables.length >= 3 ? ' · suficiente para la ficha' : ` · recomendado: 3`}
             </div>
 
             {form.comparables.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
                 {form.comparables.map((c, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
+                    {c.foto
+                      ? <img src={c.foto} alt="" style={{ width: 42, height: 42, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                      : <div style={{ width: 42, height: 42, borderRadius: 6, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gray-600)' }}><Icon name="building" size={16} /></div>}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ color: 'var(--white)', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.direccion || 'Comparable'}</div>
-                      <div style={{ color: 'var(--gray-500)', fontSize: '0.72rem' }}>
-                        {[c.tipo, c.m2 ? `${c.m2} m²` : null, c.precio ? formatUSD(c.precio) : null].filter(Boolean).join(' · ')}
+                      <div style={{ color: 'var(--gray-500)', fontSize: '0.72rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {[c.tipo, c.m2 ? `${c.m2} m²` : null, c.ambientes ? `${c.ambientes} amb.` : null, c.precio ? formatUSD(c.precio) : null].filter(Boolean).join(' · ')}
                       </div>
+                      {c.fuente && <div style={{ color: 'var(--admin-gold)', fontSize: '0.66rem', marginTop: 1 }}>{c.fuente}</div>}
                     </div>
                     <button className={styles.btnIcon} onClick={() => removeComp(i)} title="Quitar"><Icon name="x" size={13} /></button>
                   </div>
@@ -310,12 +325,21 @@ export default function TasacionDetalle() {
               </div>
             )}
 
-            {/* Alta manual */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '0.5rem', alignItems: 'end' }}>
-              <div className={styles.formGroup}><label className={styles.formLabel}>Dirección</label><input className={styles.formInput} value={newComp.direccion} onChange={e => setNewComp({ ...newComp, direccion: e.target.value })} /></div>
-              <div className={styles.formGroup}><label className={styles.formLabel}>m²</label><input className={styles.formInput} type="number" value={newComp.m2} onChange={e => setNewComp({ ...newComp, m2: e.target.value })} /></div>
-              <div className={styles.formGroup}><label className={styles.formLabel}>Precio USD</label><input className={styles.formInput} type="number" value={newComp.precio} onChange={e => setNewComp({ ...newComp, precio: e.target.value })} /></div>
-              <button className={styles.btnSecondary} style={{ height: 38 }} onClick={() => { if (newComp.direccion || newComp.precio) { addComp(newComp); setNewComp(EMPTY_COMP); } }}><Icon name="plus" size={14} /></button>
+            {/* Alta manual (incluye propiedades externas / de la competencia) */}
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.9rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--gray-400)', fontWeight: 600, marginBottom: '0.6rem' }}>Agregar comparable manual</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div className={`${styles.formGroup} ${styles.formGridFull}`}><label className={styles.formLabel}>Dirección / título</label><input className={styles.formInput} value={newComp.direccion} onChange={e => setNewComp({ ...newComp, direccion: e.target.value })} placeholder="Av. Rivadavia 4500, 3° piso" /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>Tipo</label><input className={styles.formInput} value={newComp.tipo} onChange={e => setNewComp({ ...newComp, tipo: e.target.value })} placeholder="Departamento" /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>Fuente</label><input className={styles.formInput} value={newComp.fuente} onChange={e => setNewComp({ ...newComp, fuente: e.target.value })} placeholder="Zonaprop / colega / MercadoLibre" /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>m²</label><input className={styles.formInput} type="number" value={newComp.m2} onChange={e => setNewComp({ ...newComp, m2: e.target.value })} /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>Ambientes</label><input className={styles.formInput} type="number" value={newComp.ambientes} onChange={e => setNewComp({ ...newComp, ambientes: e.target.value })} /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>Precio USD</label><input className={styles.formInput} type="number" value={newComp.precio} onChange={e => setNewComp({ ...newComp, precio: e.target.value })} /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>Foto (URL)</label><input className={styles.formInput} value={newComp.foto} onChange={e => setNewComp({ ...newComp, foto: e.target.value })} placeholder="https://…" /></div>
+              </div>
+              <button className={styles.btnSecondary} style={{ width: '100%', justifyContent: 'center', marginTop: '0.6rem' }} disabled={!newComp.direccion && !newComp.precio} onClick={() => { if (newComp.direccion || newComp.precio) { addComp(newComp); setNewComp(EMPTY_COMP); } }}>
+                <Icon name="plus" size={14} /> Agregar comparable
+              </button>
             </div>
           </div>
         </div>
@@ -344,10 +368,24 @@ export default function TasacionDetalle() {
             </p>
           </div>
 
-          {/* Observaciones */}
+          {/* Descripción / fundamento de la tasación */}
           <div className={styles.card}>
-            <label className={styles.formLabel}>Observaciones (se muestran en la ficha)</label>
-            <textarea className={styles.formInput} rows={3} value={form.observaciones} onChange={e => setField('observaciones', e.target.value)} style={{ resize: 'vertical' }} />
+            <label className={styles.formLabel}>Descripción de la tasación</label>
+            <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', margin: '0.2rem 0 0.5rem' }}>
+              Fundamentá el valor: qué aspectos viste (ubicación, estado, luz, orientación, mejoras, comparables) que justifican el número. Se muestra en la ficha del cliente.
+            </p>
+            <textarea
+              className={styles.formInput}
+              rows={5}
+              maxLength={DESC_MAX}
+              value={form.observaciones}
+              onChange={e => setField('observaciones', e.target.value.slice(0, DESC_MAX))}
+              style={{ resize: 'vertical' }}
+              placeholder="El valor se fundamenta en la excelente ubicación sobre…"
+            />
+            <div style={{ fontSize: '0.7rem', color: (form.observaciones?.length || 0) >= DESC_MAX ? 'var(--admin-gold)' : 'var(--gray-500)', textAlign: 'right', marginTop: '0.3rem' }}>
+              {form.observaciones?.length || 0} / {DESC_MAX}
+            </div>
           </div>
 
           {/* Estado */}
