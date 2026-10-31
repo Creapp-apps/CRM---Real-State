@@ -1,9 +1,9 @@
 'use client';
 
-// Detalle / editor de una tasación: datos, motor de cálculo, comparables,
-// y generación del link público a la ficha branded.
+// Detalle / editor de una tasación: junta la info de la propiedad y los
+// comparables para armar la ficha. El valor lo define el tasador a mano.
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import useSWR from 'swr';
@@ -13,8 +13,8 @@ import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
 import { fetchTasacion } from '@/lib/admin-fetchers';
 import {
-  calcularTasacion, PRECIOS_ZONA, TIPOS, ESTADOS_CONSERVACION, AMENITIES,
-  ESTADO_TASACION, formatUSD, formatPct,
+  PRECIOS_ZONA, TIPOS, ESTADOS_CONSERVACION, AMENITIES,
+  ESTADO_TASACION, formatUSD,
 } from '@/lib/tasacion-engine';
 
 const EMPTY_COMP = { direccion: '', tipo: '', m2: '', ambientes: '', precio: '', foto: '' };
@@ -48,14 +48,14 @@ export default function TasacionDetalle() {
       cochera: !!data.cochera, antiguedad: data.antiguedad ?? '',
       estado_conservacion: ESTADOS_CONSERVACION.includes(data.estado_conservacion) ? data.estado_conservacion : 'Bueno',
       amenities: Array.isArray(data.amenities) ? data.amenities : [],
-      ajuste_manual: data.ajuste_manual ?? 0,
+      valor_estimado_usd: data.valor_estimado_usd ?? '',
+      valor_min_usd: data.valor_min_usd ?? '',
+      valor_max_usd: data.valor_max_usd ?? '',
       observaciones: data.observaciones || '',
       estado: data.estado || 'solicitada',
       comparables: Array.isArray(data.comparables) ? data.comparables : [],
     });
   }, [data, form]);
-
-  const resultado = useMemo(() => (form ? calcularTasacion(form) : null), [form]);
 
   if (isLoading || !form) {
     return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--gray-500)' }}>Cargando tasación…</div>;
@@ -112,7 +112,6 @@ export default function TasacionDetalle() {
     setSaving(true);
     let tk = token;
     if (!tk) { tk = crypto.randomUUID(); setToken(tk); }
-    const r = resultado;
     const estadoNext = overrideEstado
       || (['solicitada', 'en_proceso'].includes(form.estado) ? 'tasada' : form.estado);
 
@@ -128,14 +127,11 @@ export default function TasacionDetalle() {
       antiguedad: parseInt(form.antiguedad, 10) || null,
       estado_conservacion: form.estado_conservacion,
       amenities: form.amenities,
-      ajuste_manual: parseFloat(form.ajuste_manual) || 0,
       observaciones: form.observaciones || null,
       comparables: form.comparables,
-      valor_estimado_usd: r?.valorUSD ?? null,
-      valor_min_usd: r?.valorMin ?? null,
-      valor_max_usd: r?.valorMax ?? null,
-      precio_m2_usd: r?.precioM2 ?? null,
-      factores: r?.factores ?? [],
+      valor_estimado_usd: parseFloat(form.valor_estimado_usd) || null,
+      valor_min_usd: parseFloat(form.valor_min_usd) || null,
+      valor_max_usd: parseFloat(form.valor_max_usd) || null,
       estado: estadoNext,
       public_token: tk,
       updated_at: new Date().toISOString(),
@@ -213,11 +209,11 @@ export default function TasacionDetalle() {
                 <input className={styles.formInput} value={form.barrio} onChange={e => setField('barrio', e.target.value)} />
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Zona (para el cálculo) *</label>
+                <label className={styles.formLabel}>Zona (referencia)</label>
                 <AdminSelect value={form.zona} onChange={v => setField('zona', v)} options={Object.keys(PRECIOS_ZONA).map(z => ({ value: z, label: z }))} />
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Tipo *</label>
+                <label className={styles.formLabel}>Tipo</label>
                 <AdminSelect value={form.tipo_propiedad} onChange={v => setField('tipo_propiedad', v)} options={TIPOS.map(t => ({ value: t, label: t }))} />
               </div>
               <div className={styles.formGroup}>
@@ -225,7 +221,7 @@ export default function TasacionDetalle() {
                 <AdminSelect value={form.estado_conservacion} onChange={v => setField('estado_conservacion', v)} options={ESTADOS_CONSERVACION.map(e => ({ value: e, label: e }))} />
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Superficie cubierta (m²) *</label>
+                <label className={styles.formLabel}>Superficie cubierta (m²)</label>
                 <input className={styles.formInput} type="number" value={form.superficie_cubierta} onChange={e => setField('superficie_cubierta', e.target.value)} />
               </div>
               <div className={styles.formGroup}>
@@ -265,7 +261,7 @@ export default function TasacionDetalle() {
                       background: on ? 'var(--admin-gold)' : 'transparent',
                       color: on ? '#0a1628' : 'var(--gray-300)', fontWeight: on ? 700 : 500,
                     }}>
-                    {a} <span style={{ opacity: 0.7 }}>+{Math.round(AMENITIES[a] * 100)}%</span>
+                    {a}
                   </button>
                 );
               })}
@@ -324,43 +320,28 @@ export default function TasacionDetalle() {
           </div>
         </div>
 
-        {/* ── Columna derecha: resultado + acciones ── */}
+        {/* ── Columna derecha: valor (manual) + acciones ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'sticky', top: 16 }}>
-          {/* Valor */}
-          <div style={{ background: 'linear-gradient(135deg, var(--admin-gold-12), var(--admin-gold-03))', border: '1px solid var(--admin-gold-20)', borderRadius: '0.75rem', padding: '1.75rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--admin-gold)', fontWeight: 700 }}>Valor estimado</div>
-            <div style={{ fontSize: '2.4rem', fontWeight: 800, color: '#fff', marginTop: '0.3rem' }}>
-              {resultado ? formatUSD(resultado.valorUSD) : '—'}
-            </div>
-            {resultado && <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginTop: '0.2rem' }}>{formatUSD(resultado.precioM2)} / m²</div>}
-            {resultado && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', fontSize: '0.78rem', color: 'var(--gray-400)' }}>
-                <span>Mín: <b style={{ color: '#fff' }}>{formatUSD(resultado.valorMin)}</b></span>
-                <span>Máx: <b style={{ color: '#fff' }}>{formatUSD(resultado.valorMax)}</b></span>
-              </div>
-            )}
-            {!resultado && <div style={{ fontSize: '0.78rem', color: 'var(--gray-500)', marginTop: '0.5rem' }}>Cargá la superficie cubierta para calcular.</div>}
-          </div>
-
-          {/* Ajuste manual + factores */}
-          <div className={styles.card}>
+          {/* Valor — lo define el tasador */}
+          <div style={{ background: 'linear-gradient(135deg, var(--admin-gold-12), var(--admin-gold-03))', border: '1px solid var(--admin-gold-20)', borderRadius: '0.75rem', padding: '1.5rem' }}>
+            <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--admin-gold)', fontWeight: 700, textAlign: 'center', marginBottom: '0.9rem' }}>Valor de la tasación</div>
             <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Ajuste del tasador (%)</label>
-              <input className={styles.formInput} type="number" step="1" value={form.ajuste_manual} onChange={e => setField('ajuste_manual', e.target.value)} placeholder="0" />
-              <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.3rem' }}>Tu criterio profesional sobre el valor base calculado. Ej: -5 o 8.</p>
+              <label className={styles.formLabel}>Valor estimado (USD) *</label>
+              <input className={styles.formInput} type="number" value={form.valor_estimado_usd} onChange={e => setField('valor_estimado_usd', e.target.value)} placeholder="Ej: 130000" style={{ fontSize: '1.15rem', fontWeight: 700 }} />
             </div>
-            {resultado && (
-              <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                {resultado.factores.map((f, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                    <span style={{ color: 'var(--gray-400)' }}>{f.label}</span>
-                    <span style={{ fontWeight: 700, color: f.kind === 'pct' ? (f.pct >= 0 ? '#4ade80' : '#f87171') : 'var(--white)' }}>
-                      {f.kind === 'pct' ? formatPct(f.pct) : f.value}
-                    </span>
-                  </div>
-                ))}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginTop: '0.75rem' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Mínimo (USD)</label>
+                <input className={styles.formInput} type="number" value={form.valor_min_usd} onChange={e => setField('valor_min_usd', e.target.value)} placeholder="Opcional" />
               </div>
-            )}
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Máximo (USD)</label>
+                <input className={styles.formInput} type="number" value={form.valor_max_usd} onChange={e => setField('valor_max_usd', e.target.value)} placeholder="Opcional" />
+              </div>
+            </div>
+            <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.6rem', textAlign: 'center' }}>
+              El valor lo definís vos según tu criterio profesional. El rango es opcional.
+            </p>
           </div>
 
           {/* Observaciones */}
@@ -377,11 +358,11 @@ export default function TasacionDetalle() {
           </div>
 
           {/* Guardar + acciones */}
-          <button className={styles.btnPrimary} onClick={() => save()} disabled={saving || !resultado} style={{ justifyContent: 'center' }}>
+          <button className={styles.btnPrimary} onClick={() => save()} disabled={saving} style={{ justifyContent: 'center' }}>
             <Icon name="save" size={15} /> {saving ? 'Guardando…' : 'Guardar tasación'}
           </button>
 
-          {token && resultado && (
+          {token && form.valor_estimado_usd && (
             <div className={styles.card}>
               <h3 style={{ color: 'var(--white)', fontSize: '0.95rem', marginBottom: '0.75rem' }}>Ficha para el cliente</h3>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>

@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { formatUSD, formatPct } from '@/lib/tasacion-engine';
+import { formatUSD } from '@/lib/tasacion-engine';
 
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
 const num = (n) => Number(n || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 });
@@ -34,8 +34,8 @@ export default function FichaTasacionPublica() {
 
   const t = tas;
   const amenities = Array.isArray(t.amenities) ? t.amenities : [];
-  const factores = Array.isArray(t.factores) ? t.factores : [];
   const comparables = Array.isArray(t.comparables) ? t.comparables : [];
+  const hasRange = t.valor_min_usd != null && t.valor_max_usd != null;
   const car = [
     ['Tipo', t.tipo_propiedad],
     ['Superficie cubierta', t.superficie_cubierta ? `${num(t.superficie_cubierta)} m²` : null],
@@ -148,32 +148,17 @@ export default function FichaTasacionPublica() {
             <div className="tf-value">
               <div className="tag">Valor estimado</div>
               <div className="tf-big">{formatUSD(t.valor_estimado_usd)} <small>aprox.</small></div>
-              {t.precio_m2_usd ? <div className="tf-vsub">≈ {formatUSD(t.precio_m2_usd)} / m² cubierto</div> : null}
-              <div className="tf-range">
-                <div className="tf-ends">
-                  <span>Mínimo <b>{formatUSD(t.valor_min_usd)}</b></span>
-                  <span>Máximo <b>{formatUSD(t.valor_max_usd)}</b></span>
+              {hasRange && (
+                <div className="tf-range">
+                  <div className="tf-ends">
+                    <span>Mínimo <b>{formatUSD(t.valor_min_usd)}</b></span>
+                    <span>Máximo <b>{formatUSD(t.valor_max_usd)}</b></span>
+                  </div>
+                  <div className="tf-bar2"><div className="tf-fill" /><div className="tf-dot" /></div>
+                  <div className="tf-vsub">Rango de negociación sugerido según el mercado actual de la zona.</div>
                 </div>
-                <div className="tf-bar2"><div className="tf-fill" /><div className="tf-dot" /></div>
-                <div className="tf-vsub">Rango de negociación sugerido según mercado actual de la zona.</div>
-              </div>
+              )}
             </div>
-
-            {factores.length > 0 && (
-              <>
-                <div className="tf-label">Factores considerados</div>
-                <div className="tf-factors">
-                  {factores.map((f, i) => (
-                    <div className="tf-factor" key={i}>
-                      <span className="lbl">{f.label}</span>
-                      <span className={`val ${f.kind === 'pct' ? (f.pct >= 0 ? 'up' : 'down') : ''}`}>
-                        {f.kind === 'pct' ? formatPct(f.pct) : f.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
 
             {comparables.length > 0 && (
               <>
@@ -195,10 +180,10 @@ export default function FichaTasacionPublica() {
             )}
 
             <div className="tf-note">
-              <b>Metodología.</b> Esta tasación combina el valor de mercado por m² de la zona, el estado y antigüedad del inmueble,
-              sus amenities{amenities.length ? ` (${amenities.join(', ')})` : ''} y comparables del portfolio de Cardoso Propiedades,
-              con ajuste profesional del tasador.{t.observaciones ? ` ${t.observaciones}` : ''} Es una estimación orientativa sujeta a
-              inspección y a las condiciones del mercado al momento de la operación.
+              <b>Metodología.</b> Esta tasación surge del análisis profesional de la propiedad —su ubicación, estado, antigüedad,
+              superficie{amenities.length ? ` y amenities (${amenities.join(', ')})` : ''}— y de comparables del mercado y del portfolio
+              de Cardoso Propiedades, con el criterio del tasador responsable.{t.observaciones ? ` ${t.observaciones}` : ''} Es una
+              estimación orientativa sujeta a inspección y a las condiciones del mercado al momento de la operación.
             </div>
           </div>
 
