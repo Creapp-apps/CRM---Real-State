@@ -144,6 +144,12 @@ function placeOf(p) {
   return (p.neighborhood || p.location?.split(',')[0] || '').trim();
 }
 
+/** Versión HD de una foto de MercadoLibre (−O.webp ≈500px → −F.webp ≈900–1200px). */
+function hd(url) {
+  if (typeof url !== 'string' || !url.includes('mlstatic.com')) return url;
+  return url.replace(/-[A-Z](\.[a-z]+)(\?.*)?$/i, '-F$1$2');
+}
+
 /** Titular limpio de una línea (para WhatsApp / alt). */
 function headlineOf(p) {
   const addr = (p.address || '').replace(/\s+0+$/, '').trim();
@@ -423,7 +429,7 @@ export default function FichaView({ property }) {
         <div className={styles.lightbox} onClick={closeLightbox} role="dialog" aria-modal="true">
           <button type="button" className={styles.lbClose} onClick={closeLightbox} aria-label="Cerrar">✕</button>
           <div className={styles.lbWrap} onClick={(e) => e.stopPropagation()}>
-            <Image src={images[lightbox]} alt="" fill sizes="90vw" className={styles.lbImg} />
+            <Image src={hd(images[lightbox])} alt="" fill sizes="90vw" className={styles.lbImg} />
           </div>
           <button type="button" className={`${styles.lbNav} ${styles.lbPrev}`} aria-label="Anterior"
             onClick={(e) => { e.stopPropagation(); setLightbox((i) => (i - 1 + images.length) % images.length); }}>‹</button>
