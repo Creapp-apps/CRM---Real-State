@@ -1,0 +1,76 @@
+/* Contador numérico del admin (navy + dorado). Reemplaza los <input type="number">
+   de conteo chico para no mostrar las flechas grises nativas y evitar negativos. */
+
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  width: 100%;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--admin-gold-12);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.stepper:focus-within {
+  border-color: var(--admin-gold);
+  box-shadow: 0 0 0 3px var(--admin-gold-15);
+}
+
+.btn {
+  flex: 0 0 auto;
+  width: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--admin-gold);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--admin-gold-12);
+}
+
+.btn:active:not(:disabled) {
+  background: var(--admin-gold-18);
+}
+
+.btn:disabled {
+  color: var(--gray-500, #6b7280);
+  cursor: not-allowed;
+}
+
+.value {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--admin-gold-10);
+  border-right: 1px solid var(--admin-gold-10);
+  color: var(--white);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.value::-webkit-outer-spin-button,
+.value::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.value:focus {
+  outline: none;
+}
+
+.value::placeholder {
+  color: var(--gray-500, #6b7280);
+  font-weight: 400;
+}

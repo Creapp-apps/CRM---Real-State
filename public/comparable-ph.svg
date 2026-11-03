@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" role="img" aria-label="Comparable sin foto">
+  <rect width="200" height="120" fill="#eef1f5"/>
+  <g fill="none" stroke="#002655" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M70 68 L100 44 L130 68"/>
+    <path d="M77 64 L77 86 L123 86 L123 64"/>
+    <path d="M93 86 L93 73 L107 73 L107 86"/>
+  </g>
+  <line x1="40" y1="86" x2="160" y2="86" stroke="#002655" stroke-width="3.2" stroke-linecap="round"/>
+</svg>

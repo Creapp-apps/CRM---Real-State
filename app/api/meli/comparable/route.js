@@ -1,7 +1,11 @@
 // API: arma un comparable a partir del link de CUALQUIER publicación de ML.
 // GET /api/meli/comparable?url=<link de mercadolibre>
-// Extrae el item id (MLA…) del link —siguiendo el redirect si es un link corto—
-// y devuelve los datos normalizados para cargar como comparable en una tasación.
+//
+// Dos caminos:
+//   1) API oficial de ML (solo funciona para publicaciones de la cuenta propia).
+//   2) Fallback: scraping de la página pública (OG + JSON-LD) — necesario porque ML
+//      devuelve 403 al leer por API los avisos de OTROS vendedores (que es justo
+//      lo que se usa como comparable).
 
 import { NextResponse } from 'next/server';
 import { getMeliPropertyById, isMeliConnected } from '@/lib/mercadolibre';
@@ -15,6 +19,86 @@ function extractId(text) {
   return m ? m[0].replace('-', '').toUpperCase() : null;
 }
 
+function decodeEntities(s) {
+  return String(s || '')
+    .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+}
+
+// Lee la página pública y arma el comparable desde las metas OG + JSON-LD.
+async function scrapeListing(url) {
+  let html;
+  try {
+    const res = await fetch(url, {
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml',
+        'Accept-Language': 'es-AR,es;q=0.9',
+      },
+    });
+    if (!res.ok) return null;
+    html = await res.text();
+  } catch {
+    return null;
+  }
+
+  const meta = (prop) => {
+    const re = new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']*)["']`, 'i');
+    const m = html.match(re);
+    return m ? decodeEntities(m[1]) : null;
+  };
+
+  const title = meta('og:title');
+  const image = meta('og:image');
+
+  // Precio y moneda desde JSON-LD (<script type="application/ld+json">).
+  let price = null;
+  let currency = null;
+  for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const parsed = JSON.parse(m[1].trim());
+      const nodes = Array.isArray(parsed) ? parsed : [parsed];
+      for (const node of nodes) {
+        const offers = node?.offers && (Array.isArray(node.offers) ? node.offers[0] : node.offers);
+        if (offers?.price) {
+          price = Number(offers.price);
+          currency = offers.priceCurrency || null;
+          break;
+        }
+      }
+    } catch {
+      // seguimos con el próximo bloque
+    }
+    if (price) break;
+  }
+  // Fallback: metas itemprop de precio.
+  if (!price) {
+    const mp = html.match(/itemprop=["']price["'][^>]*content=["']([\d.]+)["']/i);
+    if (mp) price = Number(mp[1]);
+    const mc = html.match(/itemprop=["']priceCurrency["'][^>]*content=["']([A-Z]{3})["']/i);
+    if (mc) currency = mc[1];
+  }
+
+  if (!title && !image && !price) return null;
+
+  const isUSD = (currency || '').toUpperCase() === 'USD';
+  return {
+    comparable: {
+      direccion: title || '',
+      tipo: '',
+      m2: null,
+      ambientes: null,
+      precio: isUSD ? price || null : null,
+      foto: image || '',
+      fuente: 'MercadoLibre',
+      link: url,
+    },
+    currency,
+    priceLoaded: isUSD,
+  };
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
@@ -25,52 +109,46 @@ export async function GET(request) {
   if (!/mercadolibre|mercadolivre|melistatic/i.test(url)) {
     return NextResponse.json({ error: 'El link no parece de MercadoLibre' }, { status: 400 });
   }
-  if (!(await isMeliConnected())) {
-    return NextResponse.json({ error: 'MercadoLibre no está conectado', connected: false }, { status: 409 });
-  }
 
-  // 1) Intentar sacar el id del link directo.
+  // 1) Intentar sacar el id del link directo; si no, seguir el redirect.
   let id = extractId(url);
-
-  // 2) Links cortos / de catálogo: seguir el redirect y buscar en la URL final y el HTML.
   if (!id) {
     try {
       const res = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0' } });
       id = extractId(res.url);
-      if (!id) {
-        const html = await res.text();
-        id = extractId(html);
-      }
+      if (!id) id = extractId(await res.text());
     } catch {
-      // seguimos; devolvemos error abajo
+      // seguimos; intentamos por scraping igual
     }
   }
 
-  if (!id) {
-    return NextResponse.json(
-      { error: 'No se pudo identificar la publicación. Pegá el link directo del aviso (el que abre la publicación del vendedor).' },
-      { status: 422 }
-    );
+  // 2) API oficial: solo trae publicaciones de la cuenta propia.
+  if (id && (await isMeliConnected())) {
+    const property = await getMeliPropertyById(id);
+    if (property) {
+      const isUSD = property.currency === 'USD';
+      const comparable = {
+        direccion: property.address || property.title || '',
+        tipo: property.type || '',
+        m2: property.coveredArea || property.totalArea || null,
+        ambientes: property.bedrooms || null,
+        precio: isUSD ? property.price || null : null,
+        foto: Array.isArray(property.images) ? property.images[0] : '',
+        fuente: 'MercadoLibre',
+        link: property.publicUrl || url,
+      };
+      return NextResponse.json({ comparable, currency: property.currency, priceLoaded: isUSD });
+    }
   }
 
-  const property = await getMeliPropertyById(id);
-  if (!property) {
-    return NextResponse.json({ error: 'No se encontró la publicación en MercadoLibre' }, { status: 404 });
+  // 3) Fallback: scraping de la página pública (avisos de otros vendedores → API 403).
+  const scraped = await scrapeListing(url);
+  if (scraped) {
+    return NextResponse.json(scraped);
   }
 
-  const isUSD = property.currency === 'USD';
-  const comparable = {
-    direccion: property.address || property.title || '',
-    tipo: property.type || '',
-    m2: property.coveredArea || property.totalArea || null,
-    ambientes: property.bedrooms || null,
-    // El comparable se expresa en USD; si la publicación está en pesos, no cargamos
-    // el precio para no mezclar monedas (Mónica puede completarlo a mano).
-    precio: isUSD ? property.price || null : null,
-    foto: Array.isArray(property.images) ? property.images[0] : '',
-    fuente: 'MercadoLibre',
-    link: property.publicUrl || url,
-  };
-
-  return NextResponse.json({ comparable, currency: property.currency, priceLoaded: isUSD });
+  return NextResponse.json(
+    { error: 'No se pudo leer la publicación. Pegá el link directo del aviso (el que abre la publicación del vendedor), o cargá el comparable a mano.' },
+    { status: 404 },
+  );
 }

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
+import AdminStepper from '@/components/admin/AdminStepper';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
 import { fetchTasacion } from '@/lib/admin-fetchers';
@@ -29,6 +30,7 @@ export default function TasacionDetalle() {
   const [token, setToken] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+  const [amenityDraft, setAmenityDraft] = useState(''); // alta de amenitie custom
 
   // Comparables: alta manual + sugerencias del portfolio + link de ML
   const [newComp, setNewComp] = useState(EMPTY_COMP);
@@ -77,6 +79,20 @@ export default function TasacionDetalle() {
     ...prev,
     amenities: prev.amenities.includes(a) ? prev.amenities.filter(x => x !== a) : [...prev.amenities, a],
   }));
+  const removeAmenity = (a) => setForm(prev => ({
+    ...prev, amenities: prev.amenities.filter(x => x !== a),
+  }));
+  const addCustomAmenity = () => {
+    const a = amenityDraft.trim();
+    if (!a) return;
+    setAmenityDraft('');
+    setForm(prev => {
+      // evita duplicados (contra presets y los ya cargados, sin distinguir mayúsculas)
+      const exists = [...Object.keys(AMENITIES), ...prev.amenities]
+        .some(x => x.toLowerCase() === a.toLowerCase());
+      return exists ? prev : { ...prev, amenities: [...prev.amenities, a] };
+    });
+  };
 
   const addComp = (comp) => {
     const c = {
@@ -88,6 +104,11 @@ export default function TasacionDetalle() {
     setForm(prev => ({ ...prev, comparables: [...prev.comparables, c] }));
   };
   const removeComp = (i) => setForm(prev => ({ ...prev, comparables: prev.comparables.filter((_, idx) => idx !== i) }));
+  // Edita un comparable ya cargado (ej: corregir el domicilio o el precio a mano).
+  const updateComp = (i, patch) => setForm(prev => ({
+    ...prev,
+    comparables: prev.comparables.map((c, idx) => (idx === i ? { ...c, ...patch } : c)),
+  }));
 
   const addFromMeliLink = async () => {
     const link = meliUrl.trim();
@@ -256,11 +277,11 @@ export default function TasacionDetalle() {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Ambientes</label>
-                <input className={styles.formInput} type="number" value={form.ambientes} onChange={e => setField('ambientes', e.target.value)} />
+                <AdminStepper value={form.ambientes} onChange={v => setField('ambientes', v)} min={0} ariaLabel="Ambientes" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Baños</label>
-                <input className={styles.formInput} type="number" value={form.banos} onChange={e => setField('banos', e.target.value)} />
+                <AdminStepper value={form.banos} onChange={v => setField('banos', v)} min={0} ariaLabel="Baños" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Antigüedad (años)</label>
@@ -277,6 +298,7 @@ export default function TasacionDetalle() {
 
             <label className={styles.formLabel} style={{ marginTop: '1rem', display: 'block' }}>Amenities</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.4rem' }}>
+              {/* Presets: se seleccionan/deseleccionan con un click */}
               {Object.keys(AMENITIES).map(a => {
                 const on = form.amenities.includes(a);
                 return (
@@ -291,6 +313,41 @@ export default function TasacionDetalle() {
                   </button>
                 );
               })}
+              {/* Custom: exclusivos de esta tasación, siempre activos, con ✕ para quitar */}
+              {form.amenities.filter(a => !AMENITIES[a]).map(a => (
+                <span key={a}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                    padding: '0.4rem 0.4rem 0.4rem 0.7rem', borderRadius: 999, fontSize: '0.78rem',
+                    border: '1px solid var(--admin-gold)', background: 'var(--admin-gold)',
+                    color: '#0a1628', fontWeight: 700,
+                  }}>
+                  {a}
+                  <button type="button" onClick={() => removeAmenity(a)} aria-label={`Quitar ${a}`}
+                    style={{
+                      display: 'grid', placeItems: 'center', width: 16, height: 16, borderRadius: 999,
+                      border: 'none', background: 'rgba(10,22,40,0.18)', color: '#0a1628', cursor: 'pointer',
+                      fontSize: '0.7rem', lineHeight: 1, padding: 0,
+                    }}>
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+            {/* Alta de amenitie exclusivo de esta propiedad */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem' }}>
+              <input
+                className={styles.formInput}
+                value={amenityDraft}
+                onChange={e => setAmenityDraft(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomAmenity(); } }}
+                placeholder="Agregar amenitie exclusivo (ej: Cava de vinos, Rooftop…)"
+                style={{ flex: 1 }}
+              />
+              <button type="button" className={styles.btnSecondary} onClick={addCustomAmenity}
+                disabled={!amenityDraft.trim()} style={{ flexShrink: 0 }}>
+                <Icon name="plus" size={14} /> Agregar
+              </button>
             </div>
           </div>
 
@@ -342,15 +399,48 @@ export default function TasacionDetalle() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
                 {form.comparables.map((c, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.8rem', background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
-                    {c.foto
-                      ? <img src={c.foto} alt="" style={{ width: 42, height: 42, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
-                      : <div style={{ width: 42, height: 42, borderRadius: 6, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--gray-600)' }}><Icon name="building" size={16} /></div>}
+                    <img
+                      src={c.foto || '/comparable-ph.svg'} alt=""
+                      onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/comparable-ph.svg'; }}
+                      style={{ width: 42, height: 42, borderRadius: 6, objectFit: 'cover', flexShrink: 0, background: '#eef1f5' }}
+                    />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ color: 'var(--white)', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.direccion || 'Comparable'}</div>
-                      <div style={{ color: 'var(--gray-500)', fontSize: '0.72rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {[c.tipo, c.m2 ? `${c.m2} m²` : null, c.ambientes ? `${c.ambientes} amb.` : null, c.precio ? formatUSD(c.precio) : null].filter(Boolean).join(' · ')}
+                      {/* Domicilio editable: se puede corregir el de ML o escribir uno a mano */}
+                      <input
+                        value={c.direccion || ''}
+                        onChange={e => updateComp(i, { direccion: e.target.value })}
+                        placeholder="Domicilio del comparable"
+                        style={{
+                          width: '100%', background: 'transparent', border: 'none', color: 'var(--white)',
+                          fontSize: '0.85rem', fontFamily: 'inherit', padding: 0, outline: 'none',
+                        }}
+                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--gray-500)', fontSize: '0.72rem', marginTop: 2 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {[c.tipo, c.m2 ? `${c.m2} m²` : null, c.ambientes ? `${c.ambientes} amb.` : null].filter(Boolean).join(' · ') || '—'}
+                        </span>
+                        <span style={{ color: 'var(--gray-600)' }}>·</span>
+                        {/* Precio USD editable: para los avisos en pesos que hay que cargar a mano */}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--admin-gold)' }}>
+                          US$
+                          <input
+                            type="number" value={c.precio ?? ''}
+                            onChange={e => updateComp(i, { precio: e.target.value === '' ? null : Number(e.target.value) })}
+                            placeholder="precio"
+                            style={{
+                              width: 90, background: 'transparent', border: 'none', borderBottom: '1px dashed var(--admin-gold-20)',
+                              color: 'var(--admin-gold)', fontSize: '0.72rem', fontFamily: 'inherit', padding: '0 2px', outline: 'none',
+                            }}
+                          />
+                        </span>
                       </div>
-                      {c.fuente && <div style={{ color: 'var(--admin-gold)', fontSize: '0.66rem', marginTop: 1 }}>{c.fuente}</div>}
+                      {c.fuente && (
+                        <div style={{ color: 'var(--admin-gold)', fontSize: '0.66rem', marginTop: 1 }}>
+                          {c.link
+                            ? <a href={c.link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--admin-gold)', textDecoration: 'none' }}>{c.fuente} ↗</a>
+                            : c.fuente}
+                        </div>
+                      )}
                     </div>
                     <button className={styles.btnIcon} onClick={() => removeComp(i)} title="Quitar"><Icon name="x" size={13} /></button>
                   </div>
@@ -386,6 +476,7 @@ export default function TasacionDetalle() {
                 <div className={styles.formGroup}><label className={styles.formLabel}>Ambientes</label><input className={styles.formInput} type="number" value={newComp.ambientes} onChange={e => setNewComp({ ...newComp, ambientes: e.target.value })} /></div>
                 <div className={styles.formGroup}><label className={styles.formLabel}>Precio USD</label><input className={styles.formInput} type="number" value={newComp.precio} onChange={e => setNewComp({ ...newComp, precio: e.target.value })} /></div>
                 <div className={styles.formGroup}><label className={styles.formLabel}>Foto (URL)</label><input className={styles.formInput} value={newComp.foto} onChange={e => setNewComp({ ...newComp, foto: e.target.value })} placeholder="https://…" /></div>
+                <div className={`${styles.formGroup} ${styles.formGridFull}`}><label className={styles.formLabel}>Link del aviso</label><input className={styles.formInput} value={newComp.link} onChange={e => setNewComp({ ...newComp, link: e.target.value })} placeholder="https://www.zonaprop.com.ar/… (o cualquier fuente)" /></div>
               </div>
               <button className={styles.btnSecondary} style={{ width: '100%', justifyContent: 'center', marginTop: '0.6rem' }} disabled={!newComp.direccion && !newComp.precio} onClick={() => { if (newComp.direccion || newComp.precio) { addComp(newComp); setNewComp(EMPTY_COMP); } }}>
                 <Icon name="plus" size={14} /> Agregar comparable
