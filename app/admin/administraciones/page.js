@@ -5,6 +5,7 @@ import Link from 'next/link';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import { fetchAdminStats } from '@/lib/admin-fetchers';
+import PanelDelMes from '@/components/admin/administraciones/PanelDelMes';
 
 export default function AdministracionesDashboard() {
   const { data, isLoading: loading } = useSWR('admin-stats', fetchAdminStats);
@@ -54,6 +55,9 @@ export default function AdministracionesDashboard() {
           <p className={styles.pageSubtitle}>Control de contratos, clientes e inmuebles administrados</p>
         </div>
       </div>
+
+      {/* Panel del mes — grilla plana estilo excel de Mónica */}
+      <PanelDelMes />
 
       {/* Stats */}
       <div className={styles.statsGrid}>

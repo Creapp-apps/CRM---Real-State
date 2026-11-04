@@ -13,7 +13,7 @@ const _RAW_NAV = [
   { section: null, items: [{ href: '/admin' }] },
   { section: 'Cartera', items: [{ href: '/admin/propiedades' }, { href: '/admin/emprendimientos' }] },
   { section: 'Clientes', items: [{ href: '/admin/contacto' }, { href: '/admin/tasaciones' }, { href: '/admin/administraciones/clientes' }] },
-  { section: 'Operaciones', items: [{ href: '/admin/pipeline' }, { href: '/admin/administraciones/contratos' }, { href: '/admin/administraciones' }] },
+  { section: 'Operaciones', items: [{ href: '/admin/pipeline' }, { href: '/admin/administraciones/contratos' }, { href: '/admin/administraciones/saldos' }, { href: '/admin/administraciones' }] },
   { section: 'Contenido', items: [{ href: '/admin/contenido' }, { href: '/admin/media' }] },
 ];
 _RAW_NAV.forEach(s => s.items.forEach(i => ALL_HREFS_FLAT.push(i.href)));
@@ -48,6 +48,7 @@ const NAV_ITEMS = [
     items: [
       { label: 'Pipeline', href: '/admin/pipeline', icon: 'activity' },
       { label: 'Contratos', href: '/admin/administraciones/contratos', icon: 'file-text' },
+      { label: 'Saldos', href: '/admin/administraciones/saldos', icon: 'dollar' },
       { label: 'Administración', href: '/admin/administraciones', icon: 'home' },
     ],
   },
