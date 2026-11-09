@@ -3,7 +3,7 @@
 // Detalle / editor de una tasación: junta la info de la propiedad y los
 // comparables para armar la ficha. El valor lo define el tasador a mano.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import useSWR from 'swr';
@@ -12,6 +12,7 @@ import AdminSelect from '@/components/admin/AdminSelect';
 import AdminStepper from '@/components/admin/AdminStepper';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
+import { nonNegativeProps } from '@/lib/numberInput';
 import { fetchTasacion } from '@/lib/admin-fetchers';
 import {
   PRECIOS_ZONA, TIPOS, ESTADOS_CONSERVACION, AMENITIES,
@@ -32,6 +33,11 @@ export default function TasacionDetalle() {
   const [toast, setToast] = useState('');
   const [amenityDraft, setAmenityDraft] = useState(''); // alta de amenitie custom
 
+  // Borrador local anti-pérdida: autoguarda en localStorage mientras edita.
+  const DRAFT_KEY = id ? `tasacion-draft-${id}` : null;
+  const baselineRef = useRef('');          // snapshot del form guardado (para detectar cambios)
+  const [draftInfo, setDraftInfo] = useState(null); // { savedAt, form } si hay borrador restaurable
+
   // Comparables: alta manual + sugerencias del portfolio + link de ML
   const [newComp, setNewComp] = useState(EMPTY_COMP);
   const [suggests, setSuggests] = useState(null); // null = no cargado, [] = sin resultados
@@ -43,8 +49,7 @@ export default function TasacionDetalle() {
 
   useEffect(() => {
     if (!data || form) return;
-    setToken(data.public_token || null);
-    setForm({
+    const initial = {
       full_name: data.full_name || '', email: data.email || '', phone: data.phone || '',
       direccion: data.direccion || '', barrio: data.barrio || '',
       tipo_propiedad: data.tipo_propiedad || 'Departamento',
@@ -60,8 +65,40 @@ export default function TasacionDetalle() {
       observaciones: data.observaciones || '',
       estado: data.estado || 'solicitada',
       comparables: Array.isArray(data.comparables) ? data.comparables : [],
-    });
-  }, [data, form]);
+    };
+    // Si hay un borrador local más nuevo que lo guardado en la base, ofrecer restaurarlo.
+    let draft = null;
+    try {
+      const raw = DRAFT_KEY && localStorage.getItem(DRAFT_KEY);
+      if (raw) draft = JSON.parse(raw);
+    } catch { /* localStorage no disponible */ }
+    const dataTime = data.updated_at ? Date.parse(data.updated_at) : 0;
+    if (draft && draft.form && draft.savedAt > dataTime) {
+      setDraftInfo({ savedAt: draft.savedAt, form: draft.form });
+    }
+    setToken(data.public_token || null);
+    setForm(initial);
+    baselineRef.current = JSON.stringify(initial);
+  }, [data, form, DRAFT_KEY]);
+
+  // Autoguardado del borrador (debounce 1s) cuando hay cambios sin guardar.
+  useEffect(() => {
+    if (!form || !DRAFT_KEY) return;
+    if (JSON.stringify(form) === baselineRef.current) return; // sin cambios
+    const t = setTimeout(() => {
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ savedAt: Date.now(), form })); } catch { /* sin storage */ }
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [form, DRAFT_KEY]);
+
+  // Aviso del navegador al cerrar/recargar con cambios sin guardar.
+  useEffect(() => {
+    const handler = (e) => {
+      if (form && JSON.stringify(form) !== baselineRef.current) { e.preventDefault(); e.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [form]);
 
   if (isLoading || !form) {
     return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--gray-500)' }}>Cargando tasación…</div>;
@@ -75,6 +112,18 @@ export default function TasacionDetalle() {
   }
 
   const setField = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const restoreDraft = () => { if (draftInfo) { setForm(draftInfo.form); setDraftInfo(null); } };
+  const discardDraft = () => {
+    try { DRAFT_KEY && localStorage.removeItem(DRAFT_KEY); } catch { /* sin storage */ }
+    setDraftInfo(null);
+  };
+  // Volver avisando si hay cambios sin guardar. El borrador queda igual, por las dudas.
+  const goBack = () => {
+    const dirty = form && JSON.stringify(form) !== baselineRef.current;
+    if (dirty && !window.confirm('Tenés cambios sin guardar. ¿Salir igual? El borrador queda guardado por las dudas.')) return;
+    router.push('/admin/tasaciones');
+  };
   const toggleAmenity = (a) => setForm(prev => ({
     ...prev,
     amenities: prev.amenities.includes(a) ? prev.amenities.filter(x => x !== a) : [...prev.amenities, a],
@@ -189,6 +238,10 @@ export default function TasacionDetalle() {
     setSaving(false);
     if (error) { setToast('Error al guardar: ' + error.message); return; }
     setForm(prev => ({ ...prev, estado: estadoNext }));
+    // Guardado OK: la base ya es la fuente de verdad, se descarta el borrador local.
+    baselineRef.current = JSON.stringify({ ...form, estado: estadoNext });
+    try { DRAFT_KEY && localStorage.removeItem(DRAFT_KEY); } catch { /* sin storage */ }
+    setDraftInfo(null);
     mutate();
     setToast(overrideEstado === 'enviada' ? 'Marcada como enviada ✓' : 'Tasación guardada ✓');
     setTimeout(() => setToast(''), 3000);
@@ -207,7 +260,7 @@ export default function TasacionDetalle() {
     <>
       <div className={styles.pageHeader} style={{ alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Link href="/admin/tasaciones" className={styles.btnIcon} title="Volver" style={{ fontSize: '1.1rem', lineHeight: 1, textDecoration: 'none' }}>←</Link>
+          <button type="button" onClick={goBack} className={styles.btnIcon} title="Volver" style={{ fontSize: '1.1rem', lineHeight: 1, cursor: 'pointer' }}>←</button>
           <div>
             <h2 className={styles.pageTitle}>Tasación</h2>
             <p className={styles.pageSubtitle}>
@@ -219,6 +272,16 @@ export default function TasacionDetalle() {
 
       {toast && (
         <div style={{ position: 'fixed', top: 72, right: 24, zIndex: 50, background: 'var(--navy, #0d1b30)', color: '#fff', border: '1px solid var(--admin-gold-40)', padding: '0.7rem 1.1rem', borderRadius: 8, fontSize: '0.85rem', boxShadow: '0 8px 30px rgba(0,0,0,.35)' }}>{toast}</div>
+      )}
+
+      {draftInfo && (
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', background: 'var(--admin-gold-10, rgba(201,162,77,0.12))', border: '1px solid var(--admin-gold-40)', color: 'var(--white)', padding: '0.7rem 1rem', borderRadius: 8, fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+          <span style={{ flex: 1, minWidth: 220 }}>
+            Hay un borrador sin guardar de esta tasación (último cambio: {new Date(draftInfo.savedAt).toLocaleString('es-AR')}). ¿Lo recuperás?
+          </span>
+          <button type="button" className={styles.btnPrimary} onClick={restoreDraft}>Restaurar</button>
+          <button type="button" className={styles.btnSecondary} onClick={discardDraft}>Descartar</button>
+        </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
@@ -269,11 +332,11 @@ export default function TasacionDetalle() {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Superficie cubierta (m²)</label>
-                <input className={styles.formInput} type="number" value={form.superficie_cubierta} onChange={e => setField('superficie_cubierta', e.target.value)} />
+                <input className={styles.formInput} type="number" {...nonNegativeProps} value={form.superficie_cubierta} onChange={e => setField('superficie_cubierta', e.target.value)} />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Superficie total (m²)</label>
-                <input className={styles.formInput} type="number" value={form.superficie_total} onChange={e => setField('superficie_total', e.target.value)} />
+                <input className={styles.formInput} type="number" {...nonNegativeProps} value={form.superficie_total} onChange={e => setField('superficie_total', e.target.value)} />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Ambientes</label>
@@ -285,7 +348,7 @@ export default function TasacionDetalle() {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Antigüedad (años)</label>
-                <input className={styles.formInput} type="number" value={form.antiguedad} onChange={e => setField('antiguedad', e.target.value)} />
+                <AdminStepper value={form.antiguedad} onChange={v => setField('antiguedad', v)} ariaLabel="Antigüedad" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Cochera</label>
@@ -315,16 +378,18 @@ export default function TasacionDetalle() {
               })}
               {/* Custom: exclusivos de esta tasación, siempre activos, con ✕ para quitar */}
               {form.amenities.filter(a => !AMENITIES[a]).map(a => (
-                <span key={a}
+                <span key={a} title={a}
                   style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                    display: 'inline-flex', alignItems: 'center', gap: '0.35rem', maxWidth: '100%',
                     padding: '0.4rem 0.4rem 0.4rem 0.7rem', borderRadius: 999, fontSize: '0.78rem',
                     border: '1px solid var(--admin-gold)', background: 'var(--admin-gold)',
                     color: '#0a1628', fontWeight: 700,
                   }}>
-                  {a}
+                  {/* Recorta textos largos (ej: un link pegado por error) para no empujar la ✕ fuera de vista */}
+                  <span style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a}</span>
                   <button type="button" onClick={() => removeAmenity(a)} aria-label={`Quitar ${a}`}
                     style={{
+                      flexShrink: 0,
                       display: 'grid', placeItems: 'center', width: 16, height: 16, borderRadius: 999,
                       border: 'none', background: 'rgba(10,22,40,0.18)', color: '#0a1628', cursor: 'pointer',
                       fontSize: '0.7rem', lineHeight: 1, padding: 0,
@@ -424,7 +489,7 @@ export default function TasacionDetalle() {
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--admin-gold)' }}>
                           US$
                           <input
-                            type="number" value={c.precio ?? ''}
+                            type="number" {...nonNegativeProps} value={c.precio ?? ''}
                             onChange={e => updateComp(i, { precio: e.target.value === '' ? null : Number(e.target.value) })}
                             placeholder="precio"
                             style={{
@@ -472,9 +537,9 @@ export default function TasacionDetalle() {
                 <div className={`${styles.formGroup} ${styles.formGridFull}`}><label className={styles.formLabel}>Dirección / título</label><input className={styles.formInput} value={newComp.direccion} onChange={e => setNewComp({ ...newComp, direccion: e.target.value })} placeholder="Av. Rivadavia 4500, 3° piso" /></div>
                 <div className={styles.formGroup}><label className={styles.formLabel}>Tipo</label><input className={styles.formInput} value={newComp.tipo} onChange={e => setNewComp({ ...newComp, tipo: e.target.value })} placeholder="Departamento" /></div>
                 <div className={styles.formGroup}><label className={styles.formLabel}>Fuente</label><input className={styles.formInput} value={newComp.fuente} onChange={e => setNewComp({ ...newComp, fuente: e.target.value })} placeholder="Zonaprop / colega / MercadoLibre" /></div>
-                <div className={styles.formGroup}><label className={styles.formLabel}>m²</label><input className={styles.formInput} type="number" value={newComp.m2} onChange={e => setNewComp({ ...newComp, m2: e.target.value })} /></div>
-                <div className={styles.formGroup}><label className={styles.formLabel}>Ambientes</label><input className={styles.formInput} type="number" value={newComp.ambientes} onChange={e => setNewComp({ ...newComp, ambientes: e.target.value })} /></div>
-                <div className={styles.formGroup}><label className={styles.formLabel}>Precio USD</label><input className={styles.formInput} type="number" value={newComp.precio} onChange={e => setNewComp({ ...newComp, precio: e.target.value })} /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>m²</label><input className={styles.formInput} type="number" {...nonNegativeProps} value={newComp.m2} onChange={e => setNewComp({ ...newComp, m2: e.target.value })} /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>Ambientes</label><AdminStepper value={newComp.ambientes} onChange={n => setNewComp({ ...newComp, ambientes: n })} ariaLabel="Ambientes" /></div>
+                <div className={styles.formGroup}><label className={styles.formLabel}>Precio USD</label><input className={styles.formInput} type="number" {...nonNegativeProps} value={newComp.precio} onChange={e => setNewComp({ ...newComp, precio: e.target.value })} /></div>
                 <div className={styles.formGroup}><label className={styles.formLabel}>Foto (URL)</label><input className={styles.formInput} value={newComp.foto} onChange={e => setNewComp({ ...newComp, foto: e.target.value })} placeholder="https://…" /></div>
                 <div className={`${styles.formGroup} ${styles.formGridFull}`}><label className={styles.formLabel}>Link del aviso</label><input className={styles.formInput} value={newComp.link} onChange={e => setNewComp({ ...newComp, link: e.target.value })} placeholder="https://www.zonaprop.com.ar/… (o cualquier fuente)" /></div>
               </div>
@@ -492,16 +557,16 @@ export default function TasacionDetalle() {
             <div style={{ fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--admin-gold)', fontWeight: 700, textAlign: 'center', marginBottom: '0.9rem' }}>Valor de la tasación</div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Valor estimado (USD) *</label>
-              <input className={styles.formInput} type="number" value={form.valor_estimado_usd} onChange={e => setField('valor_estimado_usd', e.target.value)} placeholder="Ej: 130000" style={{ fontSize: '1.15rem', fontWeight: 700 }} />
+              <input className={styles.formInput} type="number" {...nonNegativeProps} value={form.valor_estimado_usd} onChange={e => setField('valor_estimado_usd', e.target.value)} placeholder="Ej: 130000" style={{ fontSize: '1.15rem', fontWeight: 700 }} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginTop: '0.75rem' }}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Mínimo (USD)</label>
-                <input className={styles.formInput} type="number" value={form.valor_min_usd} onChange={e => setField('valor_min_usd', e.target.value)} placeholder="Opcional" />
+                <input className={styles.formInput} type="number" {...nonNegativeProps} value={form.valor_min_usd} onChange={e => setField('valor_min_usd', e.target.value)} placeholder="Opcional" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Máximo (USD)</label>
-                <input className={styles.formInput} type="number" value={form.valor_max_usd} onChange={e => setField('valor_max_usd', e.target.value)} placeholder="Opcional" />
+                <input className={styles.formInput} type="number" {...nonNegativeProps} value={form.valor_max_usd} onChange={e => setField('valor_max_usd', e.target.value)} placeholder="Opcional" />
               </div>
             </div>
             <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.6rem', textAlign: 'center' }}>

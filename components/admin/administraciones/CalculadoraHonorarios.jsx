@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import { nonNegativeProps } from '@/lib/numberInput';
 
 export default function CalculadoraHonorarios({ montoAlquiler: propMonto, porcentaje: propPorcentaje, iva: propIva }) {
   const [monto, setMonto] = useState(propMonto || '');
@@ -40,6 +41,7 @@ export default function CalculadoraHonorarios({ montoAlquiler: propMonto, porcen
               className={styles.formInput}
               type="number"
               step="0.01"
+              {...nonNegativeProps}
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
               placeholder="350000"
@@ -51,6 +53,7 @@ export default function CalculadoraHonorarios({ montoAlquiler: propMonto, porcen
               className={styles.formInput}
               type="number"
               step="0.01"
+              {...nonNegativeProps}
               value={porcentaje}
               onChange={(e) => setPorcentaje(e.target.value)}
               placeholder="4.00"

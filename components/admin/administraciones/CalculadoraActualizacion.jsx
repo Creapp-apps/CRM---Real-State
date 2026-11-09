@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
+import { nonNegativeProps } from '@/lib/numberInput';
 
 const MESES_OPCIONES = [1, 2, 3, 4, 6, 12];
 const INDICES = ['ICL', 'IPC', 'UVA'];
@@ -146,7 +147,7 @@ export default function CalculadoraActualizacion({ montoBase: propMonto, indice:
 
         <div className={styles.formGroup} style={{ marginBottom: '1rem' }}>
           <label className={styles.formLabel}>Valor inicial del alquiler</label>
-          <input className={styles.formInput} type="number" step="0.01" value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Ej: 475000" />
+          <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Ej: 475000" />
         </div>
 
         <div className={styles.formGroup} style={{ marginBottom: '1rem' }}>

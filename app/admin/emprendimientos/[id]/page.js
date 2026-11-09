@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
 import styles from '@/components/admin/admin.module.css';
+import { nonNegativeProps } from '@/lib/numberInput';
 
 export default function AdminEmprendimientoEdit() {
   const params = useParams();
@@ -51,7 +52,7 @@ export default function AdminEmprendimientoEdit() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Unidades totales</label>
-              <input className={styles.formInput} type="number" defaultValue={120} />
+              <input className={styles.formInput} type="number" {...nonNegativeProps} defaultValue={120} />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Precio desde</label>
@@ -59,7 +60,7 @@ export default function AdminEmprendimientoEdit() {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Avance de obra (%)</label>
-              <input className={styles.formInput} type="number" defaultValue={75} />
+              <input className={styles.formInput} type="number" {...nonNegativeProps} max={100} defaultValue={75} />
             </div>
           </div>
           <div className={styles.formGroup}>

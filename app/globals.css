@@ -531,3 +531,16 @@ h4 { font-size: var(--text-xl); }
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Ocultar las flechitas nativas de los <input type="number"> en toda la plataforma.
+   Son grises, fuera de estética y permiten bajar a negativos con un click.
+   Los conteos usan <AdminStepper> (botones propios); el resto queda como input limpio. */
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { supabase } from '@/lib/supabase';
@@ -26,6 +26,20 @@ export default function AdminTasaciones() {
     setCreando(false);
     if (error) { alert('Error al crear la tasación: ' + error.message); return; }
     router.push(`/admin/tasaciones/${data.id}`);
+  };
+
+  const editar = (e, t) => {
+    e.stopPropagation();
+    router.push(`/admin/tasaciones/${t.id}`);
+  };
+
+  const eliminar = async (e, t) => {
+    e.stopPropagation();
+    const quien = t.full_name || t.direccion || 'esta tasación';
+    if (!confirm(`¿Eliminar la tasación de ${quien}? Esta acción no se puede deshacer.`)) return;
+    const { error } = await supabase.from('tasaciones').delete().eq('id', t.id);
+    if (error) { alert('Error al eliminar: ' + error.message); return; }
+    mutate('tasaciones');
   };
 
   const formatDate = (dateStr) => {
@@ -57,13 +71,14 @@ export default function AdminTasaciones() {
               <th>Valor estimado</th>
               <th>Fecha</th>
               <th>Estado</th>
+              <th style={{ textAlign: 'right' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>Cargando solicitudes…</td></tr>
+              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>Cargando solicitudes…</td></tr>
             ) : tasaciones.length === 0 ? (
-              <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>No hay tasaciones registradas</td></tr>
+              <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>No hay tasaciones registradas</td></tr>
             ) : (
               tasaciones.map(t => {
                 const meta = ESTADO_TASACION[t.estado] || ESTADO_TASACION.solicitada;
@@ -84,6 +99,16 @@ export default function AdminTasaciones() {
                     <td style={{ whiteSpace: 'nowrap', color: 'var(--gray-500)' }}>{formatDate(t.created_at)}</td>
                     <td>
                       <span className={`${styles.badge} ${styles[`badge${meta.color}`]}`}>{meta.label}</span>
+                    </td>
+                    <td onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                        <button className={styles.btnIcon} title="Editar" aria-label="Editar" onClick={e => editar(e, t)}>
+                          <Icon name="edit" size={15} />
+                        </button>
+                        <button className={styles.btnIcon} title="Eliminar" aria-label="Eliminar" onClick={e => eliminar(e, t)}>
+                          <Icon name="trash" size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

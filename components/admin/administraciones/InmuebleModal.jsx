@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
+import AdminStepper from '@/components/admin/AdminStepper';
+import { nonNegativeProps } from '@/lib/numberInput';
 import { supabase } from '@/lib/supabase';
 
 const TIPOS = [
@@ -179,19 +181,19 @@ export default function InmuebleModal({ isOpen, onClose, onSaved, editData }) {
               {/* Superficies */}
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Sup. Cubierta (m²)</label>
-                <input className={styles.formInput} type="number" step="0.01" name="superficie_cubierta" value={form.superficie_cubierta} onChange={handleChange} placeholder="85.00" />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="superficie_cubierta" value={form.superficie_cubierta} onChange={handleChange} placeholder="85.00" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Sup. Descubierta (m²)</label>
-                <input className={styles.formInput} type="number" step="0.01" name="superficie_descubierta" value={form.superficie_descubierta} onChange={handleChange} placeholder="20.00" />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="superficie_descubierta" value={form.superficie_descubierta} onChange={handleChange} placeholder="20.00" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Ambientes</label>
-                <input className={styles.formInput} type="number" name="ambientes" value={form.ambientes} onChange={handleChange} placeholder="3" />
+                <AdminStepper value={form.ambientes} onChange={n => setForm({ ...form, ambientes: n })} ariaLabel="Ambientes" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Baños</label>
-                <input className={styles.formInput} type="number" name="banos" value={form.banos} onChange={handleChange} placeholder="1" />
+                <AdminStepper value={form.banos} onChange={n => setForm({ ...form, banos: n })} ariaLabel="Baños" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Cochera</label>

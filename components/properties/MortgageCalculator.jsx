@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { nonNegativeProps } from '@/lib/numberInput';
 import styles from './MortgageCalculator.module.css';
 
 export default function MortgageCalculator({ propertyPrice = 200000 }) {
@@ -57,10 +58,10 @@ export default function MortgageCalculator({ propertyPrice = 200000 }) {
           <label className={styles.label}>Valor de la propiedad (USD)</label>
           <input
             type="number"
+            {...nonNegativeProps}
             className={styles.input}
             value={price}
             onChange={e => setPrice(Number(e.target.value))}
-            min={0}
             step={5000}
           />
         </div>

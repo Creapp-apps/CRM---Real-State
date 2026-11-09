@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
+import AdminStepper from '@/components/admin/AdminStepper';
+import { nonNegativeProps } from '@/lib/numberInput';
 import s from './MeliAttributesForm.module.css';
 
 /* ─── Estilos (calcan los del wizard) ─────────────────────────────────── */
@@ -71,7 +73,7 @@ function Field({ attr, value, onChange }) {
     const cur = value || { num: '', unit: attr.defaultUnit || '' };
     return (
       <div style={{ display: 'flex', gap: '0.4rem' }}>
-        <input style={{ ...inp, flex: 1 }} type="number" inputMode="decimal" value={cur.num}
+        <input style={{ ...inp, flex: 1 }} type="number" inputMode="decimal" {...nonNegativeProps} value={cur.num}
           onChange={e => onChange(id, { num: e.target.value, unit: cur.unit || attr.defaultUnit || '' })} />
         {attr.units.length > 1 ? (
           <div style={{ width: 130, flexShrink: 0 }}>
@@ -85,10 +87,15 @@ function Field({ attr, value, onChange }) {
       </div>
     );
   }
-  // number / string
+  if (attr.valueType === 'number') {
+    // Conteos de MELI (cocheras, dormitorios, baños, huéspedes…): stepper >= 0.
+    return (
+      <AdminStepper value={value ?? ''} onChange={(n) => onChange(id, n)} ariaLabel={attr.name} />
+    );
+  }
+  // string
   return (
-    <input style={inp} type={attr.valueType === 'number' ? 'number' : 'text'}
-      inputMode={attr.valueType === 'number' ? 'numeric' : undefined}
+    <input style={inp} type="text"
       maxLength={attr.maxLength || undefined}
       value={value || ''} onChange={e => onChange(id, e.target.value)} />
   );

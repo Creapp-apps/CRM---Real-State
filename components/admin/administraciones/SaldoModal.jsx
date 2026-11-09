@@ -5,6 +5,7 @@ import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
+import { nonNegativeProps } from '@/lib/numberInput';
 
 const TEXTO_LIBRE = '__texto__';
 
@@ -92,7 +93,7 @@ export default function SaldoModal({ isOpen, onClose, onSaved, editData, cliente
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Monto *</label>
-                <input className={styles.formInput} type="number" step="0.01" min="0" value={form.monto} onChange={(e) => set('monto', e.target.value)} placeholder="0,00" required />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} value={form.monto} onChange={(e) => set('monto', e.target.value)} placeholder="0,00" required />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Moneda *</label>

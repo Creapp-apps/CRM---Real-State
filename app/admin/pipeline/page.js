@@ -5,6 +5,7 @@ import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
+import { nonNegativeProps } from '@/lib/numberInput';
 
 const ETAPAS = [
   { key: 'consulta', label: 'Consulta', color: '#818cf8', icon: '💬' },
@@ -335,7 +336,7 @@ function OportunidadModal({ editData, clientes, inmuebles, onClose, onSaved, onD
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Monto Estimado ($)</label>
-                <input className={styles.formInput} type="number" step="0.01" name="monto_estimado" value={form.monto_estimado} onChange={handleChange} placeholder="500000" />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="monto_estimado" value={form.monto_estimado} onChange={handleChange} placeholder="500000" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Agente</label>

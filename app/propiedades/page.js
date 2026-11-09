@@ -9,6 +9,7 @@ import PropertyCard from '@/components/properties/PropertyCard';
 import AnimatedSection from '@/components/ui/AnimatedSection';
 import GlassSelect from '@/components/ui/GlassSelect';
 import { MOCK_PROPERTIES, filterProperties, sortProperties } from '@/lib/mockData';
+import { nonNegativeProps } from '@/lib/numberInput';
 import styles from './page.module.css';
 
 function PropertyFilters({ filters, setFilters, resultCount, availableOptions }) {
@@ -143,6 +144,7 @@ function PropertyFilters({ filters, setFilters, resultCount, availableOptions })
           </span>
           <input
             type="number"
+            {...nonNegativeProps}
             className={styles.searchInput}
             placeholder={filters.currency === 'ARS' ? 'Ej: 150000000' : 'Ej: 150000'}
             value={filters.maxPrice || ''}

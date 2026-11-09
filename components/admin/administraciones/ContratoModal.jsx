@@ -5,6 +5,7 @@ import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
+import { nonNegativeProps, blockNegativeKey } from '@/lib/numberInput';
 
 const EMPTY_FORM = {
   inmueble_id: '', locador_id: '', locatario_id: '',
@@ -280,7 +281,7 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Monto Inicial *</label>
-                <input className={styles.formInput} type="number" step="0.01" name="monto_inicial" value={form.monto_inicial} onChange={handleChange} placeholder="250000" required />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="monto_inicial" value={form.monto_inicial} onChange={handleChange} placeholder="250000" required />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Moneda</label>
@@ -330,7 +331,7 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Porcentaje Pactado (%)</label>
-                <input className={styles.formInput} type="number" step="0.01" name="honorarios_porcentaje" value={form.honorarios_porcentaje} onChange={handleChange} placeholder="4.00" />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="honorarios_porcentaje" value={form.honorarios_porcentaje} onChange={handleChange} placeholder="4.00" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>¿Incluye IVA?</label>
@@ -402,11 +403,11 @@ export default function ContratoModal({ isOpen, onClose, onSaved, editData }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Tasa diaria (%)</label>
-                <input className={styles.formInput} type="number" step="0.01" name="punitorios_tasa" value={form.punitorios_tasa} onChange={handleChange} placeholder="0.10" />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="punitorios_tasa" value={form.punitorios_tasa} onChange={handleChange} placeholder="0.10" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Día de vencimiento de pago</label>
-                <input className={styles.formInput} type="number" min="1" max="28" name="dia_vencimiento_pago" value={form.dia_vencimiento_pago} onChange={handleChange} placeholder="10" />
+                <input className={styles.formInput} type="number" min="1" max="28" onKeyDown={blockNegativeKey} name="dia_vencimiento_pago" value={form.dia_vencimiento_pago} onChange={handleChange} placeholder="10" />
               </div>
 
               <div className={`${styles.formGroup} ${styles.formGridFull}`}>

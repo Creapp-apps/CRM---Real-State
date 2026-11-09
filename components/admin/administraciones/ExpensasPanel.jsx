@@ -5,6 +5,7 @@ import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
+import { nonNegativeProps } from '@/lib/numberInput';
 
 export default function ExpensasPanel({ contratoId, inmuebleId }) {
   const [expensas, setExpensas] = useState([]);
@@ -119,7 +120,7 @@ export default function ExpensasPanel({ contratoId, inmuebleId }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Monto ($)</label>
-                <input className={styles.formInput} type="number" step="0.01" value={form.monto} onChange={(e) => setForm({ ...form, monto: e.target.value })} placeholder="15000" required />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} value={form.monto} onChange={(e) => setForm({ ...form, monto: e.target.value })} placeholder="15000" required />
               </div>
             </div>
             <button type="submit" className={styles.btnPrimary} style={{ marginTop: '0.75rem' }}>Guardar Expensa</button>

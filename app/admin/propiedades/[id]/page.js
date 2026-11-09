@@ -7,7 +7,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
+import AdminStepper from '@/components/admin/AdminStepper';
 import styles from '@/components/admin/admin.module.css';
+import { nonNegativeProps } from '@/lib/numberInput';
 import { fetchMeliVisits } from '@/lib/admin-fetchers';
 import { normalizeImageForMeli } from '@/lib/imageForMeli';
 import { ESTADOS_COMERCIALES, ESTADO_META, ESTADO_DEFAULT } from '@/lib/estados';
@@ -305,25 +307,25 @@ export default function AdminPropertyEdit() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Dormitorios</label>
-                <input className={styles.formInput} type="number" min={0} value={form.bedrooms} onChange={e => set('bedrooms', e.target.value)} />
+                <AdminStepper value={form.bedrooms} onChange={n => set('bedrooms', n)} ariaLabel="Dormitorios" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Baños</label>
-                <input className={styles.formInput} type="number" min={0} value={form.bathrooms} onChange={e => set('bathrooms', e.target.value)} />
+                <AdminStepper value={form.bathrooms} onChange={n => set('bathrooms', n)} ariaLabel="Baños" />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Cocheras</label>
-                <input className={styles.formInput} type="number" min={0} value={form.garages} onChange={e => set('garages', e.target.value)} />
+                <AdminStepper value={form.garages} onChange={n => set('garages', n)} ariaLabel="Cocheras" />
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Superficie total (m²)</label>
-                <input className={styles.formInput} type="number" min={0} value={form.totalArea} onChange={e => set('totalArea', e.target.value)} />
+                <input className={styles.formInput} type="number" {...nonNegativeProps} value={form.totalArea} onChange={e => set('totalArea', e.target.value)} />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Superficie cubierta (m²)</label>
-                <input className={styles.formInput} type="number" min={0} value={form.coveredArea} onChange={e => set('coveredArea', e.target.value)} />
+                <input className={styles.formInput} type="number" {...nonNegativeProps} value={form.coveredArea} onChange={e => set('coveredArea', e.target.value)} />
               </div>
             </div>
           </div>
@@ -502,7 +504,7 @@ export default function AdminPropertyEdit() {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Precio</label>
-              <input className={styles.formInput} type="number" min={0} value={form.price} onChange={e => set('price', e.target.value)} />
+              <input className={styles.formInput} type="number" {...nonNegativeProps} value={form.price} onChange={e => set('price', e.target.value)} />
             </div>
           </div>
 

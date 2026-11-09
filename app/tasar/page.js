@@ -5,6 +5,8 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import AnimatedSection from '@/components/ui/AnimatedSection';
 import { supabase } from '@/lib/supabase';
+import AdminStepper from '@/components/admin/AdminStepper';
+import { nonNegativeProps } from '@/lib/numberInput';
 import styles from './page.module.css';
 
 const PROPERTY_TYPES = ['Departamento', 'Casa', 'PH', 'Terreno', 'Local', 'Oficina', 'Otro'];
@@ -141,23 +143,23 @@ export default function TasarPage() {
                       </div>
                       <div className={styles.formGroup}>
                         <label className={styles.label}>Superficie (m²)</label>
-                        <input type="number" className={styles.input} value={formData.area} onChange={e => updateField('area', e.target.value)} placeholder="Total" />
+                        <input type="number" {...nonNegativeProps} className={styles.input} value={formData.area} onChange={e => updateField('area', e.target.value)} placeholder="Total" />
                       </div>
                       <div className={styles.formGroup}>
                         <label className={styles.label}>Ambientes</label>
-                        <input type="number" className={styles.input} value={formData.bedrooms} onChange={e => updateField('bedrooms', e.target.value)} placeholder="Cant." />
+                        <AdminStepper value={formData.bedrooms} onChange={n => updateField('bedrooms', n)} ariaLabel="Ambientes" />
                       </div>
                       <div className={styles.formGroup}>
                         <label className={styles.label}>Baños</label>
-                        <input type="number" className={styles.input} value={formData.bathrooms} onChange={e => updateField('bathrooms', e.target.value)} placeholder="Cant." />
+                        <AdminStepper value={formData.bathrooms} onChange={n => updateField('bathrooms', n)} ariaLabel="Baños" />
                       </div>
                       <div className={styles.formGroup}>
-                        <label className={styles.label}>Antigüedad (años)</label>
-                        <input type="number" className={styles.input} value={formData.age} onChange={e => updateField('age', e.target.value)} placeholder="0 = A estrenar" />
+                        <label className={styles.label}>Antigüedad (años) · 0 = a estrenar</label>
+                        <AdminStepper value={formData.age} onChange={n => updateField('age', n)} ariaLabel="Antigüedad" />
                       </div>
                       <div className={styles.formGroup}>
                         <label className={styles.label}>Cocheras</label>
-                        <input type="number" className={styles.input} value={formData.garages} onChange={e => updateField('garages', e.target.value)} placeholder="Cant." />
+                        <AdminStepper value={formData.garages} onChange={n => updateField('garages', n)} ariaLabel="Cocheras" />
                       </div>
                       <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
                         <label className={styles.label}>Extras / Comentarios</label>

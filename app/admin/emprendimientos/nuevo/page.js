@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
+import AdminStepper from '@/components/admin/AdminStepper';
 import styles from '@/components/admin/admin.module.css';
+import { nonNegativeProps } from '@/lib/numberInput';
 import { supabase } from '@/lib/supabase';
 
 const INITIAL = {
@@ -89,7 +91,7 @@ export default function AdminEmprendimientoForm() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Unidades totales</label>
-              <input className={styles.formInput} type="number" placeholder="120" value={form.total_units} onChange={e => set('total_units', e.target.value)} />
+              <AdminStepper value={form.total_units} onChange={n => set('total_units', n)} ariaLabel="Unidades totales" />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Precio desde</label>
@@ -97,7 +99,7 @@ export default function AdminEmprendimientoForm() {
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Avance de obra (%)</label>
-              <input className={styles.formInput} type="number" placeholder="75" min={0} max={100} value={form.progress} onChange={e => set('progress', e.target.value)} />
+              <input className={styles.formInput} type="number" placeholder="75" {...nonNegativeProps} max={100} value={form.progress} onChange={e => set('progress', e.target.value)} />
             </div>
           </div>
           <div className={styles.formGroup}>

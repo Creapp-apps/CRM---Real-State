@@ -5,6 +5,7 @@ import styles from '@/components/admin/admin.module.css';
 import Icon from '@/components/admin/Icon';
 import AdminSelect from '@/components/admin/AdminSelect';
 import { supabase } from '@/lib/supabase';
+import { nonNegativeProps } from '@/lib/numberInput';
 
 const ESTADO_LABEL = { pendiente: 'Pendiente', pagado: 'Pagado', mora: 'En Mora', parcial: 'Parcial' };
 const ESTADO_BADGE = { pendiente: styles.badgeYellow, pagado: styles.badgeGreen, mora: styles.badgeRed, parcial: styles.badgeGray };
@@ -294,15 +295,15 @@ function PagoModal({ contrato, editData, onClose, onSaved }) {
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Monto Alquiler ($)</label>
-                <input className={styles.formInput} type="number" step="0.01" name="monto_alquiler" value={form.monto_alquiler} onChange={handleChange} />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="monto_alquiler" value={form.monto_alquiler} onChange={handleChange} />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Expensas ($)</label>
-                <input className={styles.formInput} type="number" step="0.01" name="monto_expensas" value={form.monto_expensas} onChange={handleChange} />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="monto_expensas" value={form.monto_expensas} onChange={handleChange} />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Impuestos ($)</label>
-                <input className={styles.formInput} type="number" step="0.01" name="monto_impuestos" value={form.monto_impuestos} onChange={handleChange} />
+                <input className={styles.formInput} type="number" step="0.01" {...nonNegativeProps} name="monto_impuestos" value={form.monto_impuestos} onChange={handleChange} />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Fecha Vencimiento</label>

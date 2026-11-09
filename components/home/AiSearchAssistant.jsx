@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
+import { nonNegativeProps } from '@/lib/numberInput';
 import styles from './AiSearchAssistant.module.css';
 
 const INITIAL_MESSAGE = {
@@ -703,6 +704,7 @@ export default function AiSearchAssistant({ onSelectOperacion }) {
               <form onSubmit={handleCustomBudgetSubmit} className={styles.nameInputForm} style={{ marginTop: '4px' }}>
                 <input
                   type="number"
+                  {...nonNegativeProps}
                   className={styles.nameInput}
                   placeholder={selectedCurrency === 'ARS' ? "O ingresá tu presupuesto máximo en $ (ARS)..." : "O ingresá tu presupuesto máximo en USD..."}
                   value={customBudgetInput}

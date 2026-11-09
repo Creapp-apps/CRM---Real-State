@@ -10,6 +10,7 @@ import anim from './nueva.module.css';
 import AdminSelect from '@/components/admin/AdminSelect';
 import AlertModal from '@/components/admin/AlertModal';
 import MeliAttributesForm, { buildMeliAttributes, missingRequired } from '@/components/admin/MeliAttributesForm';
+import { nonNegativeProps } from '@/lib/numberInput';
 import { normalizeImageForMeli, UNSUPPORTED_FORMAT } from '@/lib/imageForMeli';
 import SortablePhotos from '@/components/admin/SortablePhotos';
 
@@ -769,7 +770,7 @@ export default function NuevaPublicacion() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.75rem' }}>
               <div>
                 <label style={lbl}>Precio *</label>
-                <input type="number" min="0" style={inp}
+                <input type="number" {...nonNegativeProps} style={inp}
                   value={price} onChange={e => setPrice(e.target.value)} placeholder="Ej: 150000" />
               </div>
               <div>
