@@ -157,17 +157,26 @@ export default function AdminPropertyEdit() {
     if (newVideoId !== origVideoId) fields.video_id = newVideoId || null;
 
     // Attributes
+    // Solo mandamos un atributo numérico cuando el usuario cargó un valor Y cambió
+    // de verdad. Si el campo está vacío NO lo mandamos: enviar value_name vacío hace
+    // que ML intente BORRAR el atributo, y si es requerido por la categoría (ej.
+    // TOTAL_AREA en Casas MLA401685) la publicación entera falla con HTTP 400. Esto
+    // rompía la edición de publicaciones importadas sin superficie cargada.
     const attrs = [];
-    if (String(form.bedrooms) !== String(prop.bedrooms))
-      attrs.push({ id: 'BEDROOMS', value_name: String(form.bedrooms) });
-    if (String(form.bathrooms) !== String(prop.bathrooms))
-      attrs.push({ id: 'BATHROOMS', value_name: String(form.bathrooms) });
-    if (String(form.garages) !== String(prop.garages))
-      attrs.push({ id: 'PARKING_LOTS', value_name: String(form.garages) });
-    if (String(form.totalArea) !== String(prop.totalArea))
-      attrs.push({ id: 'TOTAL_AREA', value_name: String(form.totalArea), value_struct: { number: Number(form.totalArea), unit: 'm²' } });
-    if (String(form.coveredArea) !== String(prop.coveredArea))
-      attrs.push({ id: 'COVERED_AREA', value_name: String(form.coveredArea), value_struct: { number: Number(form.coveredArea), unit: 'm²' } });
+    const numChanged = (f, p) => {
+      if (f === '' || f === null || f === undefined) return false; // vacío: no tocar
+      return Number(f) !== Number(p ?? 0);
+    };
+    if (numChanged(form.bedrooms, prop.bedrooms))
+      attrs.push({ id: 'ROOMS', value_name: String(Number(form.bedrooms)) });
+    if (numChanged(form.bathrooms, prop.bathrooms))
+      attrs.push({ id: 'BATHROOMS', value_name: String(Number(form.bathrooms)) });
+    if (numChanged(form.garages, prop.garages))
+      attrs.push({ id: 'PARKING_LOTS', value_name: String(Number(form.garages)) });
+    if (numChanged(form.totalArea, prop.totalArea))
+      attrs.push({ id: 'TOTAL_AREA', value_name: String(Number(form.totalArea)), value_struct: { number: Number(form.totalArea), unit: 'm²' } });
+    if (numChanged(form.coveredArea, prop.coveredArea))
+      attrs.push({ id: 'COVERED_AREA', value_name: String(Number(form.coveredArea)), value_struct: { number: Number(form.coveredArea), unit: 'm²' } });
     if (attrs.length > 0) fields.attributes = attrs;
 
     const descChanged = form.description !== (prop.description === 'Sin descripción disponible.' ? '' : (prop.description || ''));

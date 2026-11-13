@@ -828,7 +828,7 @@ export default function NuevaPublicacion() {
             <ReviewRow label="Tipo" value={`${TIPOS.find(t => t.key === tipo)?.label} · ${OPS.find(o => o.key === operacion)?.label}`} />
             <ReviewRow label="Categoría MELI" value={attrSchema.leafId || CATEGORY_MAP[tipo]?.[operacion]} mono />
             <ReviewRow label="Título" value={title} />
-            <ReviewRow label="Precio" value={`${currency} ${Number(price || 0).toLocaleString('es-AR')}${operacion !== 'venta' ? '/mes' : ''}`} />
+            <ReviewRow label="Precio" value={`${currency} ${Number(price || 0).toLocaleString('es-AR')}${operacion === 'temporario' ? '/noche' : operacion !== 'venta' ? '/mes' : ''}`} />
             {attrText('MAINTENANCE_FEE') && <ReviewRow label="Expensas" value={attrText('MAINTENANCE_FEE')} />}
             {addressLine && <ReviewRow label="Dirección" value={hideExact ? rangoDireccion : addressLine} />}
             {hideExact && <ReviewRow label="Dirección exacta" value="Oculta (se publica rango)" />}
