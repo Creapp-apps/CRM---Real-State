@@ -152,9 +152,12 @@ function headlineOf(p) {
   return `${p.type} en ${where}`;
 }
 
-export default function FichaView({ property }) {
+export default function FichaView({ property, mode = 'cliente' }) {
+  const colega = mode === 'colega';
   const [lightbox, setLightbox] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareRef = useRef(null);
 
   const images = property.images?.length ? property.images : ['/images/hero-bg.jpg'];
   const cover = images[0];
@@ -209,11 +212,23 @@ export default function FichaView({ property }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox, images.length, closeLightbox]);
 
+  useEffect(() => {
+    if (!shareOpen) return undefined;
+    const onDown = (e) => { if (shareRef.current && !shareRef.current.contains(e.target)) setShareOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setShareOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [shareOpen]);
+
   const handlePrint = () => window.print();
-  const handleWhatsApp = () => {
-    const url = window.location.href;
+  /** Comparte por WhatsApp: 'cliente' = ficha con branding, 'colega' = ficha genérica sin marca. */
+  const handleShare = (target) => {
+    const base = window.location.origin + window.location.pathname.replace(/\/colega\/?$/, '');
+    const url = target === 'colega' ? `${base}/colega` : base;
     const text = `${headline} — ${formatPrice(property.price, property.currency, property.priceLabel)}\n${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    setShareOpen(false);
   };
   const handleCopy = async () => {
     try {
@@ -231,7 +246,21 @@ export default function FichaView({ property }) {
     <div className={`${styles.sheet} ${styles.js}`}>
       {/* Barra de acciones (no se imprime) */}
       <div className={styles.actions}>
-        <button type="button" onClick={handleWhatsApp} className={styles.actionBtn}>Compartir</button>
+        <div className={styles.shareWrap} ref={shareRef}>
+          <button type="button" onClick={() => setShareOpen((o) => !o)} className={styles.actionBtn} aria-haspopup="menu" aria-expanded={shareOpen}>Compartir</button>
+          {shareOpen && (
+            <div className={styles.shareMenu} role="menu">
+              <button type="button" role="menuitem" className={styles.shareItem} onClick={() => handleShare('cliente')}>
+                <strong>Compartir a cliente</strong>
+                <span>Ficha con nuestra marca</span>
+              </button>
+              <button type="button" role="menuitem" className={styles.shareItem} onClick={() => handleShare('colega')}>
+                <strong>Compartir a colega</strong>
+                <span>Ficha genérica, sin marca</span>
+              </button>
+            </div>
+          )}
+        </div>
         <button type="button" onClick={handleCopy} className={styles.actionBtn}>{copied ? 'Link copiado' : 'Copiar link'}</button>
         <button type="button" onClick={handlePrint} className={styles.actionBtnPrimary}>Descargar PDF</button>
       </div>
@@ -239,14 +268,20 @@ export default function FichaView({ property }) {
       {/* HERO */}
       <section className={styles.hero}>
         <div className={styles.topbar}>
-          <Image src="/logohorizontal.png" alt="Cardoso Propiedades" width={200} height={32} className={styles.logo} priority />
-          <div className={styles.agent}>
-            <div className={styles.who}>
-              <strong>{AGENTE}</strong>
-              <span>Martillera &amp; Corredora · {MATRICULA}</span>
-            </div>
-            <div className={styles.ring}>{initials(AGENTE)}</div>
-          </div>
+          {colega ? (
+            <span className={styles.genericTag}>Ficha de propiedad</span>
+          ) : (
+            <>
+              <Image src="/logohorizontal.png" alt="Cardoso Propiedades" width={200} height={32} className={styles.logo} priority />
+              <div className={styles.agent}>
+                <div className={styles.who}>
+                  <strong>{AGENTE}</strong>
+                  <span>Martillera &amp; Corredora · {MATRICULA}</span>
+                </div>
+                <div className={styles.ring}>{initials(AGENTE)}</div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className={styles.herogrid}>
@@ -392,6 +427,7 @@ export default function FichaView({ property }) {
 
       {/* CIERRE */}
       <footer className={styles.footer}>
+        {!colega && (
         <Reveal variant="up" className={styles.footTop}>
           <div>
             <Image src="/logohorizontal.png" alt="Cardoso Propiedades" width={210} height={34} className={styles.footLogo} />
@@ -407,6 +443,7 @@ export default function FichaView({ property }) {
             )}
           </div>
         </Reveal>
+        )}
         <p className={styles.legal}>
           La información y medidas son aproximadas y deberán ratificarse con la documentación pertinente; no comprometen contractualmente. Gastos (expensas, ABL) según la última información disponible. Fotografías no vinculantes ni contractuales.
         </p>
