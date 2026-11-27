@@ -12,7 +12,6 @@ import styles from '@/components/admin/admin.module.css';
 import { nonNegativeProps } from '@/lib/numberInput';
 import { fetchMeliVisits } from '@/lib/admin-fetchers';
 import { normalizeImageForMeli } from '@/lib/imageForMeli';
-import { ESTADOS_COMERCIALES, ESTADO_META, ESTADO_DEFAULT } from '@/lib/estados';
 import SortablePhotos from '@/components/admin/SortablePhotos';
 
 const EMPTY = {
@@ -20,9 +19,6 @@ const EMPTY = {
   description: '', bedrooms: '', bathrooms: '', garages: '',
   totalArea: '', coveredArea: '', videoUrl: '',
 };
-
-// Mapeo color semántico (lib/estados.js) -> clase de badge del design system admin.
-const BADGE_CLASS = { gold: 'badgeGold', yellow: 'badgeYellow', red: 'badgeRed', green: 'badgeGreen', gray: 'badgeGray' };
 
 function extractYouTubeId(url) {
   if (!url) return '';
@@ -44,16 +40,6 @@ export default function AdminPropertyEdit() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState([]);
   const [success, setSuccess] = useState(false);
-  const [estadoComercial, setEstadoComercial] = useState(ESTADO_DEFAULT);
-  const [estadoComercialOrig, setEstadoComercialOrig] = useState(ESTADO_DEFAULT);
-
-  useEffect(() => {
-    if (!id) return;
-    fetch(`/api/meli/estados?id=${id}`)
-      .then(r => r.json())
-      .then(d => { if (d.estado) { setEstadoComercial(d.estado); setEstadoComercialOrig(d.estado); } })
-      .catch(() => {});
-  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -181,56 +167,32 @@ export default function AdminPropertyEdit() {
 
     const descChanged = form.description !== (prop.description === 'Sin descripción disponible.' ? '' : (prop.description || ''));
     const hasChanges = Object.keys(fields).length > 0 || descChanged;
-    const estadoChanged = estadoComercial !== estadoComercialOrig;
 
-    if (!hasChanges && !estadoChanged) { setSaving(false); setSuccess(true); return; }
+    if (!hasChanges) { setSaving(false); setSuccess(true); return; }
 
-    let resultErrors = [];
-
-    // 1) Campos de la publicación en ML (si cambiaron).
-    if (hasChanges) {
-      const res = await fetch('/api/meli/items', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id,
-          fields: Object.keys(fields).length > 0 ? fields : undefined,
-          description: descChanged ? form.description : undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErrors([{ message: data.error || 'Error desconocido' }]);
-        setSaving(false);
-        return;
-      }
-      resultErrors = data.errors || [];
-    }
-
-    // 2) Estado comercial (si cambió). El route aplica la regla inactiva<->paused en ML.
-    if (estadoChanged) {
-      const er = await fetch('/api/meli/estados', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, estado: estadoComercial }),
-      });
-      const ed = await er.json();
-      if (!er.ok) {
-        setErrors([{ message: ed.error || 'Error guardando el estado comercial' }]);
-        setSaving(false);
-        return;
-      }
-      setEstadoComercialOrig(estadoComercial);
-      if (ed.meliWarning) {
-        resultErrors = [...resultErrors, { message: `Estado guardado, pero ML no se actualizó: ${ed.meliWarning}` }];
-      }
+    // Un único PUT a ML. El estado (active/paused) viaja en fields.status como cualquier
+    // otro campo: si falla, el error se muestra (ya no hay pausado best-effort silencioso).
+    const res = await fetch('/api/meli/items', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        fields: Object.keys(fields).length > 0 ? fields : undefined,
+        description: descChanged ? form.description : undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setErrors([{ message: data.error || 'Error desconocido' }]);
+      setSaving(false);
+      return;
     }
 
     setSaving(false);
-    setErrors(resultErrors);
+    setErrors(data.errors || []);
     setSuccess(true);
 
-    // Refrescar: el status ML pudo cambiar por la regla del estado comercial.
+    // Refrescar desde ML para reflejar el status real ya aplicado.
     const updated = await fetch(`/api/meli/items?id=${id}`).then(r => r.json());
     if (updated.property) {
       setProp(updated.property);
@@ -473,32 +435,20 @@ export default function AdminPropertyEdit() {
           <div className={styles.card}>
             <h3 style={{ color: 'var(--white)', marginBottom: '1.25rem', fontFamily: 'var(--font-heading)' }}>Publicación</h3>
             <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Estado comercial</label>
+              <label className={styles.formLabel}>Estado de la publicación</label>
               <AdminSelect
-                value={estadoComercial}
-                onChange={setEstadoComercial}
-                options={ESTADOS_COMERCIALES.map(e => ({ value: e, label: ESTADO_META[e].label }))}
-              />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                <span className={`${styles.badge} ${styles[BADGE_CLASS[ESTADO_META[estadoComercial].color]]}`}>
-                  {ESTADO_META[estadoComercial].label}
-                </span>
-                {ESTADO_META[estadoComercial].hidePublic && (
-                  <span style={{ fontSize: '0.7rem', color: 'var(--gray-500)' }}>Se oculta de la web y pausa en ML</span>
-                )}
-              </div>
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Estado en MercadoLibre</label>
-              <AdminSelect
-                value={form.status}
+                value={form.status === 'paused' ? 'paused' : 'active'}
                 onChange={(val) => set('status', val)}
                 options={[
                   { value: 'active', label: 'Activa' },
                   { value: 'paused', label: 'Pausada' },
-                  { value: 'closed', label: 'Cerrada' },
                 ]}
               />
+              <span style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.4rem', display: 'block' }}>
+                {form.status === 'paused'
+                  ? 'Pausada: fuera del aire en MercadoLibre y oculta de la web.'
+                  : 'Activa: publicada en MercadoLibre y visible en la web.'}
+              </span>
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Moneda</label>

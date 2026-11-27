@@ -7,12 +7,10 @@ import Image from 'next/image';
 import Icon from '@/components/admin/Icon';
 import styles from '@/components/admin/admin.module.css';
 import { fetchMeliItems } from '@/lib/admin-fetchers';
-import { ESTADO_META, ESTADO_DEFAULT } from '@/lib/estados';
 
 const STATUS_TABS = [
   { key: 'active',  label: 'Activas'  },
   { key: 'paused',  label: 'Pausadas' },
-  { key: 'closed',  label: 'Cerradas' },
 ];
 
 const STATUS_BADGE = {
@@ -20,9 +18,6 @@ const STATUS_BADGE = {
   paused:  { cls: styles.badgeYellow, label: 'Pausada'  },
   closed:  { cls: styles.badgeGray,   label: 'Cerrada'  },
 };
-
-// Color semántico (lib/estados.js) -> clase de badge del design system admin.
-const COM_BADGE_CLASS = { gold: styles.badgeGold, yellow: styles.badgeYellow, red: styles.badgeRed, green: styles.badgeGreen, gray: styles.badgeGray };
 
 export default function AdminProperties() {
   const [statusFilter, setStatusFilter] = useState('active');
@@ -32,11 +27,6 @@ export default function AdminProperties() {
     ['meli-items', statusFilter],
     ([, s]) => fetchMeliItems(s)
   );
-
-  const { data: estadosData } = useSWR('meli-estados', () =>
-    fetch('/api/meli/estados').then(r => r.json())
-  );
-  const estados = estadosData?.estados || {};
 
   const properties = data?.properties || [];
   const error = swrError?.message || null;
@@ -55,7 +45,6 @@ export default function AdminProperties() {
   const emptyMsg = {
     active:  'No hay publicaciones activas.',
     paused:  'No hay publicaciones pausadas.',
-    closed:  'No hay publicaciones cerradas.',
   }[statusFilter];
 
   return (
@@ -131,26 +120,25 @@ export default function AdminProperties() {
               <th>Precio</th>
               <th>Zona</th>
               <th>Estado</th>
-              <th>Comercial</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
                   Cargando publicaciones...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
                   {error.includes('conectado') ? 'Cuenta MercadoLibre no conectada' : error}
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--gray-500)' }}>
                   {emptyMsg}
                 </td>
               </tr>
@@ -190,14 +178,6 @@ export default function AdminProperties() {
                     <td style={{ color: 'var(--gray-400)', fontSize: '0.875rem' }}>{p.location}</td>
                     <td>
                       <span className={`${styles.badge} ${statusInfo.cls}`}>{statusInfo.label}</span>
-                    </td>
-                    <td>
-                      {(() => {
-                        const com = estados[p.id] || ESTADO_DEFAULT;
-                        if (com === ESTADO_DEFAULT) return <span style={{ color: 'var(--gray-600)' }}>—</span>;
-                        const meta = ESTADO_META[com];
-                        return <span className={`${styles.badge} ${COM_BADGE_CLASS[meta.color]}`}>{meta.label}</span>;
-                      })()}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
